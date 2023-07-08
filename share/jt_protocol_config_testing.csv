@@ -1,0 +1,5 @@
+﻿protocol,type,name,leg
+JTDcmj,double,CMJ,both
+JTDquad,double,ISO Quad Extension both,both
+JTSextL,single,ISO Quad Extension L,left
+JTSextR,single,ISO Quad Extension R,right

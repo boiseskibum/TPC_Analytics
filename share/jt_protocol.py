@@ -55,7 +55,7 @@ class JT_protocol:
 if __name__ == "__main__":
 
     # Test code
-    file_path = 'jt_protocol_config.csv'  # Replace with the actual path to your CSV file
+    file_path = 'jt_protocol_config_testing.csv'  # Replace with the actual path to your CSV file
 
     # Create an instance of the DataProcessor
     protocol_obj = JT_protocol(file_path)
