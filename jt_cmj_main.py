@@ -43,9 +43,7 @@ my_platform = platform.system()
 
 # appends the path to look for files to the existing path
 
-
 # mount drive if in google collab()
-my_platform = platform.system()
 if my_platform == "Linux":
 
     from google.colab import drive
@@ -58,9 +56,11 @@ if my_platform == "Linux":
 
     # required to import jt_util
     sys.path.append('/gdrive/MyDrive/Colab Notebooks')
-#    !pip  install icecream
 
-#from icecream import ic
+# this appends to the path so that files can be picked up in the different sub directories
+sys.path.append('./share')
+sys.path.append('./JT_analytics')
+sys.path.append('./JT_capture')
 
 import jt_util as util
 
@@ -266,6 +266,7 @@ class CMJ_UI(ttk.Frame):
 
         self.is_recording = False
 
+        #### Protocol
         # protocol type
         self.protocol_type_selected = get_config_key("protocol_type")
 
@@ -275,10 +276,10 @@ class CMJ_UI(ttk.Frame):
 
         log.debug(f"protocol type_selected: {self.protocol_type_selected} name_list: {self.protocol_name_list}")
 
-        #protocol name
+        # protocol name
         self.protocol_name_selected = get_config_key("protocol_name")
 
-        #make sure it is valid protocol_name
+        # validate protocol_name
         if ( self.protocol_name_selected == None or len(self.protocol_name_selected) < 1 or
                 self.protocol_obj.validate_type_name_combination(self.protocol_type_selected, self.protocol_name_selected) == False ):
             self.protocol_name_selected = self.protocol_name_list[0]
@@ -287,19 +288,24 @@ class CMJ_UI(ttk.Frame):
 
         self.saved = True  #flag so that the user can be asked if they want to save the previous set of data before recording new data
 
-        #get list of valid athletes, last athlete, output_file_dir
-        self.athletes_list_filename = get_config_key("athletes_list_filename")
-        self.athletes = get_athletes(self.athletes_list_filename) # get list of valid athletes from CSV file
+        #### Athletes - get list of valid athletes, last athlete, output_file_dir
+        self.athletes_list_filename = get_config_key( my_platform + "-athletes_list_filename")
+
+        try:
+            self.athletes = get_athletes(self.athletes_list_filename) # get list of valid athletes from CSV file
+        except:
+            dialog = jtd.JT_Dialog(parent=self.master, title="Athletes List Error", msg="Go to Settings tab and set the location for the athletes list", type="ok") # this is custom dialog class created above
+            self.athletes = []
 
         self.last_run_athlete = get_config_key("last_athlete")
 
-        self.output_file_dir = get_config_key("output_file_dir")
+        self.output_file_dir = get_config_key( my_platform + "-output_file_dir")
 
-        #general setup
+        # general setup
         self.results_df = pd.DataFrame()  # Empty DataFrame
         self.collecting_data = False
 
-        # attempt to read prior calibration information
+        # Calibration - attempt to read prior calibration information
         self.l_zero = get_config_key("l_zero")
         if self.l_zero == None:
             self.l_zero = -1
@@ -924,7 +930,7 @@ class CMJ_UI(ttk.Frame):
                     dialog = jtd.JT_Dialog(parent=self.master, title="Error", msg="No athletes in the file",
                                            type="ok")  # this is custom dialog class created above
                 else:
-                    set_config_key("athletes_list_filename", file_path)
+                    set_config_key( my_platform + "-athletes_list_filename", file_path)
                     self.athletes_list_filename = file_path
                     #update display with just the actual filename
                     file_name = os.path.basename(self.athletes_list_filename)
@@ -945,7 +951,7 @@ class CMJ_UI(ttk.Frame):
             self.output_file_dir = selected_dir
 
             #store key in config file
-            set_config_key("output_file_dir", selected_dir)
+            set_config_key( my_platform + "-output_file_dir", selected_dir)
             self.output_file_dir_display.config(text = selected_dir)
             my_str = f"Output file directory: \n  {selected_dir}"
 
