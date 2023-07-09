@@ -233,10 +233,42 @@ class CMJ_UI(ttk.Frame):
         self.master = master
         self.pack()
 
-        self.application_name = "Jake Taylor Athletic Analytics"
+        self.application_name = "Jake Taylor Analytics for Athletes"
 
         self.master.title(self.application_name)
 
+        ##### serial port setup #####
+
+        # get my my customized serial object
+        self.jt_reader = jts.SerialDataReader()
+
+        self.serial_ports_list = self.jt_reader.get_available_ports()
+
+        self.baud_rate = 115200
+        self.calibration_measurement_count = 20 # for calibration readings
+        self.updated_weight_count = 10      # for updating the weight on the screen
+        self.serial_port = None
+
+        # if only one port available then attempt to connect to it
+        if len(self.serial_ports_list) == 1:
+            self.serial_port_name = self.serial_ports_list[0]
+            log.debug(f"Only one port available, setting port to: {self.serial_port_name}, baud {self.baud_rate}")
+
+            # attempt to connect to port
+            if self.check_serial_port() != True:
+                self.serial_port_name = None
+
+        #if multiple serial ports attempt to connect to last port selected
+        else:
+            self.serial_port_name = get_config_key("last_port")
+            if self.check_serial_port() != True:
+                self.serial_port_name = None
+
+        self.is_recording = False
+
+        ##### Protocol #####
+
+        # Get list of protocols, throw error message if unsuccessful at getting list
         try:
             self.protocol_obj = jtp.JT_protocol(protocol_config_file)
             str = self.protocol_obj.validate_data()
@@ -249,24 +281,6 @@ class CMJ_UI(ttk.Frame):
                                    msg=f"{protocol_config_file} could not be opened or found",
                                    type="ok")  # this is custom dialog class created above
 
-        #serial port setup
-
-        # get my my customized serial object
-        self.jt_reader = jts.SerialDataReader()
-
-        self.serial_ports_list = self.jt_reader.get_available_ports()
-
-        self.baud_rate = 115200
-        self.calibration_measurement_count = 20 # for calibration readings
-        self.updated_weight_count = 10      # for updating the weight on the screen
-        self.serial_port = None
-        self.serial_port_name = get_config_key("last_port")
-        if self.check_serial_port() != True:
-            self.serial_port_name = None
-
-        self.is_recording = False
-
-        #### Protocol
         # protocol type
         self.protocol_type_selected = get_config_key("protocol_type")
 
@@ -288,7 +302,8 @@ class CMJ_UI(ttk.Frame):
 
         self.saved = True  #flag so that the user can be asked if they want to save the previous set of data before recording new data
 
-        #### Athletes - get list of valid athletes, last athlete, output_file_dir
+        ##### Athletes #####
+        # get list of valid athletes, last athlete, output_file_dir
         self.athletes_list_filename = get_config_key( my_platform + "-athletes_list_filename")
 
         try:
@@ -301,7 +316,7 @@ class CMJ_UI(ttk.Frame):
 
         self.output_file_dir = get_config_key( my_platform + "-output_file_dir")
 
-        # general setup
+        ###### general setup
         self.results_df = pd.DataFrame()  # Empty DataFrame
         self.collecting_data = False
 

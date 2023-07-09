@@ -1,5 +1,13 @@
-import pandas as pd
+# jt_protocol.py
+# purpose - access to the protocol data that currently resides in CSV files
+#
+#   protocol - this is the encoded name (something like JTDextL   which means JT, Double, Extension, Left leg
+#   type - single or double - this drives if two measurements are being taken or just one
+#   name - long version displayed to the user
+#   leg - will be either left or right
+#
 
+import pandas as pd
 import jt_util as util
 
 # logging configuration - the default level if not set is DEBUG
@@ -8,7 +16,8 @@ log = util.jt_logging()
 class JT_protocol:
     def __init__(self, file_path):
         self.df = pd.read_csv(file_path)
-        print(self.df)
+        log.debug("list of athletes")
+        log.debug(self.df)
 
     def get_names_by_type(self, type):
         return self.df.loc[self.df['type'] == type, 'name'].tolist()

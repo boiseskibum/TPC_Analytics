@@ -1,3 +1,7 @@
+# jt_dialog.py
+# Purpose: to provide non-blocking dialogs to the application so that threads can continue to run on the side and
+# the main screen can be updated
+
 import tkinter as tk
 from tkinter import ttk
 from tkinter import simpledialog
