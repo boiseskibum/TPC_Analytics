@@ -68,8 +68,10 @@ class SerialDataReader(threading.Thread):
             if self.port_name == None:
                 my_return = False
                 log.debug(f"Serial port name is None")
-            else:
-                # timeout after 1 second if nothing is no the port
+            elif self.serial_port == None:
+
+
+                # timeout after 1 second if nothing is
                 self.serial_port = serial.Serial(port=self.port_name, baudrate=self.baud_rate)
 #                self.serial_port = serial.Serial(port=self.port_name, baudrate=self.baud_rate, timeout=my_timeout)
 
@@ -81,6 +83,10 @@ class SerialDataReader(threading.Thread):
                     my_return = True
                 else:
                     log.error(f"Failed to connected to port |{self.port_name}|, OID: = {self.serial_port}")
+            else:  #
+                if self.serial_port.isOpen():
+                    log.debug(f"Serial Port: {self.port_name} is already open")
+                    my_return = True
 
         except:
             log.error(f"Could not connect to port: |{self.port_name}| Baud: {self.baud_rate}, OID: = {self.serial_port}")
@@ -476,7 +482,7 @@ if __name__ == "__main__":
         log.debug(f"Only one port available, setting port to: {port}, baud {baud}")
 
         #attempt to connect to port
-        reader.configure_serial_port( baud, port )
+        reader.configure_serial_port( port, baud )
 
     def main():
         app.title('Dialog')

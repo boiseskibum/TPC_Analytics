@@ -73,6 +73,7 @@ path_app = path_base + 'Force Plate Testing/'
 path_data = path_app + 'data/'
 path_results = path_app + 'results/'
 path_log = path_app + 'log/'
+path_config = path_app + 'config/'
 
 # validate that all paths exist
 if not os.path.isdir(path_base):
@@ -96,19 +97,17 @@ log.set_logging_level("WARNING")  # this will show errors but not files actually
 import jt_dialog as jtd
 import jt_serial as jts
 import jt_protocol as jtp
+import jt_athletes as jta
 
 # if set to >= 0 it utilizes test data instead of data from serial line
 test_data_file = None
 #test_data_file = 'test_output_ex1.txt'
 
-# Replace this value with the path to your CSV file containing names and test types
-csv_file = "names_and_test_types.csv"
-
 #configuration file name, holds last port #, and anothr other state information
-app_config_file = path_app + "jt_cmj_main_config.json"
+app_config_file = path_config + "jt_cmj_main_config.json"
 
 #protocol configs holds all the infor about single, double, name and actual protocol used
-protocol_config_file = path_app + "jt_protocol_config.csv"
+protocol_config_file = path_config + "jt_protocol_config.csv"
 
 jt_icon_path = "jt.png"    #icon for message boxes
 log.msg(f"path_base: {path_base}")
@@ -165,24 +164,15 @@ def set_config_key(my_key, new_key_value):
 
     return
 
-#### returns a list of athletes
-def get_athletes(athletes_filename):
+#### logging of calibration data for long term study
+def log_calibration_data(my_dict)
 
-    if athletes_filename == None:
-        athletes_filename = path_app + 'athletes.csv'
+    my_dict['timestamp'] = time.time()
+    my_dict['platform'] = my_platform
+    my_dict['username'] = my_username
 
-    log.debug(f"Athletes list Filename: {athletes_filename}")
-
-    df = pd.read_csv(athletes_filename)
-    athletes_list = df['athletes_name'].tolist()
-
-    #gets unique list of athletes
-    athletes_list = list(set(athletes_list))
-    log.debug(f"Athletes: {athletes_list}")
-
-    return athletes_list
-
-
+    my_csv_filename = path_log + "strain_gauge_multiplier-zero_history.csv"
+    df.to_csv(my_csv_filename, mode='a', header=not os.path.isfile(my_csv_filename))
 
 
 #### read in test file and return data as a list of JSON files
@@ -246,7 +236,7 @@ class CMJ_UI(ttk.Frame):
 
         self.baud_rate = 115200
         self.calibration_measurement_count = 20 # for calibration readings
-        self.updated_weight_count = 10      # for updating the weight on the screen
+        self.updated_weight_count = 5      # for updating the weight on the screen
         self.serial_port = None
 
         # if only one port available then attempt to connect to it
@@ -304,10 +294,12 @@ class CMJ_UI(ttk.Frame):
 
         ##### Athletes #####
         # get list of valid athletes, last athlete, output_file_dir
-        self.athletes_list_filename = get_config_key( my_platform + "-athletes_list_filename")
+        self.athletes_list_filename = get_config_key( my_platform + "-athletes_list_filename_key")
 
         try:
-            self.athletes = get_athletes(self.athletes_list_filename) # get list of valid athletes from CSV file
+            # create the athletes Object
+            self.athletes_obj = jta.JT_athletes(self.athletes_list_filename) # get list of valid athletes from CSV file
+            self.athletes = self.athletes_obj.get_athletes()
         except:
             dialog = jtd.JT_Dialog(parent=self.master, title="Athletes List Error", msg="Go to Settings tab and set the location for the athletes list", type="ok") # this is custom dialog class created above
             self.athletes = []
@@ -631,7 +623,6 @@ class CMJ_UI(ttk.Frame):
         log.debug(f"displayed graph: {title}, {df_column}")
 
     def l_calibrate(self, json_key):
-
         log.debug(f"left calibrate:" )
 
         if self.check_serial_port() != True:
@@ -799,6 +790,8 @@ class CMJ_UI(ttk.Frame):
 
     #### Clock updating
     def update_button_fields(self):
+
+
         current_time = time.strftime('%H:%M:%S')
         self.clock_label.config(text=current_time)
 
@@ -817,7 +810,7 @@ class CMJ_UI(ttk.Frame):
                 r_force = self.get_force_lbs(right_weight, self.r_zero, self.r_mult)
                 self.r_calibration_display.config(text="{:.0f}".format(r_force))
 
-        self.clock_label.after(500, self.update_button_fields)
+        self.clock_label.after(200, self.update_button_fields)
 
     def save_data_to_csv(self, lose_last_run=False):
 
@@ -940,13 +933,18 @@ class CMJ_UI(ttk.Frame):
 
         if file_path:
             if file_path.endswith('.csv'):
-                self.athletes = get_athletes(file_path)  # get list of valid athletes from CSV file
+
+                # pass in new filepath for athletes and see if it works.
+                self.athletes = self.athletes_obj.get_athletes(file_path)
+
                 if len(self.athletes) < 1:
                     dialog = jtd.JT_Dialog(parent=self.master, title="Error", msg="No athletes in the file",
                                            type="ok")  # this is custom dialog class created above
                 else:
-                    set_config_key( my_platform + "-athletes_list_filename", file_path)
+                    self.athlete_combobox['values'] = self.athletes
+                    set_config_key( my_platform + "-athletes_list_filename_key", file_path)
                     self.athletes_list_filename = file_path
+
                     #update display with just the actual filename
                     file_name = os.path.basename(self.athletes_list_filename)
                     self.athletes_list_filename_display.config(text=file_name)

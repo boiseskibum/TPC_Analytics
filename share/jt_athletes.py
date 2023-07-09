@@ -7,11 +7,20 @@ log = util.jt_logging()
 class JT_athletes:
     def __init__(self, file_path):
         self.file_path = file_path
-        self.df = pd.read_csv(file_path)
+        df = pd.DataFrame()
 
-    def get_athletes(self):
-        unique_athletes = self.df["athletes_name"].unique()
-        return unique_athletes.tolist()
+    #always reopen list and get it whenever called
+    def get_athletes(self, new_file_name = None ):
+        if new_file_name != None:
+            self.file_path = new_file_name
+
+        try:
+            self.df = pd.read_csv(self.file_path)
+            unique_athletes = self.df["athletes_name"].unique()
+            return unique_athletes.tolist()
+        except:
+            raise ValueError(f"Could not open athletes file: {self.file_path}")
+
 
     # this is typically "left" or right
     def get_injured_side(self, athlete_name):
@@ -32,7 +41,7 @@ if __name__ == "__main__":
 
     # Get all unique types
     athletes = athletes_obj.get_athletes()
-    print("Unique Types:", athletes)
+    print("Athletes:", athletes)
 
     for athlete in athletes:
         injured = athletes_obj.get_injured_side(athlete)
