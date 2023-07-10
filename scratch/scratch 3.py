@@ -1,37 +1,21 @@
-import os
-import pandas as pd
+import json
 
+class JT_config:
+    def __init__(self, file_path):
+        self.file_path = file_path
+        self.config_data = self._load_config()
 
-def save_to_csv(df, filename):
-    if not os.path.isfile(filename):
-        df.to_csv(filename, index=False)
-    else:
-        df.to_csv(filename, mode='a', header=False, index=False)
+    def _load_config(self):
+        with open(self.file_path, 'r') as file:
+            return json.load(file)
 
+    def _save_config(self):
+        with open(self.file_path, 'w') as file:
+            json.dump(self.config_data, file, indent=4)
 
-filename = 'test_csv_append'
+    def get_config(self, my_key):
+        return self.config_data.get(my_key)
 
-log_dict = {}
-log_dict['status'] = 'error'
-log_dict['l_zero'] = 3
-log_dict['l_mult'] = 4
-
-my_list = []
-my_list.append(log_dict)
-
-df = pd.DataFrame(my_list)
-
-save_to_csv(df, filename)
-
-
-log_dict = {}
-log_dict['status'] = 'error'
-log_dict['r_zero'] = 5
-log_dict['r_mult'] = 6
-
-my_list = []
-my_list.append(log_dict)
-
-df = pd.DataFrame(my_list)
-
-save_to_csv(df, filename)
+    def set_config(self, my_key, new_key_value):
+        self.config_data[my_key] = new_key_value
+        self._save_config()

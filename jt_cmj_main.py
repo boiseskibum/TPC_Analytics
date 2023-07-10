@@ -50,7 +50,6 @@ if my_platform == "Linux":
 
     try:
         drive.mount('/gdrive')
-
     except:
         print("INFO: Drive already mounted")
 
@@ -75,14 +74,13 @@ path_results = path_app + 'results/'
 path_log = path_app + 'log/'
 path_config = path_app + 'config/'
 
-# validate that all paths exist
+# validate that some key paths exist
 if not os.path.isdir(path_base):
     print(f'ERROR path: {path_base} does not exist')
 if not os.path.isdir(path_app):
     print(f'ERROR path: {path_app} does not exist')
 if not os.path.isdir(path_data):
     print(f'ERROR path: {path_data} does not exist')
-
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
@@ -91,17 +89,19 @@ log.msg(f'INFO - Valid logging levels are: {util.logging_levels}')
 log.set_logging_level("WARNING")  # this will show errors but not files actually processed
 # log.set_logging_level("INFO")   # this will show each file processed
 
-# Save log file to the directory specified
-# log.set_log_file(path_log, 'cmj_')
-
 import jt_dialog as jtd
 import jt_serial as jts
 import jt_protocol as jtp
 import jt_athletes as jta
+import jt_config as jtc
 
+# Testing data
 # if set to >= 0 it utilizes test data instead of data from serial line
 test_data_file = None
 #test_data_file = 'test_output_ex1.txt'
+
+
+#####File Path Setups
 
 #configuration file name, holds last port #, and anothr other state information
 app_config_file = path_config + "jt_cmj_main_config.json"
@@ -136,44 +136,26 @@ def set_theme(my_root):
 
 ##################################################################################################
 
-
-#return the key value, if nothing found then None reurned
-def get_config_key(my_key):
-    try:
-        with open(app_config_file, "r") as f:
-            config = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        config = {}
-
-    #if the key is not found then "None" is returned
-    last_key_value = config.get(my_key, None)
-
-    return last_key_value
-
-#set a key/value in the config file
-def set_config_key(my_key, new_key_value):
-    try:
-        with open(app_config_file, "r") as f:
-            config = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        config = {}
-
-    config[my_key] = new_key_value
-    with open(app_config_file, "w") as f:
-        json.dump(config, f)
-
-    return
-
 #### logging of calibration data for long term study
-def log_calibration_data(my_dict)
+# my dict should iinclude Serial Port, sensor (s1 or s2), zero, multiplier
+def log_calibration_data(my_dict):
 
     my_dict['timestamp'] = time.time()
+    my_dict['datetime'] = time.strftime("%Y%m%d_%H%M%S")
     my_dict['platform'] = my_platform
     my_dict['username'] = my_username
 
-    my_csv_filename = path_log + "strain_gauge_multiplier-zero_history.csv"
-    df.to_csv(my_csv_filename, mode='a', header=not os.path.isfile(my_csv_filename))
+    my_list = []
+    my_list.append(my_dict)
 
+    df = pd.DataFrame(my_list)
+
+    csv_log_filename = path_log + "strain_gauge_history.csv"
+
+    if not os.path.isfile(csv_log_filename):
+        df.to_csv(csv_log_filename, index=False)
+    else:
+        df.to_csv(csv_log_filename, mode='a', header=False, index=False)
 
 #### read in test file and return data as a list of JSON files
 # returns Dataframe with timestamp, s1, and s2
@@ -227,6 +209,9 @@ class CMJ_UI(ttk.Frame):
 
         self.master.title(self.application_name)
 
+        # configuration object for keys and values setup
+        self.config_obj = jtc.JT_config(app_config_file)
+
         ##### serial port setup #####
 
         # get my my customized serial object
@@ -250,7 +235,7 @@ class CMJ_UI(ttk.Frame):
 
         #if multiple serial ports attempt to connect to last port selected
         else:
-            self.serial_port_name = get_config_key("last_port")
+            self.serial_port_name = self.config_obj.get_config("last_port")
             if self.check_serial_port() != True:
                 self.serial_port_name = None
 
@@ -272,7 +257,7 @@ class CMJ_UI(ttk.Frame):
                                    type="ok")  # this is custom dialog class created above
 
         # protocol type
-        self.protocol_type_selected = get_config_key("protocol_type")
+        self.protocol_type_selected = self.config_obj.get_config("protocol_type")
 
         if self.protocol_type_selected == None or len(self.protocol_type_selected) < 1:
             self.protocol_type_selected = "single"
@@ -281,7 +266,7 @@ class CMJ_UI(ttk.Frame):
         log.debug(f"protocol type_selected: {self.protocol_type_selected} name_list: {self.protocol_name_list}")
 
         # protocol name
-        self.protocol_name_selected = get_config_key("protocol_name")
+        self.protocol_name_selected = self.config_obj.get_config("protocol_name")
 
         # validate protocol_name
         if ( self.protocol_name_selected == None or len(self.protocol_name_selected) < 1 or
@@ -294,7 +279,7 @@ class CMJ_UI(ttk.Frame):
 
         ##### Athletes #####
         # get list of valid athletes, last athlete, output_file_dir
-        self.athletes_list_filename = get_config_key( my_platform + "-athletes_list_filename_key")
+        self.athletes_list_filename = self.config_obj.get_config( my_platform + "-athletes_list_filename_key")
 
         try:
             # create the athletes Object
@@ -304,28 +289,28 @@ class CMJ_UI(ttk.Frame):
             dialog = jtd.JT_Dialog(parent=self.master, title="Athletes List Error", msg="Go to Settings tab and set the location for the athletes list", type="ok") # this is custom dialog class created above
             self.athletes = []
 
-        self.last_run_athlete = get_config_key("last_athlete")
+        self.last_run_athlete = self.config_obj.get_config("last_athlete")
 
-        self.output_file_dir = get_config_key( my_platform + "-output_file_dir")
+        self.output_file_dir = self.config_obj.get_config( my_platform + "-output_file_dir")
 
         ###### general setup
         self.results_df = pd.DataFrame()  # Empty DataFrame
         self.collecting_data = False
 
         # Calibration - attempt to read prior calibration information
-        self.l_zero = get_config_key("l_zero")
+        self.l_zero = self.config_obj.get_config("l_zero")
         if self.l_zero == None:
             self.l_zero = -1
 
-        self.r_zero = get_config_key("r_zero")
+        self.r_zero = self.config_obj.get_config("r_zero")
         if self.r_zero == None:
             self.r_zero = -1
 
-        self.l_mult = get_config_key("l_mult")
+        self.l_mult = self.config_obj.get_config("l_mult")
         if self.l_mult == None:
             self.l_mult = -1
 
-        self.r_mult = get_config_key("r_mult")
+        self.r_mult = self.config_obj.get_config("r_mult")
         if self.r_mult == None:
             self.r_mult = -1
 
@@ -449,7 +434,8 @@ class CMJ_UI(ttk.Frame):
 
         #create area for graph
         trow += 1
-        self.fig_tab1 = plt.figure(figsize=(3, 2)) # Set the size of the first graph  (5,3
+        self.fig_tab1 = plt.figure(figsize=(3, 2)) # Set the size of the first graph  (5,3)
+
 #        self.fig_tab1, self.ax_tab1 = plt.subplots()
         self.canvas_tab1 = FigureCanvasTkAgg(self.fig_tab1, master=self.tab1)
         self.canvas_tab1.draw()
@@ -558,7 +544,7 @@ class CMJ_UI(ttk.Frame):
             #validate some data is coming down the pipe
             if self.jt_reader.serial_port_validate_data('s2'):
                 #store the current serial port into the configuration file
-                set_config_key("last_port", self.serial_port_name)
+                self.config_obj.set_config("last_port", self.serial_port_name)
                 return True
             else:
                 dialog = jtd.JT_Dialog(parent=self.master, title="Serial Port Error",
@@ -572,7 +558,7 @@ class CMJ_UI(ttk.Frame):
     def toggle_protocol_type(self):
         log.f()
         self.protocol_type_selected = self.protocol_selected_type_var.get()
-        set_config_key("protocol_type", self.protocol_type_selected )
+        self.config_obj.set_config("protocol_type", self.protocol_type_selected )
 
         self.protocol_name_list = self.protocol_obj.get_names_by_type(self.protocol_type_selected)
         self.protocol_name_selected = self.protocol_name_list[0]
@@ -600,7 +586,7 @@ class CMJ_UI(ttk.Frame):
     def protocol_name_combobox_changed(self, event):
         log.f()
         self.protocol_name_selected = self.protocol_name_combobox.get()
-        set_config_key("protocol_name", self.protocol_name_selected )
+        self.config_obj.set_config("protocol_name", self.protocol_name_selected )
         log.debug(f"protocol name: {self.protocol_type_selected}, name_selected: {self.protocol_name_selected}, name_list: {self.protocol_name_list}")
 
 
@@ -612,13 +598,17 @@ class CMJ_UI(ttk.Frame):
         jt_color2 = colors_icefire[4]
 
         if self.protocol_type_selected == 'single':
-            self.subplot.plot(self.results_df['force_N'], linewidth=1, color=jt_color1)
+            self.subplot.plot(self.results_df['force_N'], linewidth=1, color=jt_color1, label='Force')
 
         else:
-            self.subplot.plot(self.results_df['l_force_N'], linewidth=1, color=jt_color1)
-            self.subplot.plot(self.results_df['r_force_N'], linewidth=1, color=jt_color2)
+            self.subplot.plot(self.results_df['l_force_N'], linewidth=1, color=jt_color1, label="Left")
+            self.subplot.plot(self.results_df['r_force_N'], linewidth=1, color=jt_color2, label="Right")
 
-        self.subplot.set_title("Abc", fontdict={'fontweight': 'bold', 'fontsize': 12})
+        self.subplot.legend()
+        self.subplot.set_title("Current run", fontdict={'fontweight': 'bold', 'fontsize': 12})
+        self.subplot.set_ylabel("force (N)")
+        self.subplot.set_xlabel("measurement number")
+
         canvas.draw()
         log.debug(f"displayed graph: {title}, {df_column}")
 
@@ -639,12 +629,20 @@ class CMJ_UI(ttk.Frame):
                 weighted_reading = self.get_average_reading('s1_clean', entered_weight, self.calibration_measurement_count)
                 self.l_zero = zero_reading
                 self.l_mult = (weighted_reading - zero_reading)/entered_weight
-                set_config_key("l_zero", self.l_zero)
-                set_config_key("l_mult", self.l_mult)
+                self.config_obj.set_config("l_zero", self.l_zero)
+                self.config_obj.set_config("l_mult", self.l_mult)
                 self.l_calibration = True
 
                 log.debug(f"Left Calibration - entered_weight: {entered_weight}, zero: {zero_reading}, weighted: {weighted_reading}, multiplier: {self.l_mult}")
                 self.message_line(f"Left sensor calibrated")
+
+                my_dict = {}
+                my_dict['serial port'] =self.serial_port_name
+                my_dict['sensor'] = 's1'
+                my_dict['zero'] = self.l_zero
+                my_dict['multiplier'] = self.l_mult
+                log_calibration_data(my_dict)
+
 
     def r_calibrate(self, json_key):
         log.debug(f"right calibrate:" )
@@ -663,12 +661,18 @@ class CMJ_UI(ttk.Frame):
                 weighted_reading = self.get_average_reading('s2_clean', entered_weight, self.calibration_measurement_count)
                 self.r_zero = zero_reading
                 self.r_mult = (weighted_reading - zero_reading)/entered_weight
-                set_config_key("r_zero", self.r_zero)
-                set_config_key("r_mult", self.r_mult)
+                self.config_obj.set_config("r_zero", self.r_zero)
+                self.config_obj.set_config("r_mult", self.r_mult)
                 self.r_calibration = True
 
                 log.debug(f"Right Calibration - entered_weight: {entered_weight}, zero: {zero_reading}, weighted: {weighted_reading}, multiplier: {self.r_mult}")
                 self.message_line(f"Right sensor calibrated")
+                my_dict = {}
+                my_dict['serial port'] =self.serial_port_name
+                my_dict['sensor'] = 's2'
+                my_dict['zero'] = self.r_zero
+                my_dict['multiplier'] = self.r_mult
+                log_calibration_data(my_dict)
 
     def start_recording(self):
 
@@ -681,7 +685,7 @@ class CMJ_UI(ttk.Frame):
                                    type="ok")
             return
 
-        set_config_key("last_athlete", self.last_run_athlete)
+        self.config_obj.set_config("last_athlete", self.last_run_athlete)
 
         # check with user if they want to proceed without calibration?
         if self.protocol_type_selected == 'single' and self.l_calibration == False:
@@ -816,7 +820,7 @@ class CMJ_UI(ttk.Frame):
 
         protocol_filename = self.protocol_obj.get_protocol_by_name((self.protocol_name_selected))
         self.last_run_athlete = self.athlete_combobox.get()
-        set_config_key("last_athlete", self.last_run_athlete)
+        self.config_obj.set_config("last_athlete", self.last_run_athlete)
 
         if lose_last_run == True:
             dialog = jtd.JT_Dialog(parent=self.master, title="Save Last Run", msg="If you say NO it will be lost", type="yesno")
@@ -942,7 +946,7 @@ class CMJ_UI(ttk.Frame):
                                            type="ok")  # this is custom dialog class created above
                 else:
                     self.athlete_combobox['values'] = self.athletes
-                    set_config_key( my_platform + "-athletes_list_filename_key", file_path)
+                    self.config_obj.set_config( my_platform + "-athletes_list_filename_key", file_path)
                     self.athletes_list_filename = file_path
 
                     #update display with just the actual filename
@@ -964,7 +968,7 @@ class CMJ_UI(ttk.Frame):
             self.output_file_dir = selected_dir
 
             #store key in config file
-            set_config_key( my_platform + "-output_file_dir", selected_dir)
+            self.config_obj.set_config( my_platform + "-output_file_dir", selected_dir)
             self.output_file_dir_display.config(text = selected_dir)
             my_str = f"Output file directory: \n  {selected_dir}"
 
