@@ -9,4 +9,5 @@ for row in data:
     product = row[0] * row[1]
     row.append(product)
 
+
 print(data)
