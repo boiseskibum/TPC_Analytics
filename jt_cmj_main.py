@@ -56,7 +56,7 @@ if my_platform == "Linux":
     # required to import jt_util
     sys.path.append('/gdrive/MyDrive/Colab Notebooks')
 
-# this appends to the path so that files can be picked up in the different sub directories
+# this appends to the path so that files/imports can be picked up in the different sub directories
 sys.path.append('./share')
 sys.path.append('./JT_analytics')
 sys.path.append('./JT_capture')
