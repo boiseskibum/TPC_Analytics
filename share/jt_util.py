@@ -254,8 +254,16 @@ def jt_path_base():
         print(f"google drive name: {google_drive}")
 
         # MacOS google drive directory
-        my_path = '/Users/' + my_username + '/Library/CloudStorage/' + google_drive[0] + '/My Drive/'
- 
+        my_path = '/Users/' + my_username + '/My Drive/'    # changed on 7/16/2023   Seems as though google changed?
+        if not os.path.isdir(my_path):
+            print(f"MacOS path didn't work:  {my_path}")
+            my_path = '/Users/' + my_username + '/Library/CloudStorage/' + google_drive[0] + '/My Drive/'
+            if not os.path.isdir(my_path):
+                print(f"MacOS old style path didn't work either:  {my_path}")
+            else:
+                print(f"MacOS path:  {my_path}")
+        else:
+            print(f"MacOS path:  {my_path}")
 
     #Windows
     elif my_platform == "Windows":

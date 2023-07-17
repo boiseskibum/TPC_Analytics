@@ -17,7 +17,7 @@ import pandas as pd
 import json
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import seaborn as sns   #pip install seaborn
+import seaborn as sns   # pip install seaborn
 
 # this appends to the path so that files can be found in the different sub directories
 sys.path.append('./share')
@@ -153,7 +153,6 @@ def log_calibration_data(my_dict):
 # returns Dataframe with timestamp, s1, and s2
 def read_test_file(filename):
     my_data = []
-    raw_data = []
     #log.f(f"reading file {filename}, getting json field {json_field_name}")
     try:
         with open(filename, "r") as my_file:
@@ -238,10 +237,10 @@ class CMJ_UI(ttk.Frame):
         # Get list of protocols, throw error message if unsuccessful at getting list
         try:
             self.protocol_obj = jtp.JT_protocol(protocol_config_file)
-            str = self.protocol_obj.validate_data()
-            if len(str) > 0:
+            ret = self.protocol_obj.validate_data()
+            if len(ret) > 0:
                 dialog = jtd.JT_Dialog(parent=self.master, title="ERROR: Protocol Config Validation",
-                                       msg=f"{str}",
+                                       msg=f"{ret}",
                                        type="ok")  # this is custom dialog class created above
         except:
             dialog = jtd.JT_Dialog(parent=self.master, title="Protocol Config File ERROR",
@@ -271,7 +270,7 @@ class CMJ_UI(ttk.Frame):
 
         ##### Athletes #####
         # get list of valid athletes, last athlete, output_file_dir
-        self.athletes_list_filename = self.config_obj.get_config( my_platform + "-athletes_list_filename_key")
+        self.athletes_list_filename = self.config_obj.get_config(my_platform + "-athletes_list_filename_key")
 
         try:
             # create the athletes Object
@@ -283,7 +282,7 @@ class CMJ_UI(ttk.Frame):
 
         self.last_run_athlete = self.config_obj.get_config("last_athlete")
 
-        self.output_file_dir = self.config_obj.get_config( my_platform + "-output_file_dir")
+        self.output_file_dir = self.config_obj.get_config(my_platform + "-output_file_dir")
 
         ###### general setup
         self.results_df = pd.DataFrame()  # Empty DataFrame
