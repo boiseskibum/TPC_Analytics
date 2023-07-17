@@ -1,21 +1,23 @@
-import json
+import sys
+from PyQt6.QtWidgets import (
+    QMainWindow, QApplication,
+    QLabel, QToolBar, QStatusBar
+)
+from PyQt6.QtGui import QAction, QIcon
+from PyQt6.QtCore import Qt
 
-class JT_config:
-    def __init__(self, file_path):
-        self.file_path = file_path
-        self.config_data = self._load_config()
+app = QApplication(sys.argv)
 
-    def _load_config(self):
-        with open(self.file_path, 'r') as file:
-            return json.load(file)
+window = QMainWindow()
+window.show()
 
-    def _save_config(self):
-        with open(self.file_path, 'w') as file:
-            json.dump(self.config_data, file, indent=4)
+menu_bar = window.menuBar()
+file_menu = menu_bar.addMenu("File")
+file_menu.addAction("Open")
+file_menu.addAction("Open2")
+file_menu.addAction("Open3")
+file_menu.addAction("Open4")
 
-    def get_config(self, my_key):
-        return self.config_data.get(my_key)
+print(menu_bar, file_menu)
 
-    def set_config(self, my_key, new_key_value):
-        self.config_data[my_key] = new_key_value
-        self._save_config()
+app.exec()

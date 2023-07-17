@@ -417,7 +417,7 @@ class CMJ_UI(ttk.Frame):
         self.stop_button.configure(state=tk.DISABLED)
         self.tab1.grid_rowconfigure(trow, weight=1)
 
-        self.data_button = ttk.Button(self.tab1, text="Stop", width=10, command=self.data_mgmt)
+        self.data_button = ttk.Button(self.tab1, text="Data", width=10, command=self.data_mgmt)
         self.data_button.grid(row=trow, column=2, sticky="nsew")
         self.data_button.configure(state=tk.DISABLED)
         self.tab1.grid_rowconfigure(trow, weight=1)

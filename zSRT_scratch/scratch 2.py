@@ -1,41 +1,73 @@
-import tkinter as tk
-from tkinter import ttk
+import sys
+from PyQt6.QtWidgets import (
+    QMainWindow, QApplication,
+    QLabel, QToolBar, QStatusBar
+)
+from PyQt6.QtGui import QAction, QIcon
+from PyQt6.QtCore import Qt
 
-class RadioApp(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("Radio App")
+class MainWindow(QMainWindow):
+    class MainWindow(QMainWindow):
+        def __init__(self):
+            super().__init__()
 
-        self.notebook = ttk.Notebook(self)
-        self.notebook.pack(padx=10, pady=10)
+            self.setWindowTitle("My App")
 
-        self.tab1 = ttk.Frame(self.notebook)
-        self.notebook.add(self.tab1, text="Tab 1")
+            label = QLabel("Hello!")
 
-        self.tab2 = ttk.Frame(self.notebook)
-        self.notebook.add(self.tab2, text="Tab 2")
+            # The `Qt` namespace has a lot of attributes to customize
+            # widgets. See: http://doc.qt.io/qt-5/qt.html
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.label = ttk.Label(self.tab1, text="Label")
-        self.label.grid(row=0, column=0, padx=10, pady=10)
+            # Set the central widget of the Window. Widget will expand
+            # to take up all the space in the window by default.
+            self.setCentralWidget(label)
 
-        self.radio_var = tk.StringVar()
-        self.radio_var.set("show")
+            toolbar = QToolBar("My main toolbar")
+            toolbar.setIconSize(QSize(16, 16))
+            self.addToolBar(toolbar)
 
-        self.radio_show = ttk.Radiobutton(self.tab1, text="Show", variable=self.radio_var, value="show",
-                                          command=self.toggle_label)
-        self.radio_show.grid(row=1, column=0, padx=10, pady=5)
+            button_action = QAction(QIcon("bug.png"), "&Your button", self)
+            button_action.setStatusTip("This is your button")
+            button_action.triggered.connect(self.onMyToolBarButtonClick)
+            button_action.setCheckable(True)
+            # You can enter keyboard shortcuts using key names (e.g. Ctrl+p)
+            # Qt.namespace identifiers (e.g. Qt.CTRL + Qt.Key_P)
+            # or system agnostic identifiers (e.g. QKeySequence.StandardKey.Print)
+            button_action.setShortcut(QKeySequence("Ctrl+p"))
+            toolbar.addAction(button_action)
 
-        self.radio_hide = ttk.Radiobutton(self.tab1, text="Hide", variable=self.radio_var, value="hide",
-                                          command=self.toggle_label)
-        self.radio_hide.grid(row=2, column=0, padx=10, pady=5)
+            toolbar.addSeparator()
 
-    def toggle_label(self):
-        if self.radio_var.get() == "hide":
-            self.label.grid_remove()  # Remove label from the grid
-        else:
-            self.label.grid()  # Add label back to the grid
+            button_action2 = QAction(QIcon("bug.png"), "Your &button2", self)
+            button_action2.setStatusTip("This is your button2")
+            button_action2.triggered.connect(self.onMyToolBarButtonClick)
+            button_action2.setCheckable(True)
+            toolbar.addAction(button_action)
+
+            toolbar.addWidget(QLabel("Hello"))
+            toolbar.addWidget(QCheckBox())
+
+            self.setStatusBar(QStatusBar(self))
+
+            menu = self.menuBar()
+
+            file_menu = menu.addMenu("&File")
+            file_menu.addAction(button_action)
+
+            file_menu.addSeparator()
+
+            file_submenu = file_menu.addMenu("Submenu")
+
+            file_submenu.addAction(button_action2)
+
+        def onMyToolBarButtonClick(self, s):
+            print("click", s)
 
 
-if __name__ == "__main__":
-    app = RadioApp()
-    app.mainloop()
+#############
+app = QApplication(sys.argv)
+#app.setAttribute(Qt.AA_DontUseNativeMenuBar, False)
+w = MainWindow()
+w.show()
+app.exec()
