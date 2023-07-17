@@ -7,7 +7,7 @@ log = util.jt_logging()
 class JT_athletes:
     def __init__(self, file_path):
         self.file_path = file_path
-        df = pd.DataFrame()
+        self.df = pd.DataFrame()
 
     #always reopen list and get it whenever called
     def get_athletes(self, new_file_name = None ):
@@ -24,8 +24,20 @@ class JT_athletes:
 
     # this is typically "left" or right
     def get_injured_side(self, athlete_name):
+        if len(self.df) < 1:
+            self.get_athletes()
+
         filtered_df = self.df[self.df["athletes_name"] == athlete_name]
         injured = filtered_df["injured"].values[0]
+        return injured
+
+    # this is used for the length of leg in the ISO test
+    def get_shank_length(self, athlete_name):
+        if len(self.df) < 1:
+            self.get_athletes()
+
+        filtered_df = self.df[self.df["athletes_name"] == athlete_name]
+        injured = filtered_df["shank_length"].values[0]
         return injured
 
 

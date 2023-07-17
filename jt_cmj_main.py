@@ -1,14 +1,9 @@
-import serial
-import serial.tools.list_ports
+# Main program
 import tkinter as tk
 import tkinter.simpledialog as sd
 from tkinter import ttk
 from tkinter import filedialog
 from PIL import Image, ImageTk   # used for icon
-
-import threading
-import pandas as pd
-import json
 
 # Import necessary modules
 import os
@@ -18,10 +13,16 @@ import sys
 import time
 import datetime
 from datetime import datetime
-
+import pandas as pd
+import json
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import seaborn as sns   #pip install seaborn
+
+# this appends to the path so that files can be found in the different sub directories
+sys.path.append('./share')
+sys.path.append('./JT_analytics')
+sys.path.append('./JT_capture')
 
 # Importing Colors
 colors_blue = sns.color_palette('Blues', 10)
@@ -56,39 +57,30 @@ if my_platform == "Linux":
     # required to import jt_util
     sys.path.append('/gdrive/MyDrive/Colab Notebooks')
 
-# this appends to the path so that files can be picked up in the different sub directories
-sys.path.append('./share')
-sys.path.append('./JT_analytics')
-sys.path.append('./JT_capture')
-
 import jt_util as util
 
 # set base and application path
 path_base = util.jt_path_base()  # this figures out right base path for Colab, MacOS, and Windows
-print(f"")
-
-# setup path variables for base and misc
-path_app = path_base + 'Force Plate Testing/'
-path_data = path_app + 'data/'
-path_results = path_app + 'results/'
-path_log = path_app + 'log/'
-path_config = path_app + 'config/'
-
-# validate that some key paths exist
-if not os.path.isdir(path_base):
-    print(f'ERROR path: {path_base} does not exist')
-if not os.path.isdir(path_app):
-    print(f'ERROR path: {path_app} does not exist')
-if not os.path.isdir(path_data):
-    print(f'ERROR path: {path_data} does not exist')
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
 
 log.msg(f'INFO - Valid logging levels are: {util.logging_levels}')
 log.set_logging_level("WARNING")  # this will show errors but not files actually processed
-# log.set_logging_level("INFO")   # this will show each file processed
 
+# setup path variables for base and misc
+path_app = path_base + 'Force Plate Testing/'
+path_data = path_app + 'data/'
+path_results = path_app + 'results/'
+path_log = path_app + 'log/'
+path_graphs = path_app + 'graphs/'
+path_config = path_app + 'config/'
+
+# validate that data paths exist
+if not os.path.isdir(path_data):
+    print(f'ERROR path: {path_data} does not exist')
+
+# import Jakes files
 import jt_dialog as jtd
 import jt_serial as jts
 import jt_protocol as jtp
@@ -137,7 +129,7 @@ def set_theme(my_root):
 ##################################################################################################
 
 #### logging of calibration data for long term study
-# my dict should iinclude Serial Port, sensor (s1 or s2), zero, multiplier
+# my dict should include Serial Port, sensor (s1 or s2), zero, multiplier
 def log_calibration_data(my_dict):
 
     my_dict['timestamp'] = time.time()
@@ -421,9 +413,14 @@ class CMJ_UI(ttk.Frame):
         self.start_button = ttk.Button(self.tab1, text="Start", width=15, command=self.start_recording, padding=10)
         self.start_button.grid(row=trow, column=0, sticky="nsew")
 
-        self.stop_button = ttk.Button(self.tab1, text="Stop", width=10, command=self.stop_cmj_recording)
+        self.stop_button = ttk.Button(self.tab1, text="Stop", width=10, command=self.stop_recording)
         self.stop_button.grid(row=trow, column=1, sticky="nsew")
         self.stop_button.configure(state=tk.DISABLED)
+        self.tab1.grid_rowconfigure(trow, weight=1)
+
+        self.data_button = ttk.Button(self.tab1, text="Stop", width=10, command=self.data_mgmt)
+        self.data_button.grid(row=trow, column=2, sticky="nsew")
+        self.data_button.configure(state=tk.DISABLED)
         self.tab1.grid_rowconfigure(trow, weight=1)
 
         # Save Data button and dropdown menu for user
@@ -734,7 +731,7 @@ class CMJ_UI(ttk.Frame):
 
         log.debug(f"Start recording, protocol: {self.protocol_name_selected}, athlete: {self.last_run_athlete}")
 
-    def stop_cmj_recording(self):
+    def stop_recording(self):
         log.f()
 
         self.is_recording = False
@@ -747,7 +744,7 @@ class CMJ_UI(ttk.Frame):
             self.jt_reader.set_test_data_list(my_df)
             self.num_measurements = len(my_df)
 
-        log.debug(f"Stop_cmj_recording, num meas: {self.num_measurements}, protocol: {self.protocol_name_selected}")
+        log.debug(f"stop_recording, num meas: {self.num_measurements}, protocol: {self.protocol_name_selected}")
         # get the df
         # def get_data_df(self, l_zero=0, l_mult=1, r_zero=0, r_mult=1, athlete='na', protocol='na'):
         leg = self.protocol_obj.get_leg_by_name(self.protocol_name_selected)
@@ -777,6 +774,7 @@ class CMJ_UI(ttk.Frame):
         #flip flop which buttons are enabled
         self.start_button.configure(state=tk.DISABLED)
         self.stop_button.configure(state=tk.NORMAL)
+        self.data_button.configure(state=tk.DISABLED)
         self.l_calibrate_button.configure(state=tk.DISABLED)
         self.r_calibrate_button.configure(state=tk.DISABLED)
         self.save_button.configure(state=tk.DISABLED)
@@ -785,6 +783,7 @@ class CMJ_UI(ttk.Frame):
         #flip flop which buttons are enabled
         self.start_button.configure(state=tk.NORMAL)
         self.stop_button.configure(state=tk.DISABLED)
+        self.data_button.configure(state=tk.NORMAL)
         self.l_calibrate_button.configure(state=tk.NORMAL)
         self.r_calibrate_button.configure(state=tk.NORMAL)
         self.save_button.configure(state=tk.NORMAL)
@@ -815,6 +814,11 @@ class CMJ_UI(ttk.Frame):
                 self.r_calibration_display.config(text="{:.0f}".format(r_force))
 
         self.clock_label.after(200, self.update_button_fields)
+
+    def data_mgmt(self):
+        log.debug("JAKE TAYLOR this is where we put code to be called")
+        pass
+
 
     def save_data_to_csv(self, lose_last_run=False):
 
@@ -879,7 +883,6 @@ class CMJ_UI(ttk.Frame):
 
         if(test_data_file == None):
 
-
             self.is_recording = True
             my_df = self.jt_reader.read_lines(num_measurements)
             self.is_recording = False
@@ -900,7 +903,6 @@ class CMJ_UI(ttk.Frame):
             avg_reading =-101
 
         return avg_reading
-
 
     def display_results_df(self):
 
@@ -925,8 +927,6 @@ class CMJ_UI(ttk.Frame):
 
         # Panda - resets the # of rows to display for all pandas to the default
         pd.reset_option("display.max_rows")
-
-
 
     ####  TAB 3 ######################################################
 
@@ -1017,14 +1017,12 @@ class CMJ_UI(ttk.Frame):
             self.text_area.insert(tk.END, my_str)  # Insert the data into the text area
             self.serial_busy = False
 
-
     ####  TAB 4 ######################################################
 
     # self.fig_tab4 = plt.Figure(figsize=(5, 4), dpi=100)
     # self.canvas = FigureCanvasTkAgg(self.fig_tab4, master=self.tab_config)   #sets up which tab it is on
     # self.canvas.draw()
     # self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-
 
 if __name__ == "__main__":
     # Replace these values with the correct serial port and baud rate for your sensor

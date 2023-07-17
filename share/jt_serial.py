@@ -441,7 +441,7 @@ class SerialDataReader(threading.Thread):
         return force
 
 # this function receives in a column full of readings and cleans them up based upon the rules specified
-def _clean_column_values(column):
+def _clean_column_values2(column):
     ugly_value = -4000000
     ugly2_value = 4000000
 
@@ -451,15 +451,53 @@ def _clean_column_values(column):
                 column[i] = column[i - 1]
             else:   # handle the case at the beginning of a string  - ie find the first non error value but don't try
                     # more than 10 spots out
-#                        for j in range(i, len(column)):
                 k_max= 10
                 if len(column) < 10:
                     k_max = len(column)
                 for j in range(i, k_max):
-                    if column[j] != -101 and column[j] > ugly_value:
+                    if column[j] != -101 and column[j] > ugly_value and column[j] < ugly2_value:
                         column[i] = column[j]
                         break
     return column
+
+def _clean_column_values(column):
+    ugly_value = -4000000
+    ugly2_value = 4000000
+
+    for i in range(len(column)):
+        if column[i] == -101  or column[i] == -1 or column[i] < ugly_value or column[i]> ugly2_value:
+
+            # normal case for values in the middle we do linear interpolation starting 2 back from error and looking 2 forward from error
+            if i > 1 and i < len(column) - 3:
+                start = column[i - 2]
+                end = column[i + 2]
+                column[i-1] = linear_interpolation(start, end, .25)
+                column[i] = linear_interpolation(start, end, .5)
+                column[i+1] = linear_interpolation(start, end, .75)
+
+            # handle the case at the beginning (first 2 value) - ie find the first non error value but don't try beyond that
+            elif i < 2:
+                k_max= 10
+                if len(column) < 10:
+                    k_max = len(column)
+                for j in range(i, k_max):
+                    if column[j] != -101 and column[j] > ugly_value and column[j] < ugly2_value:
+                        column[i] = column[j]
+                        break
+            # handle end of string case.  if in the last 3 spots just fill it in with the prior values.
+            elif i >= len(column) - 3:
+                for j in range(i, len(column)):
+                    column[j] = column[i-1]
+
+    return column
+def linear_interpolation(start_value, end_value, fraction):
+    # Perform linear interpolation between start_value and end_value.
+    # The fraction indicates the position between the two values (0.0 to 1.0).
+    # Returns the interpolated value as an integer.
+
+    interpolated_value = int(start_value + fraction * (end_value - start_value))
+    return interpolated_value
+
 
 #### Main ##########################################################
 
@@ -468,6 +506,19 @@ if __name__ == "__main__":
 
     #puts out more data
     reader.debug_mode = True
+
+    #test the smoothing algorithms
+    test_data = [-101, -101, -101, -4444444, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, -101, 4444444]
+    new_data = _clean_column_values2(test_data)
+    print(f"{test_data}\n{new_data}\n")
+
+    test_data = [1, -101, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, -101]
+    new_data = _clean_column_values2(test_data)
+    print(f"{test_data}\n{new_data}\n")
+
+    test_data = [1, 2, 3, 1, -101, 5, 7, 8, 9, 10, 11, 2, -101, 14, 15, 16, -101, -101, -101, 19, 20, 21, 22, 23]
+    new_data = _clean_column_values2(test_data)
+    print(f"{test_data}\n{new_data}\n")
 
     # Configure and test the serial port
     port = '/dev/cu.usbserial-02897983'
