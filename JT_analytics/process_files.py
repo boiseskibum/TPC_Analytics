@@ -20,6 +20,7 @@ my_platform = platform.system()
 
 import jt_util as util
 import jt_athletes as jta
+import jt_protocol as jtp
 
 import process_cmj as p_cmj
 import process_dj as p_dj
@@ -74,16 +75,25 @@ global g_single_file_debug
 g_single_file_debug = False
 
 
-##### Get Athletes #####
 
+#protocol configs holds all the infor about single, double, name and actual protocol used
+protocol_config_file = path_config + "jt_protocol_config.csv"
+protocol_obj = None
+try:
+    protocol_obj = jtp.JT_protocol(protocol_config_file)
+except:
+    log.critical(f"could not find protocol config file to open: {protocol_config_file}.   Exiting program" )
+    sys.exit(1)
+
+##### Get Athletes #####
 athletes_list_filename = path_config + 'athletes.csv'
 athletes_obj = None
 try:
     # create the athletes Object
     athletes_obj = jta.JT_athletes(athletes_list_filename)  # get list of valid athletes from CSV file
-
 except:
-    log.critical(f"could not find athletes file to open {athletes_list_filename}" )
+    log.critical(f"could not find athletes file to open {athletes_list_filename}.   Exiting program")
+    sys.exit(1)
 
 do_work = True
 
@@ -130,7 +140,7 @@ def overall_process(process_all=False, single_athlete = None):
     if single_athlete == None:
         # process athletes one at a time
         for athlete in folders:
-            log.msg(f'Processing files for athlete: {athlete}')
+            log.msg(f'Processing files for athlete: {single_athlete}')
             process_athlete(athlete, new_files, processed_files)
     else:
         log.msg(f'Processing files for SINGLE athlete: {single_athlete}')
@@ -423,7 +433,14 @@ def process_file(filename, protocol, athlete, injured):
         # JT Single Extension, both R and L are processed the same way.  The leg is
         #included in the file as one of the columns so they are distinguished that way
         elif protocol == "JTSextR_" or protocol == "JTSextL_":
-            my_dict = p_JTSext.process_iso_knee_ext(df)
+            # get the protocol from the filename (everything before _)
+            short_protocol = protocol.rstrip("_")
+
+            # get the leg being tested.   This is different than injured which is not used here
+            leg = protocol_obj.get_leg_by_protocol(short_protocol)
+            shank_length = athletes_obj.get_shank_length(athlete)
+
+            my_dict = p_JTSext.process_iso_knee_ext(df, leg, shank_length, short_filename, path_athlete_graph, athlete, date_str)
             my_dict['athlete_name'] = athlete
             my_dict ["col_timestamp_str"] = datestamp_str
             my_dict ["date_str"] = date_str
@@ -554,7 +571,7 @@ if __name__ == "__main__":
 
     do_work = True   # this is global that can be set to false and it doesn't actually do the processing
 
-#    overall_process(True, "Mickey", )
+    overall_process(True, "Mickey" )
 
-    single_file_process('Mickey/JTSextL_Mickey_20230716_153212.csv')   #JTSextL_, Mickey, left
+#    single_file_process('Mickey/JTSextL_Mickey_20230716_153212.csv')   #JTSextL_, Mickey, left
     # single_file_process('Sophia Avalos/cmj_04.csv')

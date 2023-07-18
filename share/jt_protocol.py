@@ -25,6 +25,12 @@ class JT_protocol:
     def get_protocol_by_name(self, name):
         return self.df.loc[self.df['name'] == name, 'protocol'].values[0]
 
+    def get_name_by_protocol(self, protocol):
+        return self.df.loc[self.df['protocol'] == protocol, 'name'].values[0]
+
+    def get_leg_by_protocol(self, protocol):
+        return self.df.loc[self.df['protocol'] == protocol, 'leg'].values[0]
+
     def get_leg_by_name(self, name):
         return self.df.loc[self.df['name'] == name, 'leg'].values[0]
 
@@ -79,7 +85,8 @@ if __name__ == "__main__":
         print(f"Type: {type}")
         for name in names:
             protocol = protocol_obj.get_protocol_by_name(name)
-            print(f"   Type: {type}, Name: {name}, Protocol: {protocol}")
+            leg = protocol_obj.get_leg_by_protocol(protocol)
+            print(f"   Type: {type}, Name: {name}, Protocol: {protocol}, leg: {leg}")
 
     #lastly check the validate function to make sure all fields are correct and if not return an error messagge
 
