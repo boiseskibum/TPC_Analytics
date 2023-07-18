@@ -39,43 +39,55 @@ class MainWindow(QMainWindow):
             self.buttons.append(button)
         grid_layout.addLayout(buttons_layout, 3, 0, 1, 2)
 
+    def setWindowTitle(self, title):
+        super().setWindowTitle(title + " - My App")
+
     def create_menu(self):
         # Create the menu bar
         menu_bar = self.menuBar()
         #        bit_menu = menu_bar.addMenu("who knows")
 
-        file_menu = QMenu("File_st", self)
-        settings_action = QAction("Open", self)
-        settings_action = QAction("Settings", self)
-        quit_action = QAction("quit", self)
-        open_action = QAction("quit", self)
-        file_menu.addAction(settings_action)
+        file_menu = QMenu("File", self)
+
+        open_action = QAction("Open", self)
+        quit_action = QAction("Quit", self)
         file_menu.addAction(quit_action)
         file_menu.addAction(open_action)
+
 
         # Create edit menu and add actions
         edit_menu = QMenu("edit", self)
         copy_action = QAction("Copy", self)
-        more_settings_action = QAction("Settings", self)
         paste_action = QAction("Paste", self)
         edit_menu.addAction(copy_action)
-        edit_menu.addAction(more_settings_action)
         edit_menu.addAction(paste_action)
 
-        # Create edit menu and add actions
+
+
+        # Create cmj menu and add actions
         cmj_menu = QMenu("Cmj", self)
-        more_settings_action = QAction("Settings", self)
-        edit_menu.addAction(more_settings_action)
+        cmj_pref_action = QAction("aPreferences", self)
+        cmj_menu.addAction(cmj_pref_action)
+
+        my_stuff_action = QAction("my stuff", self)
+        cmj_menu.addAction(my_stuff_action)
+
         other_action = QAction("Other", self)
-        edit_menu.addAction(other_action)
+        cmj_menu.addAction(other_action)
+
+        pref_action = QAction("preferences", self)      # shows up under python menu, regardless of what menu.  go figure
+        cmj_menu.addAction(pref_action)
+
 
 #        copy_action.triggered.connect(self.show_settings_dialog)
-        more_settings_action.triggered.connect(self.show_settings_dialog)
+        pref_action.triggered.connect(self.show_settings_dialog)
+        cmj_pref_action.triggered.connect(self.show_settings_dialog)
+        my_stuff_action.triggered.connect(self.show_settings_dialog)
         other_action.triggered.connect(self.show_settings_dialog)
 
-        menu_bar.addMenu(edit_menu)
         menu_bar.addMenu(file_menu)
         menu_bar.addMenu(cmj_menu)
+        menu_bar.addMenu(edit_menu)
 
     def show_settings_dialog(self):
         dialog = QDialog(self)
@@ -101,10 +113,18 @@ class MainWindow(QMainWindow):
         # Replace with actual code to reload serial ports
         QMessageBox.information(self, "Reload Serial Ports", "Serial ports reloaded.")
 
+
+QApplication.applicationDisplayName = lambda: "SZ-monkey"
+
 # Create the application
 app = QApplication(sys.argv)
+#app.setAttribute(Qt.AA_UseHighDpiPixmaps)  # changes the MACOS menu bar title to the application name
+app.setAttribute(Qt.ApplicationAttribute.AA_DontUseNativeDialogs, True)
+
 window = MainWindow()
 window.show()
+window.setWindowTitle("SlowestZebra")
+
 window.create_menu()
 
 # Run the event loop
