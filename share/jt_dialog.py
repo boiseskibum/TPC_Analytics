@@ -2,112 +2,114 @@
 # Purpose: to provide non-blocking dialogs to the application so that threads can continue to run on the side and
 # the main screen can be updated
 
+import sys
+from PyQt6.QtWidgets import (QApplication, QLabel, QWidget, QPushButton, QMessageBox,
+                             QVBoxLayout, QDialog, QDialogButtonBox, QInputDialog)
+
+#used just for the testing routine at the bottom of file
 import tkinter as tk
-from tkinter import ttk
-from tkinter import simpledialog
 
-class JT_Dialog(tk.simpledialog.Dialog):
-    def __init__(self, parent, title="default title", msg="default ok or cancel ", type ="okcancel"):
-        self.msg = msg
-        self.type = type   #valid is yesno, okcancel
-        super().__init__(parent, title)
+def JT_Dialog(parent, title="Default Title", msg="Default message", type="okcancel"):
 
-    def body(self, frame):
+    dialog = QMessageBox(parent)
+    dialog.setWindowTitle(title)
+    dialog.setText(msg)
 
-        # get longest len of a given line if there is multiple lines
-        split_strings = self.msg.split("\n")
-        longest_length = max(len(split) for split in split_strings)
+    if type == "yesno":
+        dialog.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+    elif type == "retrycancel":
+        dialog.setStandardButtons(QMessageBox.StandardButton.Retry | QMessageBox.StandardButton.Cancel)
+    elif type == "okcancel":
+        dialog.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
+    else:
+        dialog.setStandardButtons(QMessageBox.StandardButton.Ok)
 
-        self.box_width = int(longest_length * .8)
+    ret = dialog.exec()
 
-        if self.box_width < 35:
-            self.box_width = 35
-        self.msg_label = tk.Label(frame, width=self.box_width, text=self.msg)
-        self.msg_label.pack()
-        return frame
+    # return either True for yes/ok/retry or False for no/cancel
+    value =0
+    if type == "yesno":
+        if ret == QMessageBox.StandardButton.Yes:
+            value = 1
+        elif ret == QMessageBox.StandardButton.No:
+            value = 0
+    elif type == "retrycancel":
+        if ret == QMessageBox.StandardButton.Retry:
+            value = 1
+        elif ret == QMessageBox.StandardButton.Cancel:
+            value = 0
+    elif type == "okcancel":
+        if ret == QMessageBox.StandardButton.Ok:
+            value = 1
+        elif ret == QMessageBox.StandardButton.Cancel:
+            value = 0
+    else:
+        value = 1
 
-    def ok_pressed(self):
-        self.result = True
-        self.destroy()
+    return(value)
 
-    def cancel_pressed(self):
-        self.result = False
-        self.destroy()
-
-    def buttonbox(self):
-
-        if self.type == "yesno":
-            ok_text = 'Yes'
-            cancel_text = 'No'
-        elif self.type == "retrycancel":
-                ok_text = 'Retry'
-                cancel_text = 'Cancel'
-        else:
-            ok_text = 'OK'
-            cancel_text = 'Cancel'
-
-        #make default key have customer color for MacOS
-#        style = ttk.Style()
-#        style.theme_use("aqua")
-#        style.configure("Default.TButton", background="#007AFF", foreground="white")
-
-        pad = 6
-        self.ok_button = ttk.Button(self, text=ok_text, width=12, command=self.ok_pressed, style="Default.TButton", default="active")
-        if self.type == "ok":
-            self.ok_button.pack(padx=pad, pady=pad)
-        else:
-            self.ok_button.pack(side="left", padx=pad, pady=pad)
-        self.bind("<Return>", lambda event: self.ok_pressed())
-
-
-        if self.type != "ok":
-            cancel_button = ttk.Button(self, text=cancel_text, width=12, command=self.cancel_pressed)
-            cancel_button.pack(side="right", padx=pad, pady=pad)
-            self.bind("<Escape>", lambda event: self.cancel_pressed())
+def JT_Dialog_Integer(parent, title="Default Title", msg="Default message", value = 0):
+    number, ok = QInputDialog.getInt(parent, title, msg, value=value)
+    if ok == False:
+        number = None
+    return number
 
 if __name__ == "__main__":
+    class MainWindow(QWidget):
+        def __init__(self):
+            super().__init__()
 
-    def call_dialog(app):
-        dialog = JT_Dialog(parent=app, title="SRT title for okcancel", msg="srt message really long text to see if this works in a bad example", type="okcancel")
-        return dialog.result
+            self.setWindowTitle("Main Window")
 
-    def main():
-        app.title('Dialog')
+            layout = QVBoxLayout()
 
-        string_button = tk.Button(app, text='Show ok/cancel', width=25, command=show_dialog)
-        string_button.pack()
+            self.button1 = QPushButton("Show Dialog okcancel")
+            self.button1.clicked.connect(self.show_dialog)
+            layout.addWidget(self.button1)
 
-        string_button = tk.Button(app, text='Show y/n', width=25, command=show_dialog2)
-        string_button.pack()
+            self.button2 = QPushButton("Show Dialog yes/no")
+            self.button2.clicked.connect(self.show_dialog2)
+            layout.addWidget(self.button2)
 
-        string_button = tk.Button(app, text='Show ok', width=25, command=show_dialog3)
-        string_button.pack()
+            self.button3 = QPushButton("Show Dialog ok")
+            self.button3.clicked.connect(self.show_dialog3)
+            layout.addWidget(self.button3)
 
-        string_button = tk.Button(app, text='Show multiline ok', width=25, command=show_dialog4)
-        string_button.pack()
+            self.button4 = QPushButton("Show Dialog: long text")
+            self.button4.clicked.connect(self.show_dialog4)
+            layout.addWidget(self.button4)
 
-        exit_button = tk.Button(app, text='Close', width=25, command=app.destroy)
-        exit_button.pack()
+            self.button4 = QPushButton("Show Dialog Integer")
+            self.button4.clicked.connect(self.show_dialog5)
+            layout.addWidget(self.button4)
 
-        app.mainloop()
 
-    def show_dialog():
-        result = call_dialog(app)
-        print(result)
+            self.setLayout(layout)
+            self.show()
 
-    def show_dialog2():
-        dialog = JT_Dialog(parent=app, title="SRT Title for y/n that", msg="srt message text", type="yesno")
-        print(dialog.result)
+        def show_dialog(self):
+            result = JT_Dialog(self, title="SRT title for okcancel", msg="srt message really long text to see if this works in a bad example", type="okcancel")
+            print(result)
 
-    def show_dialog3():
-        dialog = JT_Dialog(parent=app, title="SRT Title for OK only", msg="srt message text", type="ok")
-        print(dialog.result)
+        def show_dialog2(self):
+            result = JT_Dialog(self, title="SRT Title for y/n that", msg="srt message text", type="yesno")
+            print(result)
 
-    def show_dialog4():
-        dialog = JT_Dialog(parent=app, title="SRT Title for multi-line OK only",
-               msg="srt message text\n 2nd line \n 3rd line this is a freaking reall long and crazy wide line that is ", type="ok")
-        print(dialog.result)
+        def show_dialog3(self):
+            result = JT_Dialog(self, title="SRT Title for OK only", msg="srt message text", type="ok")
+            print(result)
 
-    app = tk.Tk()
+        def show_dialog4(self):
+            result = JT_Dialog(self, title="SRT Title for multi-line OK only",
+                   msg="srt message text\n 2nd line \n 3rd line this is a freaking reall long and crazy wide line that is ", type="ok")
+            print(result)
 
-    main()
+        def show_dialog5(self):
+            result = JT_Dialog_Integer(self, title="Title of Integer", msg="Please enter an integer", value=39)
+            print(result)
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())

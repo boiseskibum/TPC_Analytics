@@ -1,8 +1,9 @@
 # Main program
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel
-from PyQt6.QtWidgets import QLineEdit, QPushButton, QMenu, QMessageBox, QDialog, QComboBox, QToolBar
+from PyQt6.QtWidgets import QLineEdit, QPushButton, QMenu, QMessageBox, QDialog, QComboBox, QToolBar, QRadioButton
+from PyQt6.QtGui import QPixmap, QIcon
 from PyQt6.QtGui import QAction
 
 from PIL import Image, ImageTk   # used for icon
@@ -18,6 +19,7 @@ from datetime import datetime
 import pandas as pd
 import json
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import seaborn as sns   # pip install seaborn
 
@@ -240,11 +242,11 @@ class CMJ_UI(QMainWindow):
             self.protocol_obj = jtp.JT_protocol(protocol_config_file)
             ret = self.protocol_obj.validate_data()
             if len(ret) > 0:
-                dialog = jtd.JT_Dialog(parent=self.master, title="ERROR: Protocol Config Validation",
+                value = jtd.JT_Dialog(parent=self, title="ERROR: Protocol Config Validation",
                                        msg=f"{ret}",
                                        type="ok")  # this is custom dialog class created above
         except:
-            dialog = jtd.JT_Dialog(parent=self.master, title="Protocol Config File ERROR",
+            value = jtd.JT_Dialog(parent=self, title="Protocol Config File ERROR",
                                    msg=f"{protocol_config_file} could not be opened or found",
                                    type="ok")  # this is custom dialog class created above
 
@@ -278,7 +280,7 @@ class CMJ_UI(QMainWindow):
             self.athletes_obj = jta.JT_athletes(self.athletes_list_filename) # get list of valid athletes from CSV file
             self.athletes = self.athletes_obj.get_athletes()
         except:
-            dialog = jtd.JT_Dialog(parent=self.master, title="Athletes List Error", msg="Go to Settings tab and set the location for the athletes list", type="ok") # this is custom dialog class created above
+            value = jtd.JT_Dialog(parent=self, title="Athletes List Error", msg="Go to Settings tab and set the location for the athletes list", type="ok") # this is custom dialog class created above
             self.athletes = []
 
         self.last_run_athlete = self.config_obj.get_config("last_athlete")
@@ -329,36 +331,55 @@ class CMJ_UI(QMainWindow):
 
         trow = 0
 
+        main_widget = QWidget()
+        self.setCentralWidget(main_widget)
+
         self.grid_layout = QGridLayout()
         main_widget.setLayout(self.grid_layout)
+#        self.grid_layout.setVerticalSpacing(0)
+
 
         # Add Icon - Load the PNG image using PIL
-        #remove the image stuff for now
-        if False:
-            image = Image.open("jt.png")
-            image = image.resize((100, 100))
-            image_tk = ImageTk.PhotoImage(image)  # Convert the image to Tkinter-compatible format
 
-            self.image_label = QLabel(self.tab1, image=image_tk)
+        w = 75
+        h = 75
 
-            self.image_label.grid(row=trow, column=0, columnspan=1)  # Adjust the grid position as needed
+        # Icon
+        ico_image = QPixmap("jt.ico").scaled(w, h)
+        ico_icon = QIcon(ico_image)
 
+        # Create the ico label
+        ico_label = QLabel(self)
+        ico_label.setPixmap(ico_image)
+        ico_label.setStyleSheet("background-color: rgba(255, 255, 255, 0);")   #make background transparent
+        self.grid_layout.addWidget(ico_label, trow,0, 3, 1)
+
+        # Preferences/Configurate/Settings button
+        gear_image = QPixmap("gear_icon.png").scaled(30, 30)
+        gear_icon = QIcon(gear_image)
+
+        # Create the ico image button
+        self.gear_button = QPushButton(clicked=self.preferences_screen)
+        self.gear_button.setIcon(gear_icon)
+        self.gear_button.setIconSize(gear_image.size())
+        self.gear_button.setStyleSheet("background-color: rgba(255, 255, 255, 0);")   #make background transparent
+        self.grid_layout.addWidget(self.gear_button, trow, 3)
+
+        trow += 1
         #clock
-
-
         self.clock_label = QLabel("12:33:44")
+        self.clock_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.grid_layout.addWidget(self.clock_label, trow, 3)
 
         #radio buttons
-        self.single_radiobutton = QRadioButton(text="Single", variable=self.protocol_selected_type_var, value="single", command=self.toggle_protocol_type)
+        self.single_radiobutton = QRadioButton("Single")
         self.single_radiobutton.setChecked(True)
         self.single_radiobutton.toggled.connect( self.toggle_protocol_type )
-        self.single_radiobutton.grid(row=trow, column=1, sticky="nsew")
-
+        self.grid_layout.addWidget(self.single_radiobutton, trow, 1)
         trow += 1
-        self.double_radiobutton = QRadioButton(text="Double")
+        self.double_radiobutton = QRadioButton("Double")
         self.double_radiobutton.toggled.connect( self.toggle_protocol_type )
-        self.double_radiobutton.grid(row=trow, column=1, sticky="nsew")
+        self.grid_layout.addWidget(self.double_radiobutton, trow, 1)
 
         # protocol_name selection - COMBO BOX
         trow += 2
@@ -368,75 +389,83 @@ class CMJ_UI(QMainWindow):
 
         trow += 1
         # column header of weight column
-        self.l_display1 = QLabel(self.tab1, text="Weight (lbs)", width=10, anchor="center")
+        self.l_display1 = QLabel("Weight (lbs)")
+        self.l_display1.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.l_display1.setFixedHeight(16)
         self.grid_layout.addWidget(self.l_display1, trow, 2)
 
         # Calibration for Left sensor
         trow += 1
-        self.l_calibrate_button = QPushButton(command=lambda:self.l_calibrate('s1'))
-        self.l_calibrate_button.clicked.connect(command=lambda:self.l_calibrate('s1'))
+        self.l_calibrate_button = QPushButton("Calibrate Left", clicked=self.l_calibrate)
         self.grid_layout.addWidget(self.l_calibrate_button, trow, 1)
         self.l_calibration_display = QLabel("0")  #, relief="solid"
+        self.l_calibration_display.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.grid_layout.addWidget(self.l_calibration_display, trow, 2)
 
         # Calibration for Right sensor
         trow += 1
-        self.r_calibrate_button = QPushButton("Calibrate Right")
-        self.r_calibrate_button.clicked.connect(command=lambda:self.l_calibrate('s2'))
+        self.r_calibrate_button = QPushButton("Calibrate Right", clicked=self.r_calibrate)
         self.grid_layout.addWidget(self.r_calibrate_button, trow, 1)
         self.r_calibration_display = QLabel(text="0")
+        self.r_calibration_display.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.grid_layout.addWidget(self.r_calibration_display, trow, 2)
 
         # athlete selection - COMBO BOX
         trow += 1
 
-        self.athlete_combobox = QComboBox()(self.tab1, values=self.athletes, textvariable=self.athlete_combobox_var)
-        self.athlete_combobox.grid(row=trow, column=1, sticky="nsew")
-        self.tab1.grid_rowconfigure(trow, weight=1)
+        self.athlete_combobox = QComboBox()
+        self.athlete_combobox.addItems(self.athletes)
+        try:
+            index = self.athletes.index(self.last_run_athlete)
+        except ValueError:
+            index = 0
+        self.athlete_combobox.currentTextChanged.connect(self.athlete_combobox_change)
+        self.athlete_combobox.setCurrentIndex(index)
+
+
+        self.grid_layout.addWidget(self.athlete_combobox, trow, 1)
 
         # Start/Stop buttons and dropdown menu for user
         trow += 1                                           # highlightbackground='lightgreen'
-        self.start_button = QPushButton(self.tab1, text="Start", width=15, command=self.start_recording, padding=10)
-        self.start_button.grid(row=trow, column=0, sticky="nsew")
+        self.start_button = QPushButton("Start", clicked=self.start_recording)
+        self.grid_layout.addWidget(self.start_button, trow, 0)
 
-        self.stop_button = QPushButton(self.tab1, text="Stop", width=10, command=self.stop_recording)
-        self.stop_button.grid(row=trow, column=1, sticky="nsew")
+        self.stop_button = QPushButton("Stop", clicked=self.stop_recording)
         self.stop_button.setEnabled(False)
-        self.tab1.grid_rowconfigure(trow, weight=1)
+        self.grid_layout.addWidget(self.stop_button, trow, 1)
 
-        self.data_button = QPushButton(self.tab1, text="Data", width=10, command=self.data_mgmt)
-        self.data_button.grid(row=trow, column=2, sticky="nsew")
-        self.data_button.setEnabled(False)
-        self.tab1.grid_rowconfigure(trow, weight=1)
+        self.data_button = QPushButton("Analytics", clicked=self.data_mgmt)
+        self.data_button.setEnabled(True)
+        self.grid_layout.addWidget(self.data_button, trow, 2)
 
         # Save Data button and dropdown menu for user
-        self.save_button = QPushButton(self.tab1, text="Save Data", width=10, command=self.save_data_to_csv)
-        self.save_button.grid(row=trow, column=3, sticky="nsew")
+        self.save_button = QPushButton("Save Data", clicked=self.save_data_to_csv)
         self.save_button.setEnabled(False)
-        self.tab1.grid_rowconfigure(trow, weight=1)
+        self.grid_layout.addWidget(self.save_button, trow, 3)
 
         #create area for graph
         trow += 1
-        self.fig_tab1 = plt.figure(figsize=(3, 2)) # Set the size of the first graph  (5,3)
 
-#        self.fig_tab1, self.ax_tab1 = plt.subplots()
-        self.canvas_tab1 = FigureCanvasTkAgg(self.fig_tab1, master=self.tab1)
-        self.canvas_tab1.draw()
-        self.canvas_tab1.get_tk_widget().grid(row=trow, column=0, padx=5, pady=5, columnspan=4, sticky="new")
-        self.tab1.grid_rowconfigure(trow, weight=1)
+        self.canvas = FigureCanvasQTAgg(plt.figure())
+        self.grid_layout.addWidget(self.canvas, trow, 0, 1, 4)   #row 1, column 0, spanning 1 row and 4 columns
+        self.grid_layout.setRowStretch(9, 1)
+        self.grid_layout.setColumnStretch(0, 1)      # the next 3 lines say for the columns stretch evenlly
+        self.grid_layout.setColumnStretch(1, 1)
+        self.grid_layout.setColumnStretch(2, 1)
+        self.grid_layout.setColumnStretch(3, 1)
+        self.setLayout(self.grid_layout)
 
         # quit button
         trow += 1
-        self.quit_button = QPushButton(self.tab1, text="Quit", width=12, command=self.quit_app)
-        self.quit_button.grid(row=trow, column=3, sticky="s")
-        self.tab1.grid_rowconfigure(trow, weight=1)
+        self.quit_button = QPushButton("Quit", clicked=self.close)
+        self.grid_layout.addWidget(self.quit_button, trow, 3)
+
 
         #status field
         trow += 1
         #  self.status_str = tk.StringVar("my srt status")
-        self.status_display =  tk.Label(self.tab1, text="", height =2)
-        self.status_display.grid(row=trow, column=0, columnspan=4)
-        self.tab1.grid_rowconfigure(trow, weight=1)
+        self.status_display = QLabel("")
+        self.grid_layout.addWidget(self.status_display, trow, 0, 1, 4)
 
 #        self.tab1.grid_columnconfigure(0, weight=1)
 
@@ -446,9 +475,11 @@ class CMJ_UI(QMainWindow):
         self.toggle_protocol_type()
 
         #fire off timer that updates time as well as the weight fields
+        time_interval = 500      # in milliseconds
         self.timer = QTimer()
-        self.timer.setInterval(200)  # Update every 0.5 seconds
+        self.timer.setInterval(time_interval)  # Update every 0.5 seconds
         self.timer.timeout.connect(self.update_fields)
+        self.timer.start()
 
     def check_serial_port(self):
 
@@ -461,18 +492,20 @@ class CMJ_UI(QMainWindow):
                 self.config_obj.set_config("last_port", self.serial_port_name)
                 return True
             else:
-                dialog = jtd.JT_Dialog(parent=self.master, title="Serial Port Error",
+                value = jtd.JT_Dialog(parent=self, title="Serial Port Error",
                                        msg="Go to Settings tab and set the serial port, data doesn't look right",
                                        type="ok")  # this is custom dialog class created above
                 return False
         else:
-            dialog = jtd.JT_Dialog(parent=self.master, title="Serial Port Error", msg="Go to Settings tab and set the serial port", type="ok") # this is custom dialog class created above
+            value = jtd.JT_Dialog(parent=self, title="Serial Port Error", msg="Go to Settings tab and set the serial port", type="ok") # this is custom dialog class created above
             return False
 
+    def preferences_screen(self):
+        log.debug("Preferences Screen goes here")
     def toggle_protocol_type(self):
         log.f()
 
-        if self.radio_button2.isChecked():
+        if self.double_radiobutton.isChecked():
             self.protocol_type_selected = "double"
         else:
             self.protocol_type_selected = "single"
@@ -489,12 +522,12 @@ class CMJ_UI(QMainWindow):
         log.debug(f"protocol type_selected: {self.protocol_type_selected}, name_selected: {self.protocol_name_selected} name_list: {self.protocol_name_list}")
 
         if self.protocol_type_selected == "double":
-            self.r_calibrate_button.grid()
-            self.r_calibration_display.grid()
+            self.r_calibrate_button.setVisible(True)
+            self.r_calibration_display.setVisible(True)
 
         elif self.protocol_type_selected == "single":
-            self.r_calibrate_button.grid_remove()
-            self.r_calibration_display.grid_remove()
+            self.r_calibrate_button.setVisible(False)
+            self.r_calibration_display.setVisible(False)
 
     def calibrate_button_text(self):
         if self.protocol_type_selected == 'single':
@@ -502,47 +535,24 @@ class CMJ_UI(QMainWindow):
         else:
             return 'Calibrate Left'
 
-    def protocol_name_combobox_changed(self, event):
+    def protocol_name_combobox_changed(self, value):
         log.f()
-        self.protocol_name_selected = self.protocol_name_combobox.get()
+        self.protocol_name_selected = value
         self.config_obj.set_config("protocol_name", self.protocol_name_selected )
         log.debug(f"protocol name: {self.protocol_type_selected}, name_selected: {self.protocol_name_selected}, name_list: {self.protocol_name_list}")
 
-
-    def display_graph_results2(self, fig, canvas, df_column, title):
-        self.fig_tab1.clear()
-        self.subplot = self.fig_tab1.add_subplot(111)
-
-        jt_color1 = colors_seismic[2]
-        jt_color2 = colors_icefire[4]
-
-        if self.protocol_type_selected == 'single':
-            self.subplot.plot(self.results_df['force_N'], linewidth=1, color=jt_color1, label='Force')
-
-        else:
-            self.subplot.plot(self.results_df['l_force_N'], linewidth=1, color=jt_color1, label="Left")
-            self.subplot.plot(self.results_df['r_force_N'], linewidth=1, color=jt_color2, label="Right")
-
-        self.subplot.legend()
-        self.subplot.set_title("Current run", fontdict={'fontweight': 'bold', 'fontsize': 12})
-        self.subplot.set_ylabel("force (N)")
-        self.subplot.set_xlabel("measurement number")
-
-        canvas.draw()
-        log.debug(f"displayed graph: {title}, {df_column}")
-
-    def l_calibrate(self, json_key):
+    def l_calibrate(self):
         log.debug(f"left calibrate:" )
 
         if self.check_serial_port() != True:
             return
 
-        dialog = jtd.JT_Dialog(parent=self.master, title="Left Calibration Zero", msg="Have nothing on the scale:", type="okcancel") # this is custom dialog class created above
-        if dialog.result:
+        value = jtd.JT_Dialog(self, "Left Calibration Zero", "Have nothing on the scale:", "okcancel") # this is custom dialog class created above
+        if value:
 
             zero_reading = self.get_average_reading('s1_clean', 0, self.calibration_measurement_count)
 
-            entered_weight = tk.simpledialog.askinteger("Left Weighted Calibration", "Enter weight in lbs:", initialvalue=30)
+            entered_weight = jtd.JT_Dialog_Integer(self, "Left Weighted Calibration", "Enter weight in lbs:", 30)
             if entered_weight is not None:
                 #log.debug(f"Ok'ed weighted calibration: {entered_weight} lbs")
                 weighted_reading = self.get_average_reading('s1_clean', entered_weight, self.calibration_measurement_count)
@@ -563,18 +573,18 @@ class CMJ_UI(QMainWindow):
                 log_calibration_data(my_dict)
 
 
-    def r_calibrate(self, json_key):
+    def r_calibrate(self):
         log.debug(f"right calibrate:" )
 
         if self.check_serial_port() != True:
             return
 
-        dialog = jtd.JT_Dialog(parent=self.master, title="Right Calibration Zero", msg="Have nothing on the scale:", type="okcancel") # this is custom dialog class created above
-        if dialog.result:
+        value = jtd.JT_Dialog(self, "Right Calibration Zero", "Have nothing on the scale:", "okcancel") # this is custom dialog class created above
+        if value:
 
             zero_reading = self.get_average_reading('s2_clean', 0, self.calibration_measurement_count)
 
-            entered_weight = tk.simpledialog.askinteger("Right Weighted Calibration", "Enter weight in lbs:", initialvalue=8)
+            entered_weight = jtd.JT_Dialog_Integer(self, "Right Weighted Calibration", "Enter weight in lbs:", 30)
             if entered_weight is not None:
                 #log.debug(f"Ok'ed weighted calibration: {entered_weight} lbs")
                 weighted_reading = self.get_average_reading('s2_clean', entered_weight, self.calibration_measurement_count)
@@ -593,51 +603,51 @@ class CMJ_UI(QMainWindow):
                 my_dict['multiplier'] = self.r_mult
                 log_calibration_data(my_dict)
 
+    def athlete_combobox_change(self, value):
+        self.last_run_athlete = value
+
     def start_recording(self):
+        log.f()
 
-        # Need to have the athlete specified to run
-        self.last_run_athlete = self.athlete_combobox.get()
-
+        #check if athlete selected
         if len(self.last_run_athlete) < 1:
-            jtd.JT_Dialog(parent=self.master, title="Start Run",
+            jtd.JT_Dialog(parent=self, title="Start Run",
                                    msg="You Must specify an athlete to run",
                                    type="ok")
             return
 
         self.config_obj.set_config("last_athlete", self.last_run_athlete)
 
-        # check with user if they want to proceed without calibration?
-        if self.protocol_type_selected == 'single' and self.l_calibration == False:
-            dialog = jtd.JT_Dialog(parent=self.master, title="Uncalibrated", msg="Continue uncalibrated?",
-                                   type="yesno")  # this is custom dialog class created above
-            if dialog.result == False:
-                return
-        elif self.protocol_type_selected == 'double' and (self.l_calibration == False or self.r_calibration == False):
-            dialog = jtd.JT_Dialog(parent=self.master, title="Uncalibrated", msg="Continue uncalibrated?",
-                                   type="yesno")  # this is custom dialog class created above
-            if dialog.result == False:
-                return
-
-        #if prior run has not been saved then request for them to save it
+        #prior run saved?  if it has not been saved then request for them to save it
         if self.saved == False:
 
-            dialog = jtd.JT_Dialog(parent=self.master, title="Save Last Run", msg="Save last run? NO will lose data",
+            value = jtd.JT_Dialog(parent=self, title="Save Last Run", msg="Save last run? NO will lose data",
                                        type="yesno")
             # save the data if requested
-            if dialog.result == True:
+            if value == True:
                 self.save_data_to_csv(True)
             else:
                 pass
 
-            # remove the graph from the canvas
-            if self.subplot:
-                self.subplot.clear()
-                self.canvas_tab1.draw()
-
-            jtd.JT_Dialog(parent=self.master, title="Start Run", msg="Press ok to start run",
+            jtd.JT_Dialog(parent=self, title="Start Run", msg="Press ok to start run",
                                        type="ok")
 
-        log.f()
+        # Calibration - check with user if they want to proceed without calibration?
+        if self.protocol_type_selected == 'single' and self.l_calibration == False:
+            value = jtd.JT_Dialog(parent=self, title="Uncalibrated", msg="Continue uncalibrated?",
+                                   type="yesno")  # this is custom dialog class created above
+            if value == False:
+                return
+        elif self.protocol_type_selected == 'double' and (self.l_calibration == False or self.r_calibration == False):
+            value = jtd.JT_Dialog(parent=self, title="Uncalibrated", msg="Continue uncalibrated?",
+                                   type="yesno")  # this is custom dialog class created above
+            if value == False:
+                return
+
+        # remove the graph from the canvas
+        if self.canvas:
+            self.canvas.figure.clear()
+            self.canvas.draw()
 
         #button enabled/disabled
         self.buttons_running()
@@ -679,11 +689,25 @@ class CMJ_UI(QMainWindow):
         log.debug(f"results_df columns: {self.results_df.columns}")
         log.debug(f"results_df: {self.results_df.head(3)}")
 
-        #display graphed results on first tab
-        self.display_graph_results2( self.fig_tab1, self.canvas_tab1, "l_force_kg", "CMJ plot")
+        #display graphed results on screen
+        self.canvas.figure.clear()
+        axes = self.canvas.figure.add_subplot(111)
 
-        #display the dataframe on the "results" tab
-        self.display_results_df()
+        jt_color1 = colors_seismic[2]
+        jt_color2 = colors_icefire[4]
+
+        if self.protocol_type_selected == 'single':
+            axes.plot(self.results_df['force_N'], linewidth=1, color=jt_color1, label='Force')
+        else:
+            axes.plot(self.results_df['l_force_N'], linewidth=1, color=jt_color1, label="Left")
+            axes.plot(self.results_df['r_force_N'], linewidth=1, color=jt_color2, label="Right")
+
+        axes.legend()
+        axes.set_title("Current run", fontdict={'fontweight': 'bold', 'fontsize': 12})
+        axes.set_ylabel("force (N)")
+        axes.set_xlabel("measurement number")
+
+        self.canvas.draw()
 
         end_time = time.time()
         elapsed = end_time - self.start_time
@@ -696,7 +720,7 @@ class CMJ_UI(QMainWindow):
         #flip flop which buttons are enabled
         self.start_button.setEnabled(False)
         self.stop_button.setEnabled(True)
-        self.data_button.setEnabled(False)
+#        self.data_button.setEnabled(False)
         self.l_calibrate_button.setEnabled(False)
         self.r_calibrate_button.setEnabled(False)
         self.save_button.setEnabled(False)
@@ -705,20 +729,20 @@ class CMJ_UI(QMainWindow):
         #flip flop which buttons are enabled
         self.start_button.setEnabled(True)
         self.stop_button.setEnabled(False)
-        self.data_button.setEnabled(True)
+#        self.data_button.setEnabled(True)
         self.l_calibrate_button.setEnabled(True)
         self.r_calibrate_button.setEnabled(True)
         self.save_button.setEnabled(True)
 
     def message_line(self, msg):
-        self.status_display.config(text=msg)
+        self.status_display.setText(msg)
 
     #### Clock updating
     def update_fields(self):
 
-
         current_time = time.strftime('%H:%M:%S')
-        self.clock_label.setText(text=current_time)
+        #log.debug(f"update time: {current_time}")
+        self.clock_label.setText(current_time)
 
         #only update weights if nobody else is reading in data, and the serial port is configured in jt_reader
         doit = True
@@ -727,13 +751,13 @@ class CMJ_UI(QMainWindow):
   #          log.debug(f"updating clock and weights")
             left_weight = self.get_average_reading('s1_clean', 0, self.updated_weight_count)
             l_force = self.get_force_lbs(left_weight, self.l_zero, self.l_mult)
-            self.l_calibration_display.setText(text="{:.0f}".format(l_force))  #format force to just an integer
+            self.l_calibration_display.setText("{:.0f}".format(l_force))  #format force to just an integer
 
             #only do the measurements if both legs are being measured
             if self.protocol_type_selected != 'single':
                 right_weight = self.get_average_reading('s2_clean', 0, self.updated_weight_count)
                 r_force = self.get_force_lbs(right_weight, self.r_zero, self.r_mult)
-                self.r_calibration_display.setText(text="{:.0f}".format(r_force))
+                self.r_calibration_display.setText("{:.0f}".format(r_force))
 
     def data_mgmt(self):
         log.debug("JAKE TAYLOR this is where we put code to be called")
@@ -743,23 +767,21 @@ class CMJ_UI(QMainWindow):
     def save_data_to_csv(self, lose_last_run=False):
 
         protocol_filename = self.protocol_obj.get_protocol_by_name((self.protocol_name_selected))
-        self.last_run_athlete = self.athlete_combobox.get()
         self.config_obj.set_config("last_athlete", self.last_run_athlete)
 
         if lose_last_run == True:
-            dialog = jtd.JT_Dialog(parent=self.master, title="Save Last Run", msg="If you say NO it will be lost", type="yesno")
+            value = jtd.JT_Dialog(parent=self, title="Save Last Run", msg="If you say NO it will be lost", type="yesno")
         else:
-            dialog = jtd.JT_Dialog(parent=self.master, title="Save Last Run", msg="Do you want to save the last run?", type="yesno")
+            value = jtd.JT_Dialog(parent=self, title="Save Last Run", msg="Do you want to save the last run?", type="yesno")
 
-        if dialog.result:
-
+        if value:
             now = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"{protocol_filename}_{self.last_run_athlete}_{now}.csv"
 
             if self.output_file_dir == None:
 
                 #if not output directory defined make them go define one
-                dialog = jtd.JT_Dialog(parent=self.master, title="Error", msg="No output directory defined, go to Settings tab and define one",
+                value = jtd.JT_Dialog(parent=self, title="Error", msg="No output directory defined, go to Settings tab and define one",
                                        type="ok")  # this is custom dialog class created above
                 return(False)
 
@@ -783,11 +805,6 @@ class CMJ_UI(QMainWindow):
                 self.save_button.setEnabled(False)
                 self.message_line(f"saved file: {filename}")
 
-        return (dialog.result)
-
-    # button for exit app
-    def quit_app(self):
-        self.master.destroy()
 
     #get weight (lbs or kg) using zero, multiplier, and wether or not kb or lbs
     def get_force_lbs(self, reading, zero, multiplier):
