@@ -112,24 +112,6 @@ log.msg(f"my_system: {my_platform}")
 log.msg(f"app_config_file: {app_config_file}")
 log.msg(f"protocol_config_file: {protocol_config_file}")
 
-
-# sets up the TTK Tkinter theme being used (see code below in the main to complete this)
-def set_theme(my_root):
-    os_name = platform.system()
-
-    if os_name == "Darwin":
-        # macOS
-        theme = "aqua"
-    elif os_name == "Windows":
-        # Windows
-        theme = "vista"
-    else:
-        # Default theme
-        theme = "default"
-
-    # Set the theme
-    my_root.style.theme_use(theme)
-
 ##################################################################################################
 
 #### logging of calibration data for long term study
@@ -269,6 +251,8 @@ class CMJ_UI(QMainWindow):
 
         log.debug(f"protocol type_selected: {self.protocol_type_selected}, name_selected: {self.protocol_name_selected} name_list: {self.protocol_name_list}")
 
+
+        # initial state is saved as there is no data at this time to be saved
         self.saved = True  #flag so that the user can be asked if they want to save the previous set of data before recording new data
 
         ##### Athletes #####
@@ -373,12 +357,11 @@ class CMJ_UI(QMainWindow):
 
         #radio buttons
         self.single_radiobutton = QRadioButton("Single")
-        self.single_radiobutton.setChecked(True)
-        self.single_radiobutton.toggled.connect( self.toggle_protocol_type )
+        self.single_radiobutton.toggled.connect( self.protocol_type_single)
         self.grid_layout.addWidget(self.single_radiobutton, trow, 1)
         trow += 1
         self.double_radiobutton = QRadioButton("Double")
-        self.double_radiobutton.toggled.connect( self.toggle_protocol_type )
+        self.double_radiobutton.toggled.connect( self.protocol_type_double)
         self.grid_layout.addWidget(self.double_radiobutton, trow, 1)
 
         # protocol_name selection - COMBO BOX
@@ -443,6 +426,12 @@ class CMJ_UI(QMainWindow):
         self.save_button.setEnabled(False)
         self.grid_layout.addWidget(self.save_button, trow, 3)
 
+        if self.protocol_type_selected == "single":
+            self.protocol_type_single()
+            self.single_radiobutton.setChecked(True)
+        else:
+            self.protocol_type_double()
+            self.double_radiobutton.setChecked(True)
         #create area for graph
         trow += 1
 
@@ -468,11 +457,6 @@ class CMJ_UI(QMainWindow):
         self.grid_layout.addWidget(self.status_display, trow, 0, 1, 4)
 
 #        self.tab1.grid_columnconfigure(0, weight=1)
-
-        #######  Last thing on first tab to make sure is right
-        #set up initial buttons to either be shown or not based upon current state (single or double)
-        #technically this doesn't actually toggle them, it leaves it in the current state
-        self.toggle_protocol_type()
 
         #fire off timer that updates time as well as the weight fields
         time_interval = 500      # in milliseconds
@@ -502,34 +486,40 @@ class CMJ_UI(QMainWindow):
 
     def preferences_screen(self):
         log.debug("Preferences Screen goes here")
-    def toggle_protocol_type(self):
+
+    def protocol_type_single(self):
         log.f()
-
-        if self.double_radiobutton.isChecked():
-            self.protocol_type_selected = "double"
-        else:
-            self.protocol_type_selected = "single"
-
+        self.protocol_type_selected = "single"
         self.config_obj.set_config("protocol_type", self.protocol_type_selected)
 
+        #change the button text on the left calibrate button and setup combo box
+        self.l_calibrate_button.setText( self.double_single_configuratrion_setup() )
+        log.debug(f"protocol type_selected: {self.protocol_type_selected}, name_selected: {self.protocol_name_selected} name_list: {self.protocol_name_list}")
+
+        self.r_calibrate_button.setVisible(False)
+        self.r_calibration_display.setVisible(False)
+
+    def protocol_type_double(self):
+        log.f()
+        self.protocol_type_selected = "double"
+        self.config_obj.set_config("protocol_type", self.protocol_type_selected)
+
+        #change the button text on the left calibrate button and setup combo box
+        self.l_calibrate_button.setText( self.double_single_configuratrion_setup() )
+        log.debug(f"protocol type_selected: {self.protocol_type_selected}, name_selected: {self.protocol_name_selected} name_list: {self.protocol_name_list}")
+
+        self.r_calibrate_button.setVisible(True)
+        self.r_calibration_display.setVisible(True)
+
+    #set up button text for double and Single measurements
+    def double_single_configuratrion_setup(self):
+
+        #bonus finish out combo box
         self.protocol_name_list = self.protocol_obj.get_names_by_type(self.protocol_type_selected)
         self.protocol_name_selected = self.protocol_name_list[0]
         self.protocol_name_combobox.clear()
         self.protocol_name_combobox.addItems(self.protocol_name_list)
 
-        #change the button text on the left calibrate button
-        self.l_calibrate_button.setText( self.calibrate_button_text() )
-        log.debug(f"protocol type_selected: {self.protocol_type_selected}, name_selected: {self.protocol_name_selected} name_list: {self.protocol_name_list}")
-
-        if self.protocol_type_selected == "double":
-            self.r_calibrate_button.setVisible(True)
-            self.r_calibration_display.setVisible(True)
-
-        elif self.protocol_type_selected == "single":
-            self.r_calibrate_button.setVisible(False)
-            self.r_calibration_display.setVisible(False)
-
-    def calibrate_button_text(self):
         if self.protocol_type_selected == 'single':
             return 'Calibrate'
         else:

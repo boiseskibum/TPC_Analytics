@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import QApplication, QWidget, QPushButton, QGridLayout
 from PyQt6.QtCore import Qt
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-
+from matplotlib.lines import Line2D
 
 class Window(QWidget):
     def __init__(self):
@@ -31,14 +31,21 @@ class Window(QWidget):
 
     def plot1(self):
         self.canvas.figure.clear()
-        axes = self.canvas.figure.add_subplot(111)
-        axes.plot([1, 2, 3, 4, 5, 6, 7, 8])
+        ax = self.canvas.figure.add_subplot(111)
+        ax.plot([1, 2, 3, 4, 5, 6, 7, 8], label="line1")
+        ax.plot([8, 7, 6, 5, 4, 3, 2, 1], label="line2")
+        ax.legend()
         self.canvas.draw()
 
     def plot2(self):
         self.canvas.figure.clear()
-        axes = self.canvas.figure.add_subplot(111)
-        axes.plot([8, 7, 6, 5, 4, 3, 2, 1])
+        ax = self.canvas.figure.add_subplot(111)
+        ax.plot([8, 7, 6, 5, 4, 3, 2, 1], label="line11")
+        ax.legend()
+        ax.set_xlabel('X-Axis')
+        ax.set_ylabel('Y-Axis')
+        ax.set_title('Matplotlib Graph with Legend')
+
         self.canvas.draw()
 
 

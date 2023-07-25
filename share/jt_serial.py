@@ -9,6 +9,8 @@ import tkinter as tk
 
 import jt_util as util
 
+default_baud_rate = 115200
+
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
 
@@ -39,7 +41,7 @@ class SerialDataReader(threading.Thread):
 
             if "usbserial" in port.device:  # handles MacOS case
                 devices.append(port.device)
-            elif "COM" in port.device:      # handles windows case
+            elif "COM" in port.device:      # handles Microsoft Windows case
                 devices.append(port.device)
 
         if len(devices) < 1:
@@ -56,7 +58,7 @@ class SerialDataReader(threading.Thread):
             return False
 
     #### set up port - timeout defaults to 1 second
-    def configure_serial_port(self, port, baud_rate):
+    def configure_serial_port(self, port, baud_rate=default_baud_rate):
         self.baud_rate = baud_rate
         self.port_name = port
         my_return = False
@@ -121,9 +123,10 @@ class SerialDataReader(threading.Thread):
         return False
 
 
-    #validates that a port has the required portion of the string contained in a line
+    #validates that a port has the required portion of the string contained in a line such as 's1' or 's2'
     def serial_port_validate_data(self, required_str):
 
+        line = "n/a"
         log.f(f"Validate data from port: {self.port_name}")
         try:
 
@@ -143,13 +146,13 @@ class SerialDataReader(threading.Thread):
                     if i < 2:
                         log.debug(f"Activity detected on: {self.port_name} and found required str: {required_str}  #:{i}  {line}")
 
-                    return True
+                    return True, line
 
         except (OSError, serial.SerialException):
             # Error occurred while reading from the port
             log.error(f"Failed to validate data from port: {self.port_name}")
 
-        return False
+        return False, line
 
     #### Getting data ###########################################################
     #### start_reading
@@ -597,8 +600,8 @@ if __name__ == "__main__":
 
     def test_validate_data():
         log.f(f"Serial_port_validate_data: {port}")
-        result = reader.serial_port_validate_data('s2')
-        log.f(f"Result: {result}\n")
+        result, line = reader.serial_port_validate_data('s2')
+        log.f(f"Result: {result}, line: {line}\n")
 
     def read_lines():
         # Read a specific number of lines
