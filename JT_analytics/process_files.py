@@ -26,6 +26,7 @@ import process_cmj as p_cmj
 import process_dj as p_dj
 import process_sj as p_sj
 import process_JTSext as p_JTSext
+import process_JTDcmj as p_JTDcmj
 
 #set base and application path
 path_base = util.jt_path_base()   # this figures out right base path for Colab, MacOS, and Windows
@@ -70,6 +71,7 @@ g_sl_results_list = []
 g_sj_results_list = []
 g_dj_results_list = []
 g_JTSext_results_list = []
+g_JTDcmj_results_list = []
 g_debug_log = []
 global g_single_file_debug
 g_single_file_debug = False
@@ -109,6 +111,7 @@ def overall_process(process_all=False, single_athlete = None):
     g_sj_results_list.clear()
     g_dj_results_list.clear()
     g_JTSext_results_list.clear()
+    g_JTDcmj_results_list.clear()
     g_debug_log.clear()
     global g_single_file_debug
     g_single_file_debug = False
@@ -137,11 +140,14 @@ def overall_process(process_all=False, single_athlete = None):
     new_files = []
 
     # allow all athletes to be processed or just a single one
+    # loop through all athletes
     if single_athlete == None:
         # process athletes one at a time
         for athlete in folders:
             log.msg(f'Processing files for athlete: {single_athlete}')
             process_athlete(athlete, new_files, processed_files)
+
+    # Single athelete
     else:
         log.msg(f'Processing files for SINGLE athlete: {single_athlete}')
         process_athlete(single_athlete, new_files, processed_files)
@@ -159,6 +165,7 @@ def overall_process(process_all=False, single_athlete = None):
     log_results(g_sj_results_list, 'sj', process_all)
     log_results(g_dj_results_list, 'dj', process_all)
     log_results(g_JTSext_results_list, 'JTSext', process_all)
+    log_results(g_JTDcmj_results_list, 'JTDcmj', process_all)
     log_results(g_debug_log, 'debug_log', process_all)   #write the debug_log
 
     log.info(f'finished')
@@ -172,6 +179,7 @@ def single_file_process(s_filename=None):  #= app_data + 'Jade Warren/cmj_01.csv
     g_sj_results_list.clear()
     g_dj_results_list.clear()
     g_JTSext_results_list.clear()
+    g_JTDcmj_results_list.clear()
     g_debug_log.clear()
     global g_single_file_debug
     g_single_file_debug = True
@@ -269,6 +277,8 @@ def process_athlete(athlete, new_files, processed_files):
 
     injured = athletes_obj.get_injured_side(athlete)
 
+
+
     #get all csv files in a path and sort based upon time
     path = path_data + athlete + '/*.csv'
     log.msg(f'Processing files in folder: {path}')
@@ -291,9 +301,7 @@ def process_athlete(athlete, new_files, processed_files):
             j+= 1
 
             protocol = get_file_protocol(filename)
-
             log_dict = {}
-
             try:
                 #log.debug( f'***** Process Single file--> protocol: {protocol}, athlete: {athlete}, injured: {injured}  {filename}')
                 process_file(filename, protocol, athlete, injured)
@@ -382,6 +390,7 @@ def process_file(filename, protocol, athlete, injured):
         else:
             df = pd.read_csv(filename, skiprows=[1, 2, 4], header=1)
 
+
         if protocol == "cmj_":
 
             # Validate and fix files if there are problems
@@ -446,6 +455,16 @@ def process_file(filename, protocol, athlete, injured):
             my_dict ["date_str"] = date_str
             my_dict ["timezone"] = timezone
             g_JTSext_results_list.append(my_dict)
+
+        elif protocol == "JTDcmj_":
+
+            # Process the cmj file
+            my_dict = p_cmj.process_JTDcmj_df(df, injured, short_filename, path_athlete_graph, athlete, date_str)
+            my_dict['athlete_name'] = athlete
+            my_dict ["col_timestamp_str"] = datestamp_str
+            my_dict ["date_str"] = date_str
+            my_dict ["timezone"] = timezone
+            g_JTDcmj_results_list.append(my_dict)
 
         elif protocol == "bw_" or protocol == "rh_":
             pass
