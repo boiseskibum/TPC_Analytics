@@ -3,7 +3,7 @@
 
 import json
 
-class JT_config:
+class JT_Config:
     def __init__(self, file_path):
         self.file_path = file_path
 

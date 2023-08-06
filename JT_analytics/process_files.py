@@ -64,20 +64,6 @@ log.msg(f"path_base: {path_base}")
 log.msg(f"my_username: {my_username}")
 log.msg(f"my_system: {my_platform}")
 
-# These are global variable that the dictionary full of columns from each test will be added to.
-# if you add a new global make sure you add it to the reset_global() function
-g_cmj_results_list = []
-g_sl_results_list = []
-g_sj_results_list = []
-g_dj_results_list = []
-g_JTSext_results_list = []
-g_JTDcmj_results_list = []
-g_debug_log = []
-global g_single_file_debug
-g_single_file_debug = False
-
-
-
 #protocol configs holds all the infor about single, double, name and actual protocol used
 protocol_config_file = path_config + "jt_protocol_config.csv"
 protocol_obj = None
@@ -99,99 +85,56 @@ except:
 
 do_work = True
 
-###############################################################################
-# overall_process() - Process all athletes and files
-###############################################################################
-def overall_process(process_all=False, single_athlete = None):
-    log.f()
 
-    # reset or clear global results from last time program was run
-    g_cmj_results_list.clear()
-    g_sl_results_list.clear()
-    g_sj_results_list.clear()
-    g_dj_results_list.clear()
-    g_JTSext_results_list.clear()
-    g_JTDcmj_results_list.clear()
-    g_debug_log.clear()
-    global g_single_file_debug
-    g_single_file_debug = False
+#### delete given athlete from output tiles
+def delete_athlete(protocol, athlete):
 
+    my_csv_filename = path_app + protocol + '_data.csv'
+    if os.path.exists(my_csv_filename):
 
-    # path to the file that will store the list of processed files
-    processed_files_file = path_log + 'processed_files.txt'
+        # Read the DataFrame from CSV
+        df = pd.read_csv('data.csv')
 
-    # read the list of previously processed files
-    processed_files = set()
-    if process_all == False:
-        if os.path.exists(processed_files_file):
-            with open(processed_files_file, "r") as f:
-                for line in f:
-                    processed_files.add(line.strip())
+        # Filter out rows with Athlete="Steve Taylor"
+        df_filtered = df[df['Athlete'] != athlete]
 
-    #get list of athletes (folders in data directory)
-    folders = []
-    for entry in os.scandir(path_data):
-        if entry.is_dir():
-            folders.append(entry.name)
+        # Reset the index
+        df_filtered = df_filtered.reset_index(drop=True)
 
-    log.debug(f'folders: {folders}')
+        # Save the filtered DataFrame to a new CSV file
+        df_filtered.to_csv('filtered_data.csv', index=False)
 
-    # process new files
-    new_files = []
-
-    # allow all athletes to be processed or just a single one
-    # loop through all athletes
-    if single_athlete == None:
-        # process athletes one at a time
-        for athlete in folders:
-            log.msg(f'Processing files for athlete: {single_athlete}')
-            process_athlete(athlete, new_files, processed_files)
-
-    # Single athelete
     else:
-        log.msg(f'Processing files for SINGLE athlete: {single_athlete}')
-        process_athlete(single_athlete, new_files, processed_files)
+        pass
 
-    # update the list of processed files
-    with open(processed_files_file, "a") as f:
-        for filename in new_files:
-            f.write(filename + "\n")
+#### log results to csv file ####
+def log_results(my_dict, protocol):
 
-    log.msg(f'Completed processing')
+    my_list = [my_dict]
+    if len(my_list) < 1:
+        log.msg(f'NO rows to store for {protocol}: Nothing written to file')
+        return
 
-    #for each type of test or jump save results to csv file (see globals above)
-    log_results(g_cmj_results_list, 'cmj', process_all)
-    log_results(g_sl_results_list, 'sl', process_all)
-    log_results(g_sj_results_list, 'sj', process_all)
-    log_results(g_dj_results_list, 'dj', process_all)
-    log_results(g_JTSext_results_list, 'JTSext', process_all)
-    log_results(g_JTDcmj_results_list, 'JTDcmj', process_all)
-    log_results(g_debug_log, 'debug_log', process_all)   #write the debug_log
+    #create dataframe from my_list
+    df = pd.DataFrame(my_list)
 
-    log.info(f'finished')
+    #set up where file is written and sort the dataframe if it is the debug_log
+    if protocol == 'debug_log':
+        my_csv_filename = path_log + protocol + '_data.csv'
+    else:
+        my_csv_filename = path_app + protocol + '_data.csv'
 
-##### Main Single File#####
-def single_file_process(s_filename=None):  #= app_data + 'Jade Warren/cmj_01.csv'):
-    log.f()
+    #log.msg(f'Results for {protocol}: number of rows {len(my_list)} written to file: {my_csv_filename}')
 
-    g_cmj_results_list.clear()
-    g_sl_results_list.clear()
-    g_sj_results_list.clear()
-    g_dj_results_list.clear()
-    g_JTSext_results_list.clear()
-    g_JTDcmj_results_list.clear()
-    g_debug_log.clear()
-    global g_single_file_debug
-    g_single_file_debug = True
+    # append if file exists,  if not then create it
+    if os.path.exists(my_csv_filename):
+        # append results
+        df.to_csv(my_csv_filename, mode='a', header=not os.path.isfile(my_csv_filename), index=True)
+    else:
+        #create new file
+        df.to_csv(my_csv_filename)
 
-    athlete = s_filename.split('/')[0]
-    protocol = get_file_protocol(s_filename)
-
-    leg = athletes_obj.get_injured_side(athlete)
-
-    log.info(f"SINGLE File Process: {s_filename}")
-    my_dict = process_file(path_data + s_filename, protocol, athlete, leg)
-
+def log_debug_results(my_dict):
     results_df = pd.DataFrame([my_dict])
     my_csv = path_temp2 + 'debug_data.csv'
     results_df.to_csv(my_csv)
@@ -203,50 +146,6 @@ def single_file_process(s_filename=None):  #= app_data + 'Jade Warren/cmj_01.csv
         for key, value in my_dict.items():
             file.write(f"{key} {value}\n")
 
-
-#### log results to csv file ####
-def log_results(my_list, protocol, process_all):
-
-    if len(my_list) < 1:
-        log.msg(f'NO rows to store for {protocol}: Nothing written to file')
-    return
-
-    #create dataframe from my_list
-    df = pd.DataFrame(my_list)
-
-    #set up where file is written and sort the dataframe if it is the debug_log
-    if protocol == 'debug_log':
-        my_csv_filename = path_log + protocol + '_data.csv'
-        df = df.sort_values(['athlete', 'protocol', 'timestamp_str'], ascending=[True, True, True])
-    else:
-        my_csv_filename = path_app + protocol + '_data.csv'
-
-    log.msg(f'Results for {protocol}: number of rows {len(my_list)} written to file: {my_csv_filename}')
-
-    # append results if doing incremental processing AND there is rows to write
-    # OR overwrite the existing file if 'processing all' files
-    if process_all == False:
-        df.to_csv(my_csv_filename, mode='a', header=not os.path.isfile(my_csv_filename), index=True)
-
-    # over write file if in processing all files
-    else:
-        df.to_csv(my_csv_filename)
-
-    # debug_log only: for backup purposes create a backup
-    # copy the existing file to a permanent log file with the date appended
-    if protocol == 'debug_log':
-        file_name, file_ext = my_csv_filename.split('.')
-
-    now = get_local_timestamp()
-    date_str = now.strftime('%Y-%m-%d %H:%M:%S')
-
-    backup_filename = f"{file_name} {date_str}.{file_ext}"
-
-    log.msg(f'Copying {my_csv_filename} to backup: {backup_filename}')
-
-    # Copy the original file to the new file with the date appended
-    shutil.copyfile(my_csv_filename, backup_filename)
-
 #### Given filename, return protocol
 def get_file_protocol(filename):
     #get protocol from the filename
@@ -256,101 +155,101 @@ def get_file_protocol(filename):
     s_protocol = short_filename.split('_')[0] + '_'
 
     return(s_protocol)
+###############################################################################
+# overall_process() - Process all athletes and files
+###############################################################################
+def process_all_athletes():
+    log.f()
 
-#### convert timestamp to local time or return the current timestamp  ####
-def get_local_timestamp(timestamp_obj = None):
+    #get list of athletes (folders in data directory)
+    folders = []
+    for entry in os.scandir(path_data):
+        if entry.is_dir():
+            folders.append(entry.name)
 
-    timezone = 'US/Mountain'
-    local_tz = pytz.timezone(timezone)
+    log.debug(f'folders: {folders}')
 
-    if timestamp_obj is None:
-        local_timestamp_obj = datetime.now(local_tz)
-    else:
-        local_timestamp_obj = datetime.fromtimestamp(timestamp_obj, local_tz)
+    # loop through all athletes
+    for athlete in folders:
+        log.msg(f'Processing files for athlete: {athlete}')
+        process_athlete(athlete)
 
-    return(local_timestamp_obj)
+    log.msg(f'Completed processing for all athletes')
 
 
 #### process_athlete ##############################################################
-# Iterate through the athletes then process all files for each athlete
-def process_athlete(athlete, new_files, processed_files):
+# Iterate through the athletes then process all files for each athlete, this forces all files to be redone
+def process_athlete( athlete ):
 
-    injured = athletes_obj.get_injured_side(athlete)
-
-
-
-    #get all csv files in a path and sort based upon time
+    # get list of files for athlete
     path = path_data + athlete + '/*.csv'
-    log.msg(f'Processing files in folder: {path}')
-
     file_list = glob.glob(path)
-
     file_list = [os.path.normpath(file_path) for file_path in file_list]   # line added so windows doesn't put a backslash in.
 
     file_list.sort(key=os.path.getmtime)
     #log.debug(f'filelist: {file_list}')
+
+    delete_athlete('JTDcmj', athlete)
+    delete_athlete('JTSext', athlete)
 
     # process each file one at a time
     j = 0
     errors = 0
     for filename in file_list:
 
-        if filename not in processed_files:
-
-            # counter for the number of files processed, for readability only
-            j+= 1
-
-            protocol = get_file_protocol(filename)
-            log_dict = {}
-            try:
-                #log.debug( f'***** Process Single file--> protocol: {protocol}, athlete: {athlete}, injured: {injured}  {filename}')
-                process_file(filename, protocol, athlete, injured)
-                new_files.append(filename)
-
-            except:
-                log.error(f"FAILED TO PROCESS FILE: {filename}, {protocol}, {athlete}, {injured}")
-                errors += 1
-
-                #debug_log - write what information we can to even though there was an error processing the file
-                short_filename = os.path.splitext(os.path.basename(filename))[0]
-                log_dict['status'] = 'error'
-                log_dict['athlete'] = athlete
-                log_dict['protocol'] = protocol
-                log_dict['short_filename'] = short_filename
-                log_dict['filename'] = filename
-                g_debug_log.append(log_dict)
-
-            # used to show progress on processing files - readability only
-            if(j % 20 == 0):
-                log.msg( f'{j} files processed' )
+        # counter for the number of files processed, for readability only
+        j+= 1
+        log_dict = {}
+            #log.debug( f'***** Process Single file--> protocol: {protocol}, athlete: {athlete}, injured: {injured}  {filename}')
+        result = process_single_file(filename)
+        if result == None:
+            errors += 1
+        # used to show progress on processing files - readability only
+        if(j % 20 == 0):
+            log.msg( f'{j} files processed' )
 
     log.msg( f'{j} total files for {athlete}, good: {j-errors}, errors: {errors}' )
 
 
 ##### process a specific filen ####################################################
 # valid protocols are filename starting with cmj or sl_
-def process_file(filename, protocol, athlete, injured):
+def process_single_file( filename, debug = False):
 
-    creation_time_obj = os.path.getctime(filename)
-    modification_time_obj = os.path.getmtime(filename)
+    # check if path-data is in filename,
+    if path_data not in filename and debug == True:
+        filename= path_data + filename
+        log.debug(f'Debug on: and making sure filename is complete:   {filename} ')
 
-    local_file_create_obj = get_local_timestamp(creation_time_obj)
-    local_file_mod_obj = get_local_timestamp(modification_time_obj)
+    if not os.path.exists(filename):
+        log.critical(f"process_single_file, file does not exist{filename}")
+        return
 
-    #for debug
-    local_file_create_str = local_file_create_obj.strftime('%Y-%m-%d %H:%M:%S')
-    local_file_mod_str = local_file_mod_obj.strftime('%Y-%m-%d %H:%M:%S')
+    #get just filename and parse the components:
+    short_filename = os.path.splitext(os.path.basename(filename))[0]
+    tokens = short_filename.split('_')
 
-    # figure out if creation time is actually newer than modification time and if
-    # so then change creation time to the older time (modification).  It is a hack
-    # but it works
-    if local_file_create_obj > local_file_mod_obj:
-        local_datestamp_obj = local_file_mod_obj
-    else:
-        local_datestamp_obj = local_file_create_obj
+    try:
+        protocol = tokens[0]
+        athlete = tokens[1]
+        date_string = tokens[2]
+        time_string = tokens[3]
 
-    datestamp_str = local_datestamp_obj.strftime('%Y-%m-%d %H:%M:%S')
-    date_str = local_datestamp_obj.strftime('%Y-%m-%d')
+        # Parse the date string into a datetime object
+        date_object = datetime.strptime(date_string, "%Y%m%d")
+        # Convert the datetime object to the desired format
+        date_str = date_object.strftime("%Y-%m-%d")
+
+        # Parse the time string to a datetime object
+        time_obj = datetime.strptime(time_string, "%H%M%S")
+        # Format the datetime object to a string with the desired format
+        time_str = time_obj.strftime("%H:%M:%S")
+        timestamp_str = date_str + " " + time_str
+    except:
+        log.info(f"File name didn't mean specification (protocol_username_date_time) so ignoring: {short_filename}")
+        return False
+
+    injured = athletes_obj.get_injured_side(athlete)
+
 
     path_athlete_graph = path_graphs + athlete + '/' + date_str + '/'
     # Check if the directory already exists
@@ -359,10 +258,7 @@ def process_file(filename, protocol, athlete, injured):
         os.makedirs(path_athlete_graph)
         log.debug(f'Directory created: {path_athlete_graph}')
 
-    #just the filename is created as it will be passed into the functions doing work below
-    short_filename = os.path.splitext(os.path.basename(filename))[0]
-
-    log.f(f'File:  {filename}, {datestamp_str}, {date_str}')
+    log.f(f'File:  {filename}, {timestamp_str}, {date_str}')
 
     #debug code to create debug_log_data.csv
     log_dict = {}
@@ -370,10 +266,8 @@ def process_file(filename, protocol, athlete, injured):
     log_dict['athlete'] = athlete
     log_dict['protocol'] = protocol
     log_dict['short_filename'] = short_filename
-    log_dict["timestamp_str"] = str(local_datestamp_obj)  # by doing this it includeds the UTC offset
+    log_dict["timestamp_str"] = timestamp_str
     log_dict["date_str"] = date_str
-    log_dict["file create time"] = local_file_create_str
-    log_dict["file mod time"] = local_file_mod_str
     log_dict['filename'] = filename
 
     #set up my_dict to pass variables to the csv file
@@ -383,202 +277,73 @@ def process_file(filename, protocol, athlete, injured):
 
     if(do_work == True):
 
-        # files starting with JT are all of Jakes protocols since leaving BSU and these files open as a normal CSV unlike the
-        # BSU files where we had to skiprows and have a header line called out.
-        if protocol[:2] == "JT":
+        try:
+            standard_dict = {}
+            standard_dict['athlete_name'] = athlete
+            standard_dict["col_timestamp_str"] = timestamp_str
+            standard_dict["date_str"] = date_str
+
+            # read in csv file to be processed
             df = pd.read_csv(filename)
-        else:
-            df = pd.read_csv(filename, skiprows=[1, 2, 4], header=1)
 
+            # JT Single Extension, both R and L are processed the same way.  The leg is
+            #included in the file as one of the columns so they are distinguished that way
+            if protocol == "JTSextR" or protocol == "JTSextL":
 
-        if protocol == "cmj_":
+                # get the leg being tested.   This is different than injured which is not used here
+                leg = protocol_obj.get_leg_by_protocol(protocol)
+                shank_length = athletes_obj.get_shank_length(athlete)
 
-            # Validate and fix files if there are problems
-            dl = validate_file(df)
-            df = fix_cmj_zero_row(df, dl)
+                my_dict = p_JTSext.process_iso_knee_ext(df, leg, shank_length, short_filename, path_athlete_graph, athlete, date_str)
+                my_dict.update(standard_dict)
 
-            # Process the cmj file
-            my_dict = p_cmj.process_cmj_df(df, injured, short_filename, path_athlete_graph, athlete, date_str)
-            my_dict['athlete_name'] = athlete
-            my_dict ["col_timestamp_str"] = datestamp_str
-            my_dict ["date_str"] = date_str
-            my_dict ["timezone"] = timezone
-            g_cmj_results_list.append(my_dict)
+                if debug:
+                    log_debug_results(my_dict)
+                else:
+                    log_results(my_dict, protocol)
 
-        # single leg
-        elif protocol == "sl_":
+            elif protocol == "JTDcmj":
 
-            # Process a Right or Left leg file
-            my_dict = p_cmj.process_sl_cmj_df(df)
-            if "sl_r" in filename:
-                my_dict["leg"] = "right"
+                # Process the cmj file
+                my_dict = p_JTDcmj.process_JTDcmj_df(df, injured, short_filename, path_athlete_graph, athlete, date_str)
+                my_dict.update(standard_dict)
+
+                if debug:
+                    log_debug_results(my_dict)
+                else:
+                    log_results(my_dict, protocol)
+
             else:
-                my_dict["leg"] = "left"
+                log.error(f'FILE: {filename} no such protocol: {protocol}')
+                return None
 
-            my_dict['athlete_name'] = athlete
-            my_dict ["col_timestamp_str"] = datestamp_str
-            my_dict ["date_str"] = date_str
-            my_dict ["timezone"] = timezone
-            g_sl_results_list.append(my_dict)
+        except:
+            log.error(f"FAILED TO PROCESS FILE: {filename}, {protocol}, {athlete}, {injured}")
 
-        # drop jump
-        elif protocol == "dj_":
-            my_dict = p_dj.process_dj_df(df, injured)
-            my_dict['athlete_name'] = athlete
-            my_dict ["col_timestamp_str"] = datestamp_str
-            my_dict ["date_str"] = date_str
-            my_dict ["timezone"] = timezone
-            g_dj_results_list.append(my_dict)
+            log_dict = {}
+            #debug_log - write what information we can to even though there was an error processing the file
+            short_filename = os.path.splitext(os.path.basename(filename))[0]
+            log_dict['status'] = 'error'
+            log_dict['athlete'] = athlete
+            log_dict['protocol'] = protocol
+            log_dict['short_filename'] = short_filename
+            log_dict['filename'] = filename
 
-        # squat jump
-        elif protocol == "sj_":
-            my_dict = p_sj.process_sj_df(df, injured)
-            my_dict['athlete_name'] = athlete
-            my_dict ["col_timestamp_str"] = datestamp_str
-            my_dict ["date_str"] = date_str
-            my_dict ["timezone"] = timezone
-            g_sj_results_list.append(my_dict)
+            log_results(log_dict, 'debug_log')
 
-        # JT Single Extension, both R and L are processed the same way.  The leg is
-        #included in the file as one of the columns so they are distinguished that way
-        elif protocol == "JTSextR_" or protocol == "JTSextL_":
-            # get the protocol from the filename (everything before _)
-            short_protocol = protocol.rstrip("_")
-
-            # get the leg being tested.   This is different than injured which is not used here
-            leg = protocol_obj.get_leg_by_protocol(short_protocol)
-            shank_length = athletes_obj.get_shank_length(athlete)
-
-            my_dict = p_JTSext.process_iso_knee_ext(df, leg, shank_length, short_filename, path_athlete_graph, athlete, date_str)
-            my_dict['athlete_name'] = athlete
-            my_dict ["col_timestamp_str"] = datestamp_str
-            my_dict ["date_str"] = date_str
-            my_dict ["timezone"] = timezone
-            g_JTSext_results_list.append(my_dict)
-
-        elif protocol == "JTDcmj_":
-
-            # Process the cmj file
-            my_dict = p_cmj.process_JTDcmj_df(df, injured, short_filename, path_athlete_graph, athlete, date_str)
-            my_dict['athlete_name'] = athlete
-            my_dict ["col_timestamp_str"] = datestamp_str
-            my_dict ["date_str"] = date_str
-            my_dict ["timezone"] = timezone
-            g_JTDcmj_results_list.append(my_dict)
-
-        elif protocol == "bw_" or protocol == "rh_":
-            pass
-
-        else:
-            log.error(f'FILE: {filename} no such protocol: {protocol}')
+            return None
 
     else:
         pass
 
     #debug code to create debug_log_data.csv
-    g_debug_log.append(log_dict)
+    log_results(log_dict, 'debug_log')
 
-    return(my_dict)   #my_dict only returned for single file processing
-
-#### Validation code  ############################################################
-
-def validate_file(df):
-    log.f()
-    df.rename(columns={'Fz': 'Right'}, inplace=True)
-    df.rename(columns={'Fz.1': 'Left'}, inplace=True)
-
-    # log.debug( "VALIDATION 1 - count zero values and left and right for comparison")
-
-    # validation 1 - count zero values in left and right
-    zero_counter_right = df['Right'].value_counts()[0]
-    # log.debug( ic.format(zero_counter_right))
-    zero_counter_left = df['Left'].value_counts()[0]
-    # log.debug( ic.format(zero_counter_left))
-    percent_dif = (zero_counter_right - zero_counter_left) / zero_counter_right * 100
-    # log.debug( ic.format(percent_dif))
-
-    zero_row_list = []
-
-    log.debug(f"VALIDATION 2 - count instances of unexpected zero rows")
-    # Validation 2 - count number of unexpected zero rows
-    # Right Leg
-    rc = 0
-    rzc = 0
-    lzc = 0
-    ignore_zero = False
-    df = df.reset_index()  # make sure indexes pair with number of rows
-
-    for index, row in df.iterrows():
-
-        # right side
-        if row.Right == 0:
-            rzc += 1
-            if lzc > 0:
-                ignore_zero = True
-        elif rzc > 0:
-            if ignore_zero == False:
-                # log.debug(f"Found Right: {rzc} zero rows at row count {rc}")
-                start_row = rc - rzc
-                end_row = rc
-                zero_row_dict = {'start_row': start_row, 'end_row': end_row, 'leg': "Right"}
-                zero_row_list.append(zero_row_dict)
-            rzc = 0
-            if ignore_zero == True and lzc == 0:
-                ignore_zero = False
-
-        # left side
-        if row.Left == 0:
-            lzc += 1
-            if rzc > 0:
-                ignore_zero = True
-        elif lzc > 0:
-            if ignore_zero == False:
-                # log.debug(f"Found Left: {lzc} zero rows at row count {rc}")
-                start_row = rc - lzc
-                end_row = rc
-                zero_row_dict = {'start_row': start_row, 'end_row': end_row, 'leg': "Left"}
-                zero_row_list.append(zero_row_dict)
-            lzc = 0
-            if ignore_zero == True and rzc == 0:
-                ignore_zero = False
-        rc += 1
-
-    return zero_row_list
+    return True
 
 
-##### fix/eliminate zero rows in a specific cmj_data_frame
-
-def fix_cmj_zero_row(df, zero_row_list):
-    log.f()
-    # new_zero_row_list = []
-
-    for my_dict in zero_row_list:
-        log.debug(f'          my_dict: {my_dict}')
-        sr = my_dict['start_row']
-        er = my_dict['end_row']
-        leg = my_dict['leg']
-        # new_value = df.iloc[sr - 1][leg]
-        i = sr
-        # Interpolation Calculations
-        nr = er - sr
-        delta = (df.at[er, leg] - df.at[sr - 1, leg]) / (nr + 1)
-        # log.debug(f'nr: {nr}')
-        # log.debug(f'delta: {delta}')
-        j = 1
-        while i < er:
-            new_value = ((delta) * j) + df.at[sr - 1, leg]
-            # log.debug(f'    new_value: {new_value}')
-            j += 1
-            df.at[i, leg] = new_value
-            i += 1
-
-    # filename = path_app +'fixed_data.csv'
-
-    # df.to_csv(filename)
-
-    return df
-
-
+#####################################################################################
+#### MAIN ###########################################################################
 #####################################################################################
 if __name__ == "__main__":
 
@@ -586,11 +351,10 @@ if __name__ == "__main__":
     # log.set_logging_level("INFO")
     log.set_logging_level("DEBUG")
 
-    # main(True)
-
     do_work = True   # this is global that can be set to false and it doesn't actually do the processing
 
-    overall_process(True, "Mickey" )
+    process_all_athletes()#
+    process_athlete("Mickey")
 
-#    single_file_process('Mickey/JTSextL_Mickey_20230716_153212.csv')   #JTSextL_, Mickey, left
-    # single_file_process('Sophia Avalos/cmj_04.csv')
+    #process_single_file('Mickey/JTSextL_Mickey_20230627_201411.csv', True)   #True is for debug mode
+    #process_single_file('Mickey/JTDcmj_Mickey_20230708_224659.csv', True)   #True is for debug mode

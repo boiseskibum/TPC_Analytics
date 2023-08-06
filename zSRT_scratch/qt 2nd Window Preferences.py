@@ -11,11 +11,17 @@ import jt_util as util
 log = util.jt_logging()
 
 class PreferencesWindow(QWidget):
-    def __init__(self):
+    def __init__(self, jt_serial_reader, jt_config):
         super().__init__()
 
-        self.jt_reader_obj = None
-        self.jt_config_obj = None
+        self.jt_reader_obj = jt_serial_reader
+        self.jt_config_obj = jt_config
+
+        self.serial_port_name = self.jt_config_obj.get_config("last_port")
+        # if self.serial_port_name == None:
+        #     self.serial_port_name = ""
+
+        self.text_widget = None # this is done here so that with serial combo box the thing doesn't error out when updating status bar
 
         self.setWindowTitle("Preferences")
         self.setGeometry(100, 100, 500, 600)
@@ -90,8 +96,8 @@ class PreferencesWindow(QWidget):
         # Set the vertical size policy of the preview_group_box to Expanding (it will expand vertically)
         preview_group_box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
-    def set_jt_objects(self, jt_reader_obj, jt_config):
-        self.jt_reader_obj = jt_reader_obj
+    def set_jt_objects(self, jt_reader, jt_config):
+        self.jt_reader_obj = jt_reader
         self.jt_config_obj = jt_config
 
     def reload_serial_ports(self):
@@ -128,7 +134,7 @@ class PreferencesWindow(QWidget):
         if self.jt_reader_obj == None:
             return
 
-        self.jt_reader_obj.config.configure_serial_port(self.serial_port_name, self.baud_rate)
+        self.jt_reader_obj.configure_serial_port(self.serial_port_name, self.baud_rate)
 
         if self.connection_validation():
             self.jt_config_obj.set_config("last_port", self.serial_port_name)
@@ -137,12 +143,14 @@ class PreferencesWindow(QWidget):
         # test out serial port
         result, line = self.jt_reader_obj.serial_port_validate_data('s1')
         if result == True:
-            my_str = f"Successful connection to port: {self.serial_port_name} baud_rate: {self.baud_rate}\n, result: {result}, line: was{line} "
+            my_str = f"Successful connection to port: {self.serial_port_name} baud_rate: {self.baud_rate}, result: {result}, line: was{line} "
         else:
-            my_str = f"FAILED connection to port: {self.serial_port_name} baud_rate: {self.baud_rate} \n, result: {result}, line: was{line} "
+            my_str = f"FAILED connection to port: {self.serial_port_name} baud_rate: {self.baud_rate}, result: {result}, line: was{line} "
 
         log.debug(my_str)
-        self.text_widget.setPlainText(my_str)
+        if self.text_widget != None:
+            self.text_widget.setPlainText(my_str)
+
         return result
 
     def camera1_combox_changed(self, value):
@@ -157,7 +165,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.jt_reader_obj = jts.SerialDataReader()
-        self.jt_config_obj = jtc.JT_config("testing_config.json")
+        self.jt_config_obj = jtc.JT_Config("testing_config.json")
 
 
         self.setWindowTitle("Main Window")
@@ -172,8 +180,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(preferences_button)
 
     def open_preferences(self):
-        self.preferences_window = PreferencesWindow()
-        self.preferences_window.set_jt_objects(self.jt_reader_obj, self.jt_config_obj)
+        self.preferences_window = PreferencesWindow(self.jt_reader_obj, self.jt_config_obj)
+        #self.preferences_window.set_jt_objects(self.jt_reader_obj, self.jt_config_obj)
         self.preferences_window.show()
 
 if __name__ == '__main__':

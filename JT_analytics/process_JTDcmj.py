@@ -45,14 +45,14 @@ def process_JTDcmj_df(df, injured, short_filename, path_athlete, athlete, date):
 
     # rename columns so they are easier to deal with AND does abvolute value columns
     list_right = []
-    df.rename(columns={'Fz': 'Right'}, inplace=True)
+    df.rename(columns={'r_force_N': 'Right'}, inplace=True)
     # log.debug(df['Right'])
     df['Right'] = df['Right'].abs()  # absolute value of 'Right'
     list_right = df['Right'].to_list()  # adds data to form a list
     # log.debug(list_right)
 
     list_left = []
-    df.rename(columns={'Fz.1': 'Left'}, inplace=True)
+    df.rename(columns={'l_force_N': 'Left'}, inplace=True)
     df['Left'] = df['Left'].abs()  # absolute value of 'Left'
     list_left = df['Left'].to_list()  # adds data to form a list
     # log.debug(list_left)
@@ -224,7 +224,7 @@ def cmj_calc(trial, mass):
 
     # Onset of Jump
     start_jump = np.where((force[0:] > 20) | (force[0:] < -20))  # if want to use one function, need to perform mass / 2
-    log.debug(f'start_jump: {start_jump}')
+    #log.debug(f'start_jump: {start_jump}')
 
     jump_onset_moment_index = start_jump[0][0]  # time stamps jump moment
     log.debug(f"INDEX jump_onset_moment_index: {jump_onset_moment_index}")
@@ -241,7 +241,12 @@ def cmj_calc(trial, mass):
     time_ss = time[
               jump_onset_moment_index:takeoff_moment_index]  # creates a time subset from jump onset moment to takeoff
     # log.debug(f"time_ss: {time_ss}")
-    jump_time = time_ss[-1] - time_ss[0]  # total time of jump
+
+    # check to see if enough variables to calculate jumptime, must be 2 of themm - Dad added this
+    if len(time_ss) < 2:
+        jump_time = 0
+    else:
+        jump_time = time_ss[-1] - time_ss[0]  # total time of jump
     log.debug(f"jump_time: {jump_time}")
 
     cmj_arr = force[
@@ -703,8 +708,4 @@ def cmj_sl_calc(trial, leg, mass):  # leg - "left", "right"
     return results_dict
 
 
-"""# DJ - process_dj_df()  dj_calc()"""
-
-
-##### process a cmj dataframe, must include which leg is injured ('Right', or 'Left')
 

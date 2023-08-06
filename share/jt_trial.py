@@ -7,7 +7,7 @@
 
 import datetime
 from datetime import datetime
-import io
+import io, os
 import pandas as pd
 import jt_util as util
 import jt_video as jtv
@@ -15,7 +15,7 @@ import jt_video as jtv
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
 
-class JT_trial:
+class JT_Trial:
     def __init__(self, athlete, protocol):
         self.athlete = athlete
         self.protocol = protocol
@@ -24,12 +24,14 @@ class JT_trial:
         self.long_date = datetime.now().strftime("%Y-%m-%d")
         self.orginal_filename = ""
 
-        self.df_results = pd.DataFrame()
+        self.results_df = pd.DataFrame()
         self.jt_videos = {}
         self.graph_images = {}
 
+        self.trial_dict = {}
+
     def attach_results_df(self, results_df):
-        self.df_results = results_df
+        self.results_df = results_df
 
     # video keys should be:   front, side, etc
     # video value - should be Object of JT_Video
@@ -61,7 +63,7 @@ class JT_trial:
         path_athlete = path_app + "/data/" + self.athlete + "/"
 
         #create filename
-        filename = f"{self.protocol}_{self.athlete}_{self.timestamp}.csv"
+        self.orginal_filename = f"{self.protocol}_{self.athlete}_{self.timestamp}.csv"
 
         log.debug(f'path_athlete: {path_athlete}')
 
@@ -71,19 +73,22 @@ class JT_trial:
             os.makedirs(path_athlete)
             log.debug(f'Directory created: {path_athlete}')
 
-        path_filename = path_athlete + filename
+        self.trial_dict['original_filename'] = self.orginal_filename
+        self.trial_dict['athlete'] = self.athlete
+        self.trial_dict['protocol'] = self.protocol
+        self.trial_dict['date'] = self.date
+        self.trial_dict['timestamp'] = self.timestamp
+
+        path_filename = path_athlete + self.orginal_filename
 
         try:
             self.results_df.to_csv(path_filename, index=True)
             log.debug(f"saved file: {path_filename}")
+            self.trial_dict['results_csv'] = path_filename
         except:
-            log.error(f"failed to save file {path_filename}")
+            log.error(f"failed to save results_df: {path_filename}")
 
-        ##### Graphs/Images and Videos
-        results_df.to_csv(path_filename, index=True)
-
-        log.debug(f"saved file: {path_filename}")
-
+        ##### Graphs/Images and Videos Saving
         # check if the results/athlete/date path exists and if not makes it
         path_results = path_app + "/results/" + self.athlete + "/" + self.long_date + "/"
         if not os.path.exists(path_results):
@@ -91,18 +96,21 @@ class JT_trial:
             os.makedirs(path_results)
             log.debug(f'Directory created: {path_results}')
 
-        # Videos and images/graphs or stored in the results directory
-        # save videos, these are stored in results directory
+        ###### Videos and images/graphs or stored in the results directory ######
+
+        # save videos in results directory
         for key, value in self.videos.items():
             filename = f"{self.protocol}_{self.athlete}_{self.timestamp}_{key}.mp4"
             path_filename = path_results + filename
             try:
                 value.save_video(path_filename)
                 log.msg(f"Saved Video: {path_filename}")
+                self.trial_dict[key] = path_filename
+
             except:
                 log.error(f"FAILED to saved Video key: {key}: file: {path_filename}")
 
-        # save images   ----   going to need to think about this as files are
+        # save images in results directory
         for key, value in self.graph_images.items():
             filename = f"{self.protocol}_{self.athlete}_{self.timestamp}_{key}."
             path_filename = path_results + filename
@@ -110,6 +118,9 @@ class JT_trial:
                 with open(path_filename, 'wb') as f:
                     f.write(value.getvalue())
                     log.msg(f"Saved graph/image: {path_filename}")
+                    self.trial_dict[key] = path_filename
+
             except:
                 log.error(f"FAILED to saved graph/image key: {key}: file: {path_filename}")
 
+        return(self.trial_dict)

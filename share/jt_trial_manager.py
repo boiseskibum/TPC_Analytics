@@ -31,7 +31,7 @@ class JT_JsonTrialManager:
         return df
 
     def backup_trial(self, trial_dict):
-        backup_directory = os.path.join(os.path.dirname(self.file_path), 'backup')
+        backup_directory = os.path.join(os.path.dirname(self.file_path), 'json_backup')
         # if not os.path.exists(backup_directory):
         #     os.makedirs(backup_directory)
         backup_file_path = os.path.join(backup_directory, trial_dict['original_filename'] + '.json')

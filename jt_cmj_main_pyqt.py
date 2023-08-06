@@ -77,8 +77,9 @@ path_app = path_base + 'Force Plate Testing/'
 path_data = path_app + 'data/'
 path_results = path_app + 'results/'
 path_log = path_app + 'log/'
-path_graphs = path_app + 'graphs/'
+#path_graphs = path_app + 'graphs/'
 path_config = path_app + 'config/'
+path_db = path_app + 'db/'
 
 # validate that data paths exist
 if not os.path.isdir(path_data):
@@ -90,6 +91,9 @@ import jt_serial as jts
 import jt_protocol as jtp
 import jt_athletes as jta
 import jt_config as jtc
+import jt_trial as jtt
+import jt_trial_manager as jttm
+import jt_video as jtv
 
 # Testing data
 # if set to >= 0 it utilizes test data instead of data from serial line
@@ -186,7 +190,7 @@ class CMJ_UI(QMainWindow):
         self.setWindowTitle(self.application_name)
 
         # configuration object for keys and values setup
-        self.config_obj = jtc.JT_config(app_config_file)
+        self.config_obj = jtc.JT_Config(app_config_file)
 
         ##### serial port setup #####
 
@@ -619,8 +623,7 @@ class CMJ_UI(QMainWindow):
             else:
                 pass
 
-            jtd.JT_Dialog(parent=self, title="Start Run", msg="Press ok to start run",
-                                       type="ok")
+            jtd.JT_Dialog(parent=self, title="Start Run", msg="Press ok to start run", type="ok")
 
         # Calibration - check with user if they want to proceed without calibration?
         if self.protocol_type_selected == 'single' and self.l_calibration == False:
@@ -658,8 +661,14 @@ class CMJ_UI(QMainWindow):
 
         self.is_recording = False
 
+        #button enabled/disabled
+        self.buttons_stopped()
+
         if test_data_file == None:
             self.num_measurements = self.jt_reader.stop_reading()
+            if self.num_measurements == 0:
+                jtd.JT_Dialog(parent=self, title="Run Error", msg="No data collected, press ok to continue", type="ok")
+                return
         else:
             log.debug(f"UTILIZING TEST FILE: {test_data_file}")
             my_df = read_test_file(test_data_file)
@@ -672,9 +681,6 @@ class CMJ_UI(QMainWindow):
         leg = self.protocol_obj.get_leg_by_name(self.protocol_name_selected)
         self.results_df = self.jt_reader.get_data_df(self.l_zero, self.l_mult, self.r_zero, self.r_mult,
                     self.last_run_athlete, self.protocol_name_selected, self.protocol_type_selected, leg)
-
-        #button enabled/disabled
-        self.buttons_stopped()
 
         log.debug(f"results_df columns: {self.results_df.columns}")
         log.debug(f"results_df: {self.results_df.head(3)}")
@@ -753,11 +759,8 @@ class CMJ_UI(QMainWindow):
         log.debug("JAKE TAYLOR this is where we put code to be called")
         pass
 
-
+    ########  SAVE DATA ########
     def save_data_to_csv(self, lose_last_run=False):
-
-        protocol_filename = self.protocol_obj.get_protocol_by_name((self.protocol_name_selected))
-        self.config_obj.set_config("last_athlete", self.last_run_athlete)
 
         if lose_last_run == True:
             value = jtd.JT_Dialog(parent=self, title="Save Last Run", msg="If you say NO it will be lost", type="yesno")
@@ -765,8 +768,6 @@ class CMJ_UI(QMainWindow):
             value = jtd.JT_Dialog(parent=self, title="Save Last Run", msg="Do you want to save the last run?", type="yesno")
 
         if value:
-            now = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"{protocol_filename}_{self.last_run_athlete}_{now}.csv"
 
             if self.output_file_dir == None:
 
@@ -776,20 +777,24 @@ class CMJ_UI(QMainWindow):
                 return(False)
 
             else:
-                path_athlete = self.output_file_dir + "/" + self.last_run_athlete + "/"
 
-                log.debug(f'path_athlete: {path_athlete}')
+                protocol_filename = self.protocol_obj.get_protocol_by_name((self.protocol_name_selected))
+                self.config_obj.set_config("last_athlete", self.last_run_athlete)
 
-                # Check if the directory already exists
-                if not os.path.exists(path_athlete):
-                    # Create the directory if it doesn't exist
-                    os.makedirs(path_athlete)
-                    log.debug(f'Directory created: {path_athlete}')
+                trial = jtt.JT_Trial(self.last_run_athlete, self.protocol_filename)
+                trial.attach_results_df(self.results_df)
 
-                path_filename = path_athlete + filename
-                self.results_df.to_csv(path_filename, index=True)
+                #add videos
+#                trial.attach_video()
 
-                log.debug(f"saved file: {path_filename}")
+                #add images
+#                trial.attach_image()
+
+                trial_dict = trial.save_trial(path_app)
+
+                filename = 'all_athletes.json'
+                tm = jttm.JT_JsonTrialManager(path_db, filename)
+                tm.write_trial_dict(self, trial_dict)
 
                 self.saved = True
                 self.save_button.setEnabled(False)

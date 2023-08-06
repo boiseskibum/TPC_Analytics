@@ -126,6 +126,11 @@ class SerialDataReader(threading.Thread):
     #validates that a port has the required portion of the string contained in a line such as 's1' or 's2'
     def serial_port_validate_data(self, required_str):
 
+        line = ""
+
+        if self.serial_port == None:
+            return False, line
+
         line = "n/a"
         log.f(f"Validate data from port: {self.port_name}")
         try:
@@ -206,6 +211,11 @@ class SerialDataReader(threading.Thread):
 
     #### stop_reading, returns the number of rows read in
     def stop_reading(self):
+
+        if self.serial_port == None:
+            self.error_str = f"Stop_reading - Serial port not configured: {self.port_name}"
+            log.debug(self.error_str)
+            return 0
 
         end_time = time.time()
         self.elapsed_time = end_time - self.start_time

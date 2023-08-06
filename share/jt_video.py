@@ -21,7 +21,7 @@ class JT_Video(QThread):
 
         self.camera_index = 0           # which camera to connect to, 1 or 2
         self.display_video = True       # this toggles whether or not to display/show video while capturing
-        self.save_frames = True         #this is to keep frames for saving to disk at later time, saves them in numpy array
+        self.save_frames = False        #this is to keep frames for saving to disk at later time, saves them in numpy array
         self.display_width = 200        #number of pixels wide for display
         self.rotate  = True             #assumes that it is portrait mode
 
@@ -51,7 +51,7 @@ class JT_Video(QThread):
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
                 #this is HACK, where index is 1 is trying to deal with Iphone as camera,
-                if self.camera_index == 1:
+                if self.camera_index == 2:   #this basically disables it for now
                     rotated_frame = rgb_frame
                 else:
                     if self.rotate == True:
@@ -74,9 +74,9 @@ class JT_Video(QThread):
                     pixmap = QPixmap.fromImage(image)
                     self._video_widget.setPixmap(pixmap)
 
+#                if cv2.waitKey(1) & 0xFF == ord("q"):
+#                    break
 
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    break
             else:
                 break
 
@@ -86,6 +86,13 @@ class JT_Video(QThread):
     def stop(self):
         self._is_running = False
 
+    def camera_offline(self):
+        # Load the image from disk
+        image_path = 'camera_offline.png'
+        image = QImage(image_path)
+        image = image.scaledToWidth(self.display_width)
+        pixmap = QPixmap.fromImage(image)
+        self._video_widget.setPixmap(pixmap)
 
     # save video to file.  Filename must end in .mp4
     def save_video(self, filename):
@@ -115,17 +122,19 @@ if __name__ == "__main__":
         def __init__(self):
             super().__init__()
 
-            self.num_cameras = 1   # 1 or 2
+            self.num_cameras = 2   # 1 or 2
             self.setGeometry(100, 100, 800, 600)  # (x, y, width, height)
             self.start_button = QPushButton("Start")
             self.stop_button = QPushButton("Stop")
             self.save_button = QPushButton("Save")
+            self.swap_button = QPushButton("Swap Cameras")
 
 
             layout = QVBoxLayout()
             layout.addWidget(self.start_button)
             layout.addWidget(self.stop_button)
             layout.addWidget(self.save_button)
+            layout.addWidget(self.swap_button)
 
             # the following are for "video buttons" to be shown
             self.video_label1 = QLabel()
@@ -148,6 +157,7 @@ if __name__ == "__main__":
             self.start_button.clicked.connect(self.start_video)
             self.stop_button.clicked.connect(self.stop_video)
             self.save_button.clicked.connect(self.save_video)
+            self.swap_button.clicked.connect(self.swap_video)
 
         def start_video(self):
             self.start_button.setEnabled(False)
@@ -167,6 +177,15 @@ if __name__ == "__main__":
             self.video1.save_video('jt_video_test1.mp4')
             if self.num_cameras == 2:
                 self.video2.save_video('jt_video_test2.mp4')
+
+        def swap_video(self):
+
+            if self.video1.camera_index == 1:
+                self.video1.camera_index = 0
+                self.video2.camera_index = 1
+            else:
+                self.video1.camera_index = 1
+                self.video2.camera_index = 0
 
 
     app = QApplication(sys.argv)
