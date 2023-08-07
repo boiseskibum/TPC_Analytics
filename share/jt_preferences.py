@@ -21,20 +21,21 @@ def convert_to_int(value):
     except ValueError:
         return -1
 class JT_PreferencesWindow(QWidget):
-    def __init__(self, jt_serial_reader, jt_config):
+    def __init__(self, jt_config_obj, jt_serial_reader):
         super().__init__()
 
-        self.jt_reader_obj = jt_serial_reader
-        self.jt_config_obj = jt_config
+        self.reader_obj = jt_serial_reader
+        self.config_obj = jt_config_obj
 
-        self.serial_port_name = self.jt_config_obj.get_config("last_port")
+        self.serial_port_name = self.config_obj.get_config("last_port")
         # if self.serial_port_name == None:
         #     self.serial_port_name = ""
 
         self.text_widget = None # this is done here so that with serial combo box the thing doesn't error out when updating status bar
 
         self.setWindowTitle("Preferences")
-        self.setGeometry(100, 100, 500, 600)
+        self.setGeometry(600, 200, 500, 700)
+        self.setFixedSize(500, 700)
 
         self.num_cameras = 1
         self.video1 = None
@@ -68,8 +69,17 @@ class JT_PreferencesWindow(QWidget):
         self.text_widget = QTextEdit()
         layout.addWidget(self.text_widget, trow, 0, 2, 2)
 
-        # Row 4: Refresh Camera List button and ComboBox to select the camera
         trow += 2
+        label1 = QLabel("Front View Camera")
+        label1.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(label1, trow, 0)
+
+        label1 = QLabel("Side View Camera")
+        label1.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(label1, trow, 1)
+
+        # Row 4: Refresh Camera List button and ComboBox to select the camera
+        trow += 1
 
         list_of_cameras = ["not in use", "0", "1"]
 
@@ -77,33 +87,22 @@ class JT_PreferencesWindow(QWidget):
         self.camera1_combobox = QComboBox()
         self.camera1_combobox.currentTextChanged.connect(self.camera1_combox_changed)
         self.camera1_combobox.addItems(list_of_cameras)
-        self.camera1_index = self.jt_config_obj.get_config("camera1")
-        index = 0  # this is the default index
-        try:
-            list_of_cameras.index(self.camera1_index)
-        except ValueError:
-            pass
-        self.camera1_combobox.setCurrentIndex(index)
         layout.addWidget(self.camera1_combobox, trow, 0)
 
         #Set up camera #2
         self.camera2_combobox = QComboBox()
         self.camera2_combobox.currentTextChanged.connect(self.camera2_combox_changed)
         self.camera2_combobox.addItems(list_of_cameras)
-        self.camera2_index = self.jt_config_obj.get_config("camera1")
-        index = 0  # this is the default index
-        try:
-            list_of_cameras.index(self.camera2_index)
-        except ValueError:
-            pass
-        self.camera2_combobox.setCurrentIndex(index)
         layout.addWidget(self.camera2_combobox, trow, 1)
 
         ###### VIDEO ######
         # Row 5: Preview widget with video control (QGroupBox with QLabel)
+
         trow += 1
-        preview_group_box = QGroupBox("Video Preview")
+        preview_group_box = QGroupBox()
         preview_layout = QHBoxLayout()
+        video_label1 = QLabel("Preview Video 1")
+        video_label1.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         video_label1 = QLabel("Preview Video 1")
         video_label1.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -121,22 +120,32 @@ class JT_PreferencesWindow(QWidget):
         self.video1 = jtv.JT_Video(video_label1)
         self.video2 = jtv.JT_Video(video_label2)
 
-        self.video1.camera_offline()
-        self.video2.camera_offline()
+        cam1_index = self.config_obj.get_config("camera1")
+        cam2_index = self.config_obj.get_config("camera2")
+
+        if cam1_index > -1:
+            self.camera1_combobox.setCurrentIndex(cam1_index + 1)
+        else:
+            self.video1.camera_offline()
+
+        if cam2_index > -1:
+            self.camera2_combobox.setCurrentIndex(cam2_index + 1)
+        else:
+            self.video2.camera_offline()
 
     def reload_serial_ports(self):
 
         # get list of ports
-        self.serial_ports_list = self.jt_reader_obj.get_available_ports()
+        self.serial_ports_list = self.reader_obj.get_available_ports()
         self.serial_port_combobox.clear()
         self.serial_port_combobox.addItems(self.serial_ports_list)
 
         # if only one port default to that
         if len(self.serial_ports_list) == 1:
-            result = self.jt_reader_obj.configure_serial_port(self.serial_ports_list[0])
+            result = self.reader_obj.configure_serial_port(self.serial_ports_list[0])
 
             if self.connection_validation():
-                self.jt_config_obj.set_config("last_port", self.serial_port_name)
+                self.config_obj.set_config("last_port", self.serial_port_name)
         else:
             my_str = f"Valid Serial Ports are: {self.serial_ports_list}\n, need to select your port "
             self.text_widget.setPlainText(my_str)
@@ -144,28 +153,28 @@ class JT_PreferencesWindow(QWidget):
     def serial_port_combobox_changed(self, value):
         self.serial_port_name = value
 
-        if self.jt_reader_obj == None:
+        if self.reader_obj == None:
             return
 
-        self.jt_reader_obj.configure_serial_port(self.serial_port_name)
+        self.reader_obj.configure_serial_port(self.serial_port_name)
 
         # test out serial port
         if self.connection_validation():
-            self.jt_config_obj.set_config("last_port", self.serial_port_name)
+            self.config_obj.set_config("last_port", self.serial_port_name)
 
     def baud_rate_combobox_changed(self, value):
         self.baud_rate = value
-        if self.jt_reader_obj == None:
+        if self.reader_obj == None:
             return
 
-        self.jt_reader_obj.configure_serial_port(self.serial_port_name, self.baud_rate)
+        self.reader_obj.configure_serial_port(self.serial_port_name, self.baud_rate)
 
         if self.connection_validation():
-            self.jt_config_obj.set_config("last_port", self.serial_port_name)
+            self.config_obj.set_config("last_port", self.serial_port_name)
 
     def connection_validation(self):
         # test out serial port
-        result, line = self.jt_reader_obj.serial_port_validate_data('s1')
+        result, line = self.reader_obj.serial_port_validate_data('s1')
         if result == True:
             my_str = f"Successful connection to port: {self.serial_port_name} baud_rate: {self.baud_rate}, result: {result}, line: was{line} "
         else:
@@ -211,6 +220,8 @@ class JT_PreferencesWindow(QWidget):
             self.camera1_combobox.setCurrentIndex(0)
             self.video1.camera_offline()
 
+        self.save_video_config()
+
     def camera2_combox_changed(self, value):
         if self.video2 == None or self.ignore_combox_change == True:
             return
@@ -243,6 +254,8 @@ class JT_PreferencesWindow(QWidget):
             self.camera2_combobox.setCurrentIndex(0)
             self.video2.camera_offline()
 
+        self.save_video_config()
+
     def start_video1(self):
         log.debug(f"checking to start video1: {self.video1.camera_index}")
 
@@ -262,14 +275,31 @@ class JT_PreferencesWindow(QWidget):
             self.video2.start()
             log.debug(f"starting video2.   value: {value}")
 
+    def save_video_config(self):
+
+        cam1_index = convert_to_int(self.camera1_combobox.currentText())
+        cam2_index = convert_to_int(self.camera2_combobox.currentText())
+
+        self.config_obj.set_config("camera1", cam1_index)
+        self.config_obj.set_config("camera2", cam2_index)
+
+    def resizeEvent(self, event):
+        # Ignore resize event
+        pass
+    def closeEvent(self, event):
+        self.video1.stop()
+        self.video2.stop()
+        time.sleep(camera_sleep_time)
+
+
 if __name__ == '__main__':
 
     class MainWindow(QMainWindow):
         def __init__(self):
             super().__init__()
 
-            self.jt_reader_obj = jts.SerialDataReader()
-            self.jt_config_obj = jtc.JT_Config("testing_config.json")
+            self.reader_obj = jts.SerialDataReader()
+            self.config_obj = jtc.JT_Config("testing_config.json")
 
 
             self.setWindowTitle("Main Window")
@@ -284,8 +314,7 @@ if __name__ == '__main__':
             layout.addWidget(preferences_button)
 
         def open_preferences(self):
-            self.preferences_window = JT_PreferencesWindow(self.jt_reader_obj, self.jt_config_obj)
-            #self.preferences_window.set_jt_objects(self.jt_reader_obj, self.jt_config_obj)
+            self.preferences_window = JT_PreferencesWindow(self.config_obj, self.reader_obj)
             self.preferences_window.show()
 
     app = QApplication(sys.argv)
@@ -294,9 +323,3 @@ if __name__ == '__main__':
     app.exec()
     sys.exit()
 
-
-# if __name__ == '__main__':
-#     app = QApplication(sys.argv)
-#     window = PreferencesWindow()
-#     window.show()
-#     sys.exit(app.exec())

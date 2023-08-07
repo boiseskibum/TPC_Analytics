@@ -1,8 +1,11 @@
-import sys
+import sys, time
 import cv2
 from PyQt6.QtCore import Qt, QThread
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
+
+import jt_util as util
+log = util.jt_logging()
 
 
 def resize_with_aspect_ratio(img, target_width):
@@ -13,7 +16,7 @@ def resize_with_aspect_ratio(img, target_width):
     return cv2.resize(img, (target_width, target_height))
 
 class JT_Video(QThread):
-    def __init__(self, video_widget):
+    def __init__(self, video_widget = None):
         super().__init__()
         self._video_widget = video_widget
         self._is_running = False         # used internally
@@ -24,6 +27,7 @@ class JT_Video(QThread):
         self.save_frames = False        #this is to keep frames for saving to disk at later time, saves them in numpy array
         self.display_width = 200        #number of pixels wide for display
         self.rotate  = True             #assumes that it is portrait mode
+        self.max_record_time = 15       #this is seconds
 
     def run(self):
         self._is_running = True
@@ -43,10 +47,18 @@ class JT_Video(QThread):
 
         self._frames = []
 
-        start_time = cv2.getTickCount()
+        start_time = time.time()
         while cap.isOpened() and self._is_running:
             ret, frame = cap.read()
             if ret:
+
+                # Check if the desired time has elapsed
+                current_time = time.time()
+                elapsed_time = current_time - start_time
+                if elapsed_time >= self.max_record_time:
+                    log.info(f"MAX_RECORD_TIME has been exceeded: {self.max_record_time} secs")
+                    break
+
                 # Convert the frame to RGB format and resize it
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
@@ -92,7 +104,8 @@ class JT_Video(QThread):
         image = QImage(image_path)
         image = image.scaledToWidth(self.display_width)
         pixmap = QPixmap.fromImage(image)
-        self._video_widget.setPixmap(pixmap)
+        if self._video_widget:
+            self._video_widget.setPixmap(pixmap)
 
     # save video to file.  Filename must end in .mp4
     def save_video(self, filename):

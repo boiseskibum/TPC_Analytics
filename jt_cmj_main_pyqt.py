@@ -1,7 +1,7 @@
 # Main program
 
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel
+from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox
 from PyQt6.QtWidgets import QLineEdit, QPushButton, QMenu, QMessageBox, QDialog, QComboBox, QToolBar, QRadioButton
 from PyQt6.QtGui import QPixmap, QIcon
 from PyQt6.QtGui import QAction
@@ -94,6 +94,7 @@ import jt_config as jtc
 import jt_trial as jtt
 import jt_trial_manager as jttm
 import jt_video as jtv
+import jt_preferences as jtpref
 
 # Testing data
 # if set to >= 0 it utilizes test data instead of data from serial line
@@ -186,11 +187,15 @@ class CMJ_UI(QMainWindow):
 
 
         self.application_name = "Jake Taylor Analytics for Athletes"
-
         self.setWindowTitle(self.application_name)
+#        self.setGeometry(500, 100, 500, 700)
 
         # configuration object for keys and values setup
         self.config_obj = jtc.JT_Config(app_config_file)
+
+        self.video1 = None
+        self.video2 = None
+        self.trial = None
 
         ##### serial port setup #####
 
@@ -198,7 +203,6 @@ class CMJ_UI(QMainWindow):
         self.jt_reader = jts.SerialDataReader()
 
         self.serial_ports_list = self.jt_reader.get_available_ports()
-
         self.baud_rate = 115200
         self.calibration_measurement_count = 20 # for calibration readings
         self.updated_weight_count = 5      # for updating the weight on the screen
@@ -222,7 +226,6 @@ class CMJ_UI(QMainWindow):
         self.is_recording = False
 
         ##### Protocol #####
-
         # Get list of protocols, throw error message if unsuccessful at getting list
         try:
             self.protocol_obj = jtp.JT_protocol(protocol_config_file)
@@ -275,7 +278,7 @@ class CMJ_UI(QMainWindow):
 
         self.output_file_dir = self.config_obj.get_config(my_platform + "-output_file_dir")
 
-        ###### general setup
+        ###### general setup ######
         self.results_df = pd.DataFrame()  # Empty DataFrame
         self.collecting_data = False
 
@@ -303,7 +306,6 @@ class CMJ_UI(QMainWindow):
         #variables for utilizing test data
         self.file_list = glob.glob("output*.txt")
 
-
         str = ""
         str = f"The following things will need to be set up in order to run this applicaton:\n"
         str = str + f"- assign USB communications port, see Settings tab\n"
@@ -317,25 +319,19 @@ class CMJ_UI(QMainWindow):
 
 #### Main SCreen ######################################################
 
-        trow = 0
-
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
 
         self.grid_layout = QGridLayout()
         main_widget.setLayout(self.grid_layout)
-#        self.grid_layout.setVerticalSpacing(0)
-
 
         # Add Icon - Load the PNG image using PIL
-
         w = 75
         h = 75
-
-        # Icon
         ico_image = QPixmap("jt.ico").scaled(w, h)
         ico_icon = QIcon(ico_image)
 
+        trow = 0
         # Create the ico label
         ico_label = QLabel(self)
         ico_label.setPixmap(ico_image)
@@ -343,13 +339,13 @@ class CMJ_UI(QMainWindow):
         self.grid_layout.addWidget(ico_label, trow,0, 3, 1)
 
         # Preferences/Configurate/Settings button
-        gear_image = QPixmap("gear_icon.png").scaled(30, 30)
-        gear_icon = QIcon(gear_image)
+        settings_image = QPixmap("icon_settings.png").scaled(30, 30)
+        settings_icon = QIcon(settings_image)
 
         # Create the ico image button
         self.gear_button = QPushButton(clicked=self.preferences_screen)
-        self.gear_button.setIcon(gear_icon)
-        self.gear_button.setIconSize(gear_image.size())
+        self.gear_button.setIcon(settings_icon)
+        self.gear_button.setIconSize(settings_image.size())
         self.gear_button.setStyleSheet("background-color: rgba(255, 255, 255, 0);")   #make background transparent
         self.grid_layout.addWidget(self.gear_button, trow, 3)
 
@@ -408,9 +404,13 @@ class CMJ_UI(QMainWindow):
             index = 0
         self.athlete_combobox.currentTextChanged.connect(self.athlete_combobox_change)
         self.athlete_combobox.setCurrentIndex(index)
-
-
         self.grid_layout.addWidget(self.athlete_combobox, trow, 1)
+
+        trow +=1
+        self.video_checkbox = QCheckBox('Video On')
+        self.video_checkbox.setChecked(False)
+        self.video_checkbox.stateChanged.connect(self.on_video_checkbox_checkbox_changed)
+        self.grid_layout.addWidget(self.video_checkbox, trow, 1)
 
         # Start/Stop buttons and dropdown menu for user
         trow += 1                                           # highlightbackground='lightgreen'
@@ -460,8 +460,6 @@ class CMJ_UI(QMainWindow):
         self.status_display = QLabel("")
         self.grid_layout.addWidget(self.status_display, trow, 0, 1, 4)
 
-#        self.tab1.grid_columnconfigure(0, weight=1)
-
         #fire off timer that updates time as well as the weight fields
         time_interval = 500      # in milliseconds
         self.timer = QTimer()
@@ -489,7 +487,9 @@ class CMJ_UI(QMainWindow):
             return False
 
     def preferences_screen(self):
-        log.debug("Preferences Screen goes here")
+
+        self.preferences_window = jtpref.JT_PreferencesWindow(self.config_obj, self.reader_obj)
+        self.preferences_window.show()
 
     def protocol_type_single(self):
         log.f()
@@ -599,6 +599,20 @@ class CMJ_UI(QMainWindow):
 
     def athlete_combobox_change(self, value):
         self.last_run_athlete = value
+
+    def on_video_checkbox_checkbox_changed(self, value):
+
+        if value != 0:
+            camera_index = self.config_obj.get_config('camera1')
+            if camera_index != None and camera_index > -1:
+                self.video1 = jtv.JT_Video()
+                self.video1.display_video = False       # turns off writing the video to the screen
+                self.video1.save_frames = True          # turns on recording of a video
+                self.video1.camera_index = camera_index
+                log.debug(f"video1 configured for index: {camera_index}")
+
+        else:
+            self.video1.quit()
 
     def start_recording(self):
         log.f()
@@ -781,20 +795,23 @@ class CMJ_UI(QMainWindow):
                 protocol_filename = self.protocol_obj.get_protocol_by_name((self.protocol_name_selected))
                 self.config_obj.set_config("last_athlete", self.last_run_athlete)
 
-                trial = jtt.JT_Trial(self.last_run_athlete, self.protocol_filename)
-                trial.attach_results_df(self.results_df)
+                self.trial = jtt.JT_Trial(self.last_run_athlete, self.protocol_filename)
+                self.trial.attach_results_df(self.results_df)
 
-                #add videos
-#                trial.attach_video()
+                # add videos
+                if self.video1 != None:
+                    self.trial.attach_video(self.video1)
 
-                #add images
-#                trial.attach_image()
+                # add images
+#                self.trial.attach_image()
 
-                trial_dict = trial.save_trial(path_app)
+                # save run/videos/images to disk
+                trial_dict = self.trial.save_trial(path_app)
 
+                #save trail structural information to disk
                 filename = 'all_athletes.json'
                 tm = jttm.JT_JsonTrialManager(path_db, filename)
-                tm.write_trial_dict(self, trial_dict)
+                tm.write_trial_dict(self, self.trial_dict)
 
                 self.saved = True
                 self.save_button.setEnabled(False)
@@ -844,6 +861,7 @@ if __name__ == "__main__":
 
     app = QApplication(sys.argv)
     window = CMJ_UI()
+    window.adjustSize()
     window.show()
 
     # update clock initially which also starts timer for it
