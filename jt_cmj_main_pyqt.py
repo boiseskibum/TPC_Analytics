@@ -317,13 +317,11 @@ class CMJ_UI(QMainWindow):
         str = str + f"  \n"
         self.help_str = str
 
-#### Main SCreen ######################################################
+#### Main Screen ######################################################
 
-        main_widget = QWidget()
-        self.setCentralWidget(main_widget)
-
-        self.grid_layout = QGridLayout()
-        main_widget.setLayout(self.grid_layout)
+        central_widget = QWidget(self)
+        self.setCentralWidget(central_widget)
+        self.grid_layout = QGridLayout(central_widget)
 
         # Add Icon - Load the PNG image using PIL
         w = 75
@@ -467,6 +465,7 @@ class CMJ_UI(QMainWindow):
         self.timer.timeout.connect(self.update_fields)
         self.timer.start()
 
+
     def check_serial_port(self):
 
         my_return = self.jt_reader.configure_serial_port(self.serial_port_name, self.baud_rate)
@@ -487,8 +486,8 @@ class CMJ_UI(QMainWindow):
             return False
 
     def preferences_screen(self):
-
-        self.preferences_window = jtpref.JT_PreferencesWindow(self.config_obj, self.reader_obj)
+        print("made it to preferences window")
+        self.preferences_window = jtpref.JT_PreferencesWindow(self.config_obj, self.jt_reader)
         self.preferences_window.show()
 
     def protocol_type_single(self):

@@ -20,16 +20,18 @@ def convert_to_int(value):
         return integer_value
     except ValueError:
         return -1
-class JT_PreferencesWindow(QWidget):
+class JT_PreferencesWindow(QMainWindow):
     def __init__(self, jt_config_obj, jt_serial_reader):
         super().__init__()
+
+        central_widget = QWidget(self)
+        self.setCentralWidget(central_widget)
+        layout = QGridLayout(central_widget)
 
         self.reader_obj = jt_serial_reader
         self.config_obj = jt_config_obj
 
         self.serial_port_name = self.config_obj.get_config("last_port")
-        # if self.serial_port_name == None:
-        #     self.serial_port_name = ""
 
         self.text_widget = None # this is done here so that with serial combo box the thing doesn't error out when updating status bar
 
@@ -43,9 +45,6 @@ class JT_PreferencesWindow(QWidget):
         self.camera1 = -1
         self.camera2 = -1
         self.ignore_combox_change = False
-
-        layout = QGridLayout()
-        self.setLayout(layout)
 
         # Row 1: Refresh Serial Ports button and ComboBox to select the serial port
         trow = 0
@@ -123,12 +122,12 @@ class JT_PreferencesWindow(QWidget):
         cam1_index = self.config_obj.get_config("camera1")
         cam2_index = self.config_obj.get_config("camera2")
 
-        if cam1_index > -1:
+        if cam1_index and cam1_index > -1:
             self.camera1_combobox.setCurrentIndex(cam1_index + 1)
         else:
             self.video1.camera_offline()
 
-        if cam2_index > -1:
+        if cam2_index and cam2_index > -1:
             self.camera2_combobox.setCurrentIndex(cam2_index + 1)
         else:
             self.video2.camera_offline()
@@ -304,10 +303,11 @@ if __name__ == '__main__':
 
             self.setWindowTitle("Main Window")
 
-            layout = QVBoxLayout()
             central_widget = QWidget()
-            central_widget.setLayout(layout)
             self.setCentralWidget(central_widget)
+            layout = QVBoxLayout(central_widget)
+#            central_widget.setLayout(layout)
+
 
             preferences_button = QPushButton("Open Preferences")
             preferences_button.clicked.connect(self.open_preferences)

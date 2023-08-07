@@ -131,6 +131,9 @@ class SerialDataReader(threading.Thread):
         if self.serial_port == None:
             return False, line
 
+        if self.serial_port == None:
+            return False, "Serial Port NOT configured"
+
         line = "n/a"
         log.f(f"Validate data from port: {self.port_name}")
         try:
