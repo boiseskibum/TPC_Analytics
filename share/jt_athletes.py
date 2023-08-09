@@ -27,8 +27,12 @@ class JT_athletes:
         if len(self.df) < 1:
             self.get_athletes()
 
-        filtered_df = self.df[self.df["athletes_name"] == athlete_name]
-        injured = filtered_df["injured"].values[0]
+        try:
+            filtered_df = self.df[self.df["athletes_name"] == athlete_name]
+            injured = filtered_df["injured"].values[0]
+        except:
+            log.error(f'could not find: {athlete_name} in get_injured_side call')
+            injured =""
         return injured
 
     # this is used for the length of leg in the ISO test
@@ -36,9 +40,13 @@ class JT_athletes:
         if len(self.df) < 1:
             self.get_athletes()
 
-        filtered_df = self.df[self.df["athletes_name"] == athlete_name]
-        injured = filtered_df["shank_length"].values[0]
-        return injured
+        try:
+            filtered_df = self.df[self.df["athletes_name"] == athlete_name]
+            value = filtered_df["shank_length"].values[0]
+        except:
+            log.error(f'could not find: {athlete_name} in get_shank_length call')
+            value = ""
+        return value
 
 
 #### Main ##########################################################

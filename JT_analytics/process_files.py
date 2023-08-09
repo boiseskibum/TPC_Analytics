@@ -35,18 +35,18 @@ print(f"")
 # setup path variables for base and misc
 path_app = path_base + 'Force Plate Testing/'
 path_data = path_app + 'data/'
+path_db = path_app + 'db/'
 path_results = path_app + 'results/'
 path_log = path_app + 'log/'
 path_temp = path_app + 'temp/'
 path_temp2 = path_app + 'temp2/'
-path_graphs = path_app + 'graphs/'
 path_config = path_app + 'config/'
 
 # Check if the directory already exists
-if not os.path.exists(path_graphs):
+if not os.path.exists(path_db):
     # Create the directory if it doesn't exist
-    os.makedirs(path_graphs)
-    print(f'Directory created: {path_graphs}')
+    os.makedirs(path_db)
+    print(f'Directory created: {path_db}')
 
 
 #logging configuration - the default level if not set is DEBUG
@@ -80,7 +80,7 @@ try:
     # create the athletes Object
     athletes_obj = jta.JT_athletes(athletes_list_filename)  # get list of valid athletes from CSV file
 except:
-    log.critical(f"could not find athletes file to open {athletes_list_filename}.   Exiting program")
+    log.critical(f"could not find athletes file to open: {athletes_list_filename}.   Exiting program")
     sys.exit(1)
 
 do_work = True
@@ -89,20 +89,20 @@ do_work = True
 #### delete given athlete from output tiles
 def delete_athlete(protocol, athlete):
 
-    my_csv_filename = path_app + protocol + '_data.csv'
+    my_csv_filename = path_db + protocol + '_data.csv'
     if os.path.exists(my_csv_filename):
 
         # Read the DataFrame from CSV
-        df = pd.read_csv('data.csv')
+        df = pd.read_csv(my_csv_filename)
 
-        # Filter out rows with Athlete="Steve Taylor"
-        df_filtered = df[df['Athlete'] != athlete]
+        # Filter out rows with athlete_name="Steve Taylor"
+        df_filtered = df[df['athlete_name'] != athlete]
 
         # Reset the index
         df_filtered = df_filtered.reset_index(drop=True)
 
         # Save the filtered DataFrame to a new CSV file
-        df_filtered.to_csv('filtered_data.csv', index=False)
+        df_filtered.to_csv(my_csv_filename, index=False)
 
     else:
         pass
@@ -122,11 +122,12 @@ def log_results(my_dict, protocol):
     if protocol == 'debug_log':
         my_csv_filename = path_log + protocol + '_data.csv'
     else:
-        my_csv_filename = path_app + protocol + '_data.csv'
+        my_csv_filename = path_db + protocol + '_data.csv'
 
     #log.msg(f'Results for {protocol}: number of rows {len(my_list)} written to file: {my_csv_filename}')
 
     # append if file exists,  if not then create it
+    log.debug(f'SAVING RESULTS to file: {my_csv_filename}')
     if os.path.exists(my_csv_filename):
         # append results
         df.to_csv(my_csv_filename, mode='a', header=not os.path.isfile(my_csv_filename), index=True)
@@ -185,7 +186,7 @@ def process_athlete( athlete ):
     path = path_data + athlete + '/*.csv'
     file_list = glob.glob(path)
     file_list = [os.path.normpath(file_path) for file_path in file_list]   # line added so windows doesn't put a backslash in.
-
+    log.debug(f'PROCESSING all files for: {athlete}')
     file_list.sort(key=os.path.getmtime)
     #log.debug(f'filelist: {file_list}')
 
@@ -213,53 +214,57 @@ def process_athlete( athlete ):
 
 ##### process a specific filen ####################################################
 # valid protocols are filename starting with cmj or sl_
+# this returns a dictionary containing any files created while running.  Mostly likely Graphs
+
 def process_single_file( filename, debug = False):
-
-    # check if path-data is in filename,
-    if path_data not in filename and debug == True:
-        filename= path_data + filename
-        log.debug(f'Debug on: and making sure filename is complete:   {filename} ')
-
-    if not os.path.exists(filename):
-        log.critical(f"process_single_file, file does not exist{filename}")
-        return
 
     #get just filename and parse the components:
     short_filename = os.path.splitext(os.path.basename(filename))[0]
     tokens = short_filename.split('_')
 
+    # get dates and directories
     try:
         protocol = tokens[0]
         athlete = tokens[1]
         date_string = tokens[2]
         time_string = tokens[3]
 
+        # check if path-data is in filename,
+        if path_data not in filename:
+            filename = path_data + '/' + athlete + '/' + filename
+            log.debug(f'Debug on: and making sure filename is complete:   {filename} ')
+
+        if not os.path.exists(filename):
+            log.critical(f"process_single_file, file does not exist: {filename}")
+            return
+
         # Parse the date string into a datetime object
-        date_object = datetime.strptime(date_string, "%Y%m%d")
+        date_object = datetime.strptime(date_string, "%Y-%m-%d")
         # Convert the datetime object to the desired format
-        date_str = date_object.strftime("%Y-%m-%d")
+        long_date_str = date_object.strftime("%Y-%m-%d")
 
         # Parse the time string to a datetime object
-        time_obj = datetime.strptime(time_string, "%H%M%S")
+        time_obj = datetime.strptime(time_string, "%H-%M-%S")
         # Format the datetime object to a string with the desired format
-        time_str = time_obj.strftime("%H:%M:%S")
-        timestamp_str = date_str + " " + time_str
+        time_str = time_obj.strftime("%H-%M-%S")
+        timestamp_str = long_date_str + " " + time_str
     except:
-        log.info(f"File name didn't mean specification (protocol_username_date_time) so ignoring: {short_filename}")
+        log.info(f"File name didn't meet specification (protocol_username_date_time) so ignoring: {short_filename}")
         return False
 
     injured = athletes_obj.get_injured_side(athlete)
 
 
-    path_athlete_graph = path_graphs + athlete + '/' + date_str + '/'
+    path_athlete_graph = path_results + athlete + '/' + long_date_str + '/'
     # Check if the directory already exists
     if not os.path.exists(path_athlete_graph):
         # Create the directory if it doesn't exist
         os.makedirs(path_athlete_graph)
         log.debug(f'Directory created: {path_athlete_graph}')
 
-    log.f(f'File:  {filename}, {timestamp_str}, {date_str}')
+    log.f(f'File:  {filename}, {timestamp_str}, {long_date_str}')
 
+    ##### Process the File #####
     #debug code to create debug_log_data.csv
     log_dict = {}
     log_dict['status'] = 'success'
@@ -267,21 +272,22 @@ def process_single_file( filename, debug = False):
     log_dict['protocol'] = protocol
     log_dict['short_filename'] = short_filename
     log_dict["timestamp_str"] = timestamp_str
-    log_dict["date_str"] = date_str
+    log_dict["date_str"] = long_date_str
     log_dict['filename'] = filename
 
     #set up my_dict to pass variables to the csv file
     my_dict = {}
+    return_dict = {}
 
     # turn this flag to False to just provide list of all files to be processed
-
     if(do_work == True):
 
         try:
             standard_dict = {}
+            standard_dict['original_filename'] = short_filename + '.csv'
             standard_dict['athlete_name'] = athlete
             standard_dict["col_timestamp_str"] = timestamp_str
-            standard_dict["date_str"] = date_str
+            standard_dict["date_str"] = long_date_str
 
             # read in csv file to be processed
             df = pd.read_csv(filename)
@@ -294,24 +300,27 @@ def process_single_file( filename, debug = False):
                 leg = protocol_obj.get_leg_by_protocol(protocol)
                 shank_length = athletes_obj.get_shank_length(athlete)
 
-                my_dict = p_JTSext.process_iso_knee_ext(df, leg, shank_length, short_filename, path_athlete_graph, athlete, date_str)
+                my_dict = p_JTSext.process_iso_knee_ext(df, leg, shank_length, short_filename, path_athlete_graph, athlete, long_date_str)
                 my_dict.update(standard_dict)
 
                 if debug:
                     log_debug_results(my_dict)
                 else:
-                    log_results(my_dict, protocol)
+                    # NOTE::::   for left and right protocols the values are all put into the same file, hence L and R are dropped
+                    log_results(my_dict, "JTSext")
+                    return_dict = {key: value for key, value in my_dict.items() if "#GRAPH_" in key}
 
             elif protocol == "JTDcmj":
 
                 # Process the cmj file
-                my_dict = p_JTDcmj.process_JTDcmj_df(df, injured, short_filename, path_athlete_graph, athlete, date_str)
+                my_dict = p_JTDcmj.process_JTDcmj_df(df, injured, short_filename, path_athlete_graph, athlete, long_date_str)
                 my_dict.update(standard_dict)
 
                 if debug:
                     log_debug_results(my_dict)
                 else:
                     log_results(my_dict, protocol)
+                    return_dict = {key: value for key, value in my_dict.items() if "GRAPH_" in key}
 
             else:
                 log.error(f'FILE: {filename} no such protocol: {protocol}')
@@ -322,11 +331,10 @@ def process_single_file( filename, debug = False):
 
             log_dict = {}
             #debug_log - write what information we can to even though there was an error processing the file
-            short_filename = os.path.splitext(os.path.basename(filename))[0]
             log_dict['status'] = 'error'
             log_dict['athlete'] = athlete
             log_dict['protocol'] = protocol
-            log_dict['short_filename'] = short_filename
+            log_dict['short_filename'] = short_filename + '.csv'
             log_dict['filename'] = filename
 
             log_results(log_dict, 'debug_log')
@@ -339,7 +347,7 @@ def process_single_file( filename, debug = False):
     #debug code to create debug_log_data.csv
     log_results(log_dict, 'debug_log')
 
-    return True
+    return return_dict
 
 
 #####################################################################################
@@ -347,14 +355,16 @@ def process_single_file( filename, debug = False):
 #####################################################################################
 if __name__ == "__main__":
 
-    # log.set_logging_level("WARNING")
-    # log.set_logging_level("INFO")
+#    log.set_logging_level("WARNING")
+#    log.set_logging_level("INFO")
     log.set_logging_level("DEBUG")
 
     do_work = True   # this is global that can be set to false and it doesn't actually do the processing
 
-    process_all_athletes()#
-    process_athlete("Mickey")
+#    process_all_athletes()
+#    process_athlete("Mickey")
+#    process_athlete("Avery McBride")
 
     #process_single_file('Mickey/JTSextL_Mickey_20230627_201411.csv', True)   #True is for debug mode
     #process_single_file('Mickey/JTDcmj_Mickey_20230708_224659.csv', True)   #True is for debug mode
+    process_single_file('Avery McBride/JTSextR_Avery McBride_20230717_164704.csv', False)   #True is for debug mode

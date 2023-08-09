@@ -95,6 +95,7 @@ import jt_trial as jtt
 import jt_trial_manager as jttm
 import jt_video as jtv
 import jt_preferences as jtpref
+import process_files as  jtpf
 
 # Testing data
 # if set to >= 0 it utilizes test data instead of data from serial line
@@ -784,7 +785,7 @@ class CMJ_UI(QMainWindow):
 
             if self.output_file_dir == None:
 
-                #if not output directory defined make them go define one
+                # if not output directory defined make them go define one
                 value = jtd.JT_Dialog(parent=self, title="Error", msg="No output directory defined, go to Settings tab and define one",
                                        type="ok")  # this is custom dialog class created above
                 return(False)
@@ -794,7 +795,8 @@ class CMJ_UI(QMainWindow):
                 protocol_filename = self.protocol_obj.get_protocol_by_name((self.protocol_name_selected))
                 self.config_obj.set_config("last_athlete", self.last_run_athlete)
 
-                self.trial = jtt.JT_Trial(self.last_run_athlete, self.protocol_filename)
+                # Dreate Trial which will allow dataframe, videos and images to be saved
+                self.trial = jtt.JT_Trial(self.last_run_athlete, protocol_filename)
                 self.trial.attach_results_df(self.results_df)
 
                 # add videos
@@ -806,11 +808,20 @@ class CMJ_UI(QMainWindow):
 
                 # save run/videos/images to disk
                 trial_dict = self.trial.save_trial(path_app)
+                filename = path_data + '/' + self.last_run_athlete + '/' + trial_dict['original_filename']
+
+                # process the file  - this creates the summary data and there is also some graphs that are produced
+                return_dict = jtpf.process_single_file(filename)
+                print(f'type of return dict is: {type(return_dict)}')
+                if(return_dict != None):
+                    trial_dict.update(return_dict)
+                else:
+                    log.error(f'No Dictionary returned from process_single_file while processing: {filename}')
 
                 #save trail structural information to disk
                 filename = 'all_athletes.json'
                 tm = jttm.JT_JsonTrialManager(path_db, filename)
-                tm.write_trial_dict(self, self.trial_dict)
+                tm.write_trial_dict(trial_dict)
 
                 self.saved = True
                 self.save_button.setEnabled(False)

@@ -40,7 +40,7 @@ def asym_index(i_r, i_l, injured, col_name):
     return results_dict
 
 ##### process a cmj dataframe, must include which leg is injured ('Right', or 'Left')
-def process_JTDcmj_df(df, injured, short_filename, path_athlete, athlete, date):
+def process_JTDcmj_df(df, injured, short_filename, graph_athlete_graph, athlete, date):
     log.f()
 
     # rename columns so they are easier to deal with AND does abvolute value columns
@@ -89,7 +89,7 @@ def process_JTDcmj_df(df, injured, short_filename, path_athlete, athlete, date):
     # plt.plot(force_norm_r,'g.-', linewidth=1)
 
     # plt.figure()
-    # title = athlete + ' CMJ ' + date + ' ' + short_filename
+    # title = athlete + ' CMJ ' + date
     # plt.title(title, fontdict={'fontweight':'bold', 'fontsize': 12})
     # plt.plot(force_norm_r, linestyle = '-', label = 'Right', color=colors_seismic[2], linewidth = 1)
     # plt.plot(force_norm_l, linestyle = '-', label = 'Left', color=colors_icefire[4], linewidth = 1)
@@ -97,7 +97,7 @@ def process_JTDcmj_df(df, injured, short_filename, path_athlete, athlete, date):
     # plt.ylabel('Force')
     # plt.legend()
 
-    # graph_name = path_athlete + short_filename
+    # graph_name = graph_athlete_graph + short_filename
     # log.debug(f"graph_name: {graph_name}")
 
     # plt.savefig(graph_name,
@@ -118,7 +118,7 @@ def process_JTDcmj_df(df, injured, short_filename, path_athlete, athlete, date):
 
     # create graph and have it stored permanently to file
     fig = plt.figure()
-    title = athlete + ' CMJ ' + date + ' ' + short_filename
+    title = athlete + ' CMJ ' + date
     plt.title(title, fontdict={'fontweight': 'bold', 'fontsize': 12})
     plt.plot(cmj_arr_l, linestyle='-', label='Left', color=colors_seismic[2], linewidth=1)
     plt.plot(cmj_arr_r, linestyle='-', label='Right', color=colors_icefire[4], linewidth=1)
@@ -126,14 +126,16 @@ def process_JTDcmj_df(df, injured, short_filename, path_athlete, athlete, date):
     plt.ylabel('Force')
     plt.legend()
 
-    graph_name = path_athlete + short_filename
-    log.debug(f"graph_name: {graph_name}")
+    graph_filename = graph_athlete_graph + short_filename
+    log.debug(f"graph_filename: {graph_filename}")
 
-    plt.savefig(graph_name,
+    plt.savefig(graph_filename,
                 transparent=False,
                 facecolor='white', dpi=300,
                 bbox_inches="tight")
     plt.close(fig)
+
+    results_dict['#GRAPH_1'] = graph_filename
 
     # log.debug(f' L: {results_dict_l} R: {results_dict_r}')
     results_dict.update(results_dict_l)
@@ -142,27 +144,21 @@ def process_JTDcmj_df(df, injured, short_filename, path_athlete, athlete, date):
     # force asymmetry calcs
     r = asym_index(results_dict['force_right'], results_dict['force_left'], injured, 'force_asymmetry_index')
     results_dict.update(r)
-    r = asym_index(results_dict['unloading_force_right'], results_dict['unloading_force_left'], injured,
-                   'unloading_force_asymmetry_index')
+    r = asym_index(results_dict['unloading_force_right'], results_dict['unloading_force_left'], injured, 'unloading_force_asymmetry_index')
     results_dict.update(r)
-    r = asym_index(results_dict['braking_force_right'], results_dict['braking_force_left'], injured,
-                   'braking_force_asymmetry_index')
+    r = asym_index(results_dict['braking_force_right'], results_dict['braking_force_left'], injured, 'braking_force_asymmetry_index')
     results_dict.update(r)
-    r = asym_index(results_dict['concentric_force_right'], results_dict['concentric_force_left'], injured,
-                   'concentric_force_asymmetry_index')
+    r = asym_index(results_dict['concentric_force_right'], results_dict['concentric_force_left'], injured, 'concentric_force_asymmetry_index')
     results_dict.update(r)
 
     # impulse asymmetry calcs
     r = asym_index(results_dict['impulse_right'], results_dict['impulse_left'], injured, 'impulse_asymmetry_index')
     results_dict.update(r)
-    r = asym_index(results_dict['unloading_impulse_right'], results_dict['unloading_impulse_left'], injured,
-                   'unloading_impulse_asymmetry_index')
+    r = asym_index(results_dict['unloading_impulse_right'], results_dict['unloading_impulse_left'], injured, 'unloading_impulse_asymmetry_index')
     results_dict.update(r)
-    r = asym_index(results_dict['braking_impulse_right'], results_dict['braking_impulse_left'], injured,
-                   'braking_impulse_asymmetry_index')
+    r = asym_index(results_dict['braking_impulse_right'], results_dict['braking_impulse_left'], injured, 'braking_impulse_asymmetry_index')
     results_dict.update(r)
-    r = asym_index(results_dict['concentric_impulse_right'], results_dict['concentric_impulse_left'], injured,
-                   'concentric_impulse_asymmetry_index')
+    r = asym_index(results_dict['concentric_impulse_right'], results_dict['concentric_impulse_left'], injured, 'concentric_impulse_asymmetry_index')
     results_dict.update(r)
 
     return results_dict

@@ -4,10 +4,17 @@
 import pandas as pd
 import json
 import os
+import jt_util as util
+
+# logging configuration - the default level if not set is DEBUG
+log = util.jt_logging()
 
 class JT_JsonTrialManager:
     def __init__(self, path, filename):
         self.path = path
+        #if path doesn't exist create it
+        if len(path) > 0 and not os.path.exists(path):
+            os.makedirs(path)
         self.filename = filename    #filename to hold the json strings
         self.file_path = path + filename
         print(f"JsonTrialManager results stored in: {self.file_path}")
@@ -17,13 +24,17 @@ class JT_JsonTrialManager:
             json.dump(trial_dict, file)
             file.write('\n')
 
+        log.debug(f"Trial Manager - writing trial to {self.file_path}")
         self.backup_trial(trial_dict)
 
     def read_to_dataframe(self):
         data = []
-        with open(self.file_path, 'r') as file:
-            for line in file:
-                data.append(self._extract_keys(line.strip()))
+        try:
+            with open(self.file_path, 'r') as file:
+                for line in file:
+                    data.append(self._extract_keys(line.strip()))
+        except:
+            log.error(f"Failed to write the backup json file: {backup_file_path}")
 
         df = pd.DataFrame(data)
         # Drop duplicates based on the 'original_filename' key and keep the last occurrence
@@ -31,17 +42,21 @@ class JT_JsonTrialManager:
         return df
 
     def backup_trial(self, trial_dict):
-        backup_directory = os.path.join(os.path.dirname(self.file_path), 'json_backup')
-        # if not os.path.exists(backup_directory):
-        #     os.makedirs(backup_directory)
-        backup_file_path = os.path.join(backup_directory, trial_dict['original_filename'] + '.json')
+        backup_directory = self.path + 'json_backup/'
+        if not os.path.exists(backup_directory):
+            os.makedirs(backup_directory)
+        json_filename = os.path.splitext( trial_dict['original_filename'] )[0]
+        backup_file_path = backup_directory + json_filename + '.json'
 
         print(f'backup_file_path: {backup_file_path}')
         if os.path.exists(backup_file_path):
-            print(f'{backup_file_path} already exists. Overwriting...')
+            log.debug(f'{backup_file_path} already exists. Overwriting...')
 
-        with open(backup_file_path, 'w') as file:
-            json.dump(trial_dict, file)
+        try:
+            with open(backup_file_path, 'w') as file:
+                json.dump(trial_dict, file)
+        except:
+            log.error(f"Failed to write the backup json file: {backup_file_path}")
 
     def _extract_keys(self, json_str):
         data = json.loads(json_str)
@@ -52,7 +67,7 @@ class JT_JsonTrialManager:
             'date': data.get('date', ''),
             'timestamp': data.get('timestamp', ''),
             'original_json': json_str
-    }
+        }
 # Example usage:
 if __name__ == "__main__":
     file_path = 'trials.json'

@@ -19,8 +19,8 @@ class JT_Trial:
     def __init__(self, athlete, protocol):
         self.athlete = athlete
         self.protocol = protocol
-        self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.date = datetime.now().strftime("%Y%m%d")
+        self.timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        self.date = datetime.now().strftime("%Y-%m-%d")
         self.long_date = datetime.now().strftime("%Y-%m-%d")
         self.orginal_filename = ""
 
@@ -60,10 +60,10 @@ class JT_Trial:
 
         ###### data CSV saving
         #create path
-        path_athlete = path_app + "/data/" + self.athlete + "/"
+        path_athlete = path_app + "data/" + self.athlete + "/"
 
         #create filename
-        self.orginal_filename = f"{self.protocol}_{self.athlete}_{self.timestamp}.csv"
+        self.original_filename = f"{self.protocol}_{self.athlete}_{self.timestamp}.csv"
 
         log.debug(f'path_athlete: {path_athlete}')
 
@@ -73,17 +73,17 @@ class JT_Trial:
             os.makedirs(path_athlete)
             log.debug(f'Directory created: {path_athlete}')
 
-        self.trial_dict['original_filename'] = self.orginal_filename
+        self.trial_dict['original_filename'] = self.original_filename
         self.trial_dict['athlete'] = self.athlete
         self.trial_dict['protocol'] = self.protocol
         self.trial_dict['date'] = self.date
         self.trial_dict['timestamp'] = self.timestamp
 
-        path_filename = path_athlete + self.orginal_filename
+        path_filename = path_athlete + self.original_filename
 
         try:
             self.results_df.to_csv(path_filename, index=True)
-            log.debug(f"saved file: {path_filename}")
+            log.debug(f"Trial: appending to file: {path_filename}")
             self.trial_dict['results_csv'] = path_filename
         except:
             log.error(f"failed to save results_df: {path_filename}")
@@ -99,7 +99,7 @@ class JT_Trial:
         ###### Videos and images/graphs or stored in the results directory ######
 
         # save videos in results directory
-        for key, value in self.videos.items():
+        for key, value in self.jt_videos.items():
             filename = f"{self.protocol}_{self.athlete}_{self.timestamp}_{key}.mp4"
             path_filename = path_results + filename
             try:

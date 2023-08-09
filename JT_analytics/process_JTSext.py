@@ -70,9 +70,21 @@ def process_iso_knee_ext(df, leg, shank_length, short_filename, path_athlete_gra
     plt.xlabel('Time')
     plt.ylabel('Torque(Nm)')
     plt.legend()
-    plt.show()
+
+    graph_filename = path_athlete_graph + short_filename + '.png'
+    log.debug(f"graph_filename: {graph_filename}")
+
+    plt.savefig(graph_filename,
+                transparent=False,
+                facecolor='white', dpi=300,
+                bbox_inches="tight")
+
+#    plt.show()
+    plt.close(fig)
 
     results_dict = iso_knee_ext_calc(torque, elapsed_time, start_torque, leg)
+
+    results_dict['#GRAPH_1'] = graph_filename
 
     return results_dict
 
