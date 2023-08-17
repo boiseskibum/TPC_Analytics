@@ -137,7 +137,7 @@ def process_JTDcmj_df(df, injured, short_filename, graph_athlete_graph, athlete,
                 bbox_inches="tight")
     plt.close(fig)
 
-    results_dict['#GRAPH_1'] = graph_filename
+    results_dict['GRAPH_1'] = graph_filename
 
     # log.debug(f' L: {results_dict_l} R: {results_dict_r}')
     results_dict.update(results_dict_l)
@@ -202,8 +202,6 @@ def process_sl_cmj_df(df):
     return results_dict
 
 ##### cmj_calc() - does all calculations for a cmj
-
-
 def cmj_calc(trial, mass, elapsed_time):
     log.f("** CMJ calc")
 
@@ -253,7 +251,7 @@ def cmj_calc(trial, mass, elapsed_time):
     # Calculating Acceleration using F=ma
     acceleration2 = cmj_arr / mass
     # Debug plot to show show acceleration
-    global g_single_file_debug  # should go at bottom and graph all curves
+    g_single_file_debug = False # should go at bottom and graph all curves
     if (g_single_file_debug == True):
         #  Graph impulse and delta_velocity
         plt.figure()
@@ -305,6 +303,7 @@ def cmj_calc(trial, mass, elapsed_time):
 
     # Debug plot to show show impulse and delta_velocity
     # global g_single_file_debug
+    g_single_file_debug = False
     if (g_single_file_debug == True):
         #  Graph impulse and delta_velocity
         plt.figure()

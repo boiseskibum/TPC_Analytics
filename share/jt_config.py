@@ -43,7 +43,7 @@ if __name__ == "__main__":
     file_path = 'config_testing.csv'  # Replace with the actual path to your CSV file
 
     # Create an instance of the DataProcessor
-    config_obj = JT_config(file_path)
+    config_obj = JT_Config(file_path)
 
     print( f"test1: should be nothing/fail: {config_obj.get_config('abc')}")
     print( f"test2: stores a value: {config_obj.set_config('abc', 'abc_value1')}")

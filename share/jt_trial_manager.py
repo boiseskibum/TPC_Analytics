@@ -59,7 +59,7 @@ class JT_JsonTrialManager:
                     for line in file:
                         data.append(self._extract_keys(line.strip()))
             except:
-                log.error(f"Failed to write the backup json file: {backup_file_path}")
+                log.error(f"Failed to load_all_trials from: {self.file_path}")
 
             self.df = pd.DataFrame(data)
 
@@ -97,12 +97,12 @@ class JT_JsonTrialManager:
         for key, value in data.items():
 
             # get graphs associated with this trial
-            if key.startswith("#GRAPH"):
+            if key.startswith("GRAPH"):
                 print(f"Key: {key}, Value: {value}")
                 td.attach_graph(key, value)
 
             # get videos associated with this trial
-            if key.startswith("#VIDEO"):
+            if key.startswith("VIDEO"):
                 print(f"Key: {key}, Value: {value}")
                 td.attach_video(key, value)
 

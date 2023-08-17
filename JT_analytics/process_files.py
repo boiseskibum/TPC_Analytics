@@ -30,7 +30,7 @@ import process_JTDcmj as p_JTDcmj
 
 #set base and application path
 path_base = util.jt_path_base()   # this figures out right base path for Colab, MacOS, and Windows
-print(f"")
+
 
 # setup path variables for base and misc
 path_app = path_base + 'Force Plate Testing/'
@@ -41,6 +41,8 @@ path_log = path_app + 'log/'
 path_temp = path_app + 'temp/'
 path_temp2 = path_app + 'temp2/'
 path_config = path_app + 'config/'
+
+print(f"path_app: {path_app}")
 
 # Check if the directory already exists
 if not os.path.exists(path_db):
@@ -54,10 +56,8 @@ log = util.jt_logging()
 
 log.msg(f'INFO - Valid logging levels are: {util.logging_levels}')
 log.set_logging_level("WARNING")   # this will show errors but not files actually processed
-#log.set_logging_level("INFO")   # this will show each file processed
 
-
-# Save log file to the directory specified
+# Save log file to the directory specifie
 #log.set_log_file(path_log, 'cmj_')
 
 log.msg(f"path_base: {path_base}")
@@ -234,7 +234,7 @@ def process_single_file( filename, debug=False):
 
         # check if path-data is in filename,
         if path_data not in filename:
-            filename = path_data + '/' + athlete + '/' + filename
+            filename = path_data + athlete + '/' + filename
             log.debug(f'Debug on: and making sure filename is complete:   {filename} ')
 
         if not os.path.exists(filename):
@@ -258,12 +258,12 @@ def process_single_file( filename, debug=False):
     injured = athletes_obj.get_injured_side(athlete)
 
 
-    path_athlete_graph = path_results + athlete + '/' + long_date_str + '/'
+    path_athlete_results = path_results + athlete + '/' + long_date_str + '/'
     # Check if the directory already exists
-    if not os.path.exists(path_athlete_graph):
+    if not os.path.exists(path_athlete_results):
         # Create the directory if it doesn't exist
-        os.makedirs(path_athlete_graph)
-        log.debug(f'Directory created: {path_athlete_graph}')
+        os.makedirs(path_athlete_results)
+        log.debug(f'Directory created: {path_athlete_results}')
 
     log.f(f'File:  {filename}, {timestamp_str}, {long_date_str}')
 
@@ -303,7 +303,7 @@ def process_single_file( filename, debug=False):
                 leg = protocol_obj.get_leg_by_protocol(protocol)
                 shank_length = athletes_obj.get_shank_length(athlete)
 
-                my_dict = p_JTSext.process_iso_knee_ext(df, leg, shank_length, short_filename, path_athlete_graph, athlete, long_date_str)
+                my_dict = p_JTSext.process_iso_knee_ext(df, leg, shank_length, short_filename, path_athlete_results, athlete, long_date_str)
                 my_dict.update(standard_dict)
 
                 if debug:
@@ -311,12 +311,12 @@ def process_single_file( filename, debug=False):
                 else:
                     # NOTE::::   for left and right protocols the values are all put into the same file, hence L and R are dropped
                     log_results(my_dict, "JTSext")
-                    return_dict = {key: value for key, value in my_dict.items() if "#GRAPH_" in key}
+                    return_dict = {key: value for key, value in my_dict.items() if "GRAPH_" in key}
 
             elif protocol == "JTDcmj":
 
                 # Process the cmj file
-                my_dict = p_JTDcmj.process_JTDcmj_df(df, injured, short_filename, path_athlete_graph, athlete, long_date_str)
+                my_dict = p_JTDcmj.process_JTDcmj_df(df, injured, short_filename, path_athlete_results, athlete, long_date_str)
                 my_dict.update(standard_dict)
 
                 if debug:
@@ -371,4 +371,5 @@ if __name__ == "__main__":
     #process_single_file('Mickey/JTSextL_Mickey_20230627_201411.csv', True)   #True is for debug mode
     #process_single_file('Mickey/JTDcmj_Mickey_20230708_224659.csv', True)   #True is for debug mode
 #    process_single_file('Avery McBride/JTSextR_Avery McBride_20230717_164704.csv', False)   #True is for debug mode
+    process_single_file('JTDcmj_huey_2023-08-17_00-46-31.csv', False)   #True is for debug mode
 

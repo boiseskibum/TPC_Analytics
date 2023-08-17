@@ -84,7 +84,7 @@ def process_iso_knee_ext(df, leg, shank_length, short_filename, path_athlete_gra
 
     results_dict = iso_knee_ext_calc(torque, elapsed_time, start_torque, leg)
 
-    results_dict['#GRAPH_1'] = graph_filename
+    results_dict['GRAPH_1'] = graph_filename
 
     return results_dict
 

@@ -109,6 +109,9 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
     def load_tree(self):
         df = self.trial_mgr_obj.load_all_trials()
 
+        if len(df) < 1:
+            return
+
         unique_athletes = df['athlete'].unique()
         for athlete in unique_athletes:
             athlete_item = QTreeWidgetItem([athlete])
@@ -143,8 +146,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
                     trial_item.setData(0, Qt.ItemDataRole.UserRole, original_filename)
 
     def item_clicked(self, item, column):
-        #print(f"item {item}, column: {col
-        # umn}")
+
         if item.childCount() == 0:
             parent_path = ""
             current_item = item
@@ -179,13 +181,16 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         # add graphic to screen
         if len(trial.graph_images) > 0:
             key, image_path = next(iter(trial.graph_images.items()))
-            pixmap = QPixmap(image_path)
-            label_size = self.label_graphic.size()
-            w = label_size.width()
-            h = label_size.height()
-            scaled_pixmap = pixmap.scaled(w, h, Qt.AspectRatioMode.KeepAspectRatio)
 
-            self.label_graphic.setPixmap(scaled_pixmap)
+            try:
+                pixmap = QPixmap(image_path)
+                label_size = self.label_graphic.size()
+                w = label_size.width()
+                h = label_size.height()
+                scaled_pixmap = pixmap.scaled(w, h, Qt.AspectRatioMode.KeepAspectRatio)
+                self.label_graphic.setPixmap(scaled_pixmap)
+            except:
+                log.error(f"Failed to scale pixmap for: {image_path}")
 
         # add videos to screen
 

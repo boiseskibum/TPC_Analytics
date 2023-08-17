@@ -104,6 +104,7 @@ trial_mgr_filename = 'all_athletes.json'
 
 #configuration file name, holds last port #, and anothr other state information
 app_config_file = path_config + "jt_cmj_main_config.json"
+athletes_list_file = path_config + "athletes.csv"
 
 #protocol configs holds all the infor about single, double, name and actual protocol used
 protocol_config_file = path_config + "jt_protocol_config.csv"
@@ -196,6 +197,8 @@ class CMJ_UI(QMainWindow):
         self.trial = None
         self.analytics_ui = None
         self.trial_display = None
+        self.video_on = False
+
         ##### serial port setup #####
 
         # get my customized serial object
@@ -262,12 +265,10 @@ class CMJ_UI(QMainWindow):
         self.saved = True  #flag so that the user can be asked if they want to save the previous set of data before recording new data
 
         ##### Athletes #####
-        # get list of valid athletes, last athlete, output_file_dir
-        self.athletes_list_filename = self.config_obj.get_config(my_platform + "-athletes_list_filename_key")
 
         try:
             # create the athletes Object
-            self.athletes_obj = jta.JT_athletes(self.athletes_list_filename) # get list of valid athletes from CSV file
+            self.athletes_obj = jta.JT_athletes(athletes_list_file) # get list of valid athletes from CSV file
             self.athletes = self.athletes_obj.get_athletes()
         except:
             value = jtd.JT_Dialog(parent=self, title="Athletes List Error", msg="Go to Settings tab and set the location for the athletes list", type="ok") # this is custom dialog class created above
@@ -606,6 +607,7 @@ class CMJ_UI(QMainWindow):
     def on_video_checkbox_checkbox_changed(self, value):
 
         if value != 0:
+            self.video_on = True
             camera_index = self.config_obj.get_config('camera1')
             if camera_index != None and camera_index > -1:
                 self.video1 = jtv.JT_Video()
@@ -616,6 +618,7 @@ class CMJ_UI(QMainWindow):
 
         else:
             self.video1.quit()
+            self.video_on = False
 
     def start_recording(self):
         log.f()
@@ -670,6 +673,9 @@ class CMJ_UI(QMainWindow):
         # if in testing mode them skip actually getting data and allow the stop button to read it from a file
         if test_data_file == None:
             self.jt_reader.start_reading()
+            #start video
+            if self.video_on == True:
+                self.video1.start()
 
         log.debug(f"Start recording, protocol: {self.protocol_name_selected}, athlete: {self.last_run_athlete}")
 
@@ -677,6 +683,8 @@ class CMJ_UI(QMainWindow):
         log.f()
 
         self.is_recording = False
+        if self.video_on == True:
+            self.video1.stop()
 
         #button enabled/disabled
         self.buttons_stopped()
@@ -823,10 +831,10 @@ class CMJ_UI(QMainWindow):
 
                 # add videos
                 if self.video1 != None:
-                    self.trial.attach_video('#VIDEO_1', self.video1)
+                    self.trial.attach_video('VIDEO_1', self.video1)
 
                 if self.video2 != None:
-                    self.trial.attach_video('#VIDEO_2', self.video2)
+                    self.trial.attach_video('VIDEO_2', self.video2)
 
                 # save to disk (run/videos/images)
                 trial_dict = self.trial.save_trial(path_app)
