@@ -106,7 +106,9 @@ def process_JTDcmj_df(df, injured, short_filename, graph_athlete_graph, athlete,
     #             bbox_inches="tight")
 
     ##### Calling cmj calculation functions for both legs as well as left and right
-    results_dict = cmj_calc(force_norm, mass)
+    elapsed_time = df['elapsed_time_sec'].to_list()
+
+    results_dict = cmj_calc(force_norm, mass, elapsed_time)
 
     results_dict_l = cmj_sl_calc(force_norm_l, "left", m_l)
     cmj_arr_l = results_dict_l.get('cmj_arr')
@@ -199,13 +201,10 @@ def process_sl_cmj_df(df):
 
     return results_dict
 
-
-"""# cmj_calc() CMJ"""
-
 ##### cmj_calc() - does all calculations for a cmj
 
 
-def cmj_calc(trial, mass):
+def cmj_calc(trial, mass, elapsed_time):
     log.f("** CMJ calc")
 
     force = np.array(trial)
@@ -217,7 +216,6 @@ def cmj_calc(trial, mass):
     # log.debug(f"time: {time}")
 
     # ******************************* Indexing Key Points in the Jump******************************
-
     # Onset of Jump
     start_jump = np.where((force[0:] > 20) | (force[0:] < -20))  # if want to use one function, need to perform mass / 2
     #log.debug(f'start_jump: {start_jump}')
@@ -540,6 +538,17 @@ def cmj_calc(trial, mass):
     results_dict['unloading_time'] = unloading_time
     results_dict['braking_time'] = braking_time
     results_dict['concentric_time'] = concentric_time
+
+    # add in elapsed time for the key indexes
+    results_dict['jump_onset_moment_time'] = elapsed_time[jump_onset_moment_index]
+    results_dict['takeoff_moment_time'] = elapsed_time[takeoff_moment_index]
+    results_dict['unloading_end_time'] = elapsed_time[unloading_end_index]
+    results_dict['braking_end_time'] = elapsed_time[braking_end_index]
+
+    results_dict['velocity_min_time'] = elapsed_time[velocity_min_index]
+    results_dict['velocity_zero_time'] = elapsed_time[velocity_zero_index]
+    results_dict['velocity_max_time'] = elapsed_time[velocity_max_index]
+    results_dict['concentric_end_time'] = elapsed_time[concentric_end_index]
 
     return results_dict
 

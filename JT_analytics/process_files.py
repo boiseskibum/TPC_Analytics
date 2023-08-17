@@ -178,6 +178,9 @@ def process_all_athletes():
     log.msg(f'Completed processing for all athletes')
 
 
+
+
+
 #### process_athlete ##############################################################
 # Iterate through the athletes then process all files for each athlete, this forces all files to be redone
 def process_athlete( athlete ):
@@ -216,7 +219,7 @@ def process_athlete( athlete ):
 # valid protocols are filename starting with cmj or sl_
 # this returns a dictionary containing any files created while running.  Mostly likely Graphs
 
-def process_single_file( filename, debug = False):
+def process_single_file( filename, debug=False):
 
     #get just filename and parse the components:
     short_filename = os.path.splitext(os.path.basename(filename))[0]
@@ -367,4 +370,5 @@ if __name__ == "__main__":
 
     #process_single_file('Mickey/JTSextL_Mickey_20230627_201411.csv', True)   #True is for debug mode
     #process_single_file('Mickey/JTDcmj_Mickey_20230708_224659.csv', True)   #True is for debug mode
-    process_single_file('Avery McBride/JTSextR_Avery McBride_20230717_164704.csv', False)   #True is for debug mode
+#    process_single_file('Avery McBride/JTSextR_Avery McBride_20230717_164704.csv', False)   #True is for debug mode
+

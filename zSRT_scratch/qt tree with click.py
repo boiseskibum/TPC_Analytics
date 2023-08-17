@@ -1,27 +1,6 @@
+from PyQt6.QtWidgets import QApplication, QMainWindow, QTreeWidget, QTreeWidgetItem
+from PyQt6.QtCore import Qt
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QTreeWidget, QTreeWidgetItem, QMenu
-
-class CustomTreeWidget(QTreeWidget):
-    def __init__(self):
-        super().__init__()
-
-    def contextMenuEvent(self, event):
-        menu = QMenu(self)
-        expand_all_action = menu.addAction("Expand All")
-        expand_all_action.triggered.connect(self.expand_all_items)
-
-        collapse_all_action = menu.addAction("Collapse All")
-        collapse_all_action.triggered.connect(self.collapse_all_items)
-
-        menu.exec(event.globalPos())
-
-    def expand_all_items(self):
-        for i in range(self.topLevelItemCount()):
-            self.topLevelItem(i).setExpanded(True)
-
-    def collapse_all_items(self):
-        for i in range(self.topLevelItemCount()):
-            self.topLevelItem(i).setExpanded(False)
 
 class TreeWidgetExample(QMainWindow):
     def __init__(self):
@@ -30,11 +9,12 @@ class TreeWidgetExample(QMainWindow):
         self.setWindowTitle("Tree Widget Example")
         self.setGeometry(100, 100, 400, 300)
 
-        self.tree_widget = CustomTreeWidget()
+        self.tree_widget = QTreeWidget()
         self.tree_widget.setHeaderLabels(["Athlete", "Date", "Trial"])
         self.setCentralWidget(self.tree_widget)
 
         self.populate_tree()
+        self.tree_widget.itemClicked.connect(self.item_clicked)
 
     def populate_tree(self):
         athletes = ["Athlete 1", "Athlete 2", "Athlete 3"]
@@ -54,6 +34,20 @@ class TreeWidgetExample(QMainWindow):
                 for trial in trials:
                     trial_item = QTreeWidgetItem([trial])
                     date_item.addChild(trial_item)
+                    trial_item.setData(0, Qt.ItemDataRole.UserRole, athlete+'/'+date+'/'+trial)
+    def item_clicked(self, item, column):
+        #print(f"item {item}, column: {col
+        # umn}")
+        if item.childCount() == 0:
+            parent_path = ""
+            current_item = item
+            while current_item.parent():
+                parent_path = f"/{current_item.text(0)}{parent_path}"
+                current_item = current_item.parent()
+            additional_data = item.data(0, Qt.ItemDataRole.UserRole)
+            print(f"Clicked: {item.text(0)}, Parent Path: {parent_path}, additional data: {additional_data}")
+
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

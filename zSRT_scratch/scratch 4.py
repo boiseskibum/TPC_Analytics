@@ -1,54 +1,43 @@
-from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QPushButton, QWidget
+import sys
+from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget
+from PyQt6.QtGui import QPixmap, QPainter, QPen, QColor
 
-class CMJ_UI(QMainWindow):
+class ImageWidget(QWidget):
+    def __init__(self, image_path):
+        super().__init__()
+        self.image = QPixmap(image_path)
+        self.lines = []
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.drawPixmap(0, 0, self.image)
+
+        pen = QPen()
+        pen.setColor(QColor("red"))
+        pen.setWidth(2)
+        painter.setPen(pen)
+
+        for line in self.lines:
+            painter.drawLine(*line)
+
+    def add_line(self, start_x, start_y, end_x, end_y):
+        self.lines.append((start_x, start_y, end_x, end_y))
+        self.update()
+
+class ImageDisplayApp(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Main Window")
-        self.setGeometry(100, 100, 400, 300)
+        self.setWindowTitle("Image Display with Lines")
+        self.setGeometry(100, 100, 800, 600)
 
-        # Create a central widget to hold the main window's layout
-        central_widget = QWidget(self)
-        self.setCentralWidget(central_widget)
+        self.central_widget = ImageWidget("gear_icon.png")
+        self.setCentralWidget(self.central_widget)
 
-        # Create a vertical layout for the main window
-        main_layout = QVBoxLayout(central_widget)
-
-        button = QPushButton("Open Second Window", self)
-        button.clicked.connect(self.open_second_window)
-        main_layout.addWidget(button)
-
-        # Create a reference to the second window instance
-        self.second_window = None
-
-    def open_second_window(self):
-        if not self.second_window:
-            self.second_window = JT_PreferencesWindow(49, 69)
-        self.second_window.show()
-
-class JT_PreferencesWindow(QMainWindow):
-    def __init__(self, st_var1, st_var2):
-        super().__init__()
-
-        print(f"st stuff   var1: {st_var1}, var2: {st_var2}")
-
-        self.setWindowTitle("Second Window")
-        self.setGeometry(200, 200, 300, 200)
-
-        # Create a central widget to hold the second window's layout
-        central_widget = QWidget(self)
-        self.setCentralWidget(central_widget)
-
-        # Create a vertical layout for the second window
-        second_layout = QVBoxLayout(central_widget)
-
-        button = QPushButton("Close", self)
-        button.clicked.connect(self.close)
-        second_layout.addWidget(button)
+        self.central_widget.add_line(100, 100, 300, 200)  # Example line coordinates
 
 if __name__ == "__main__":
-    app = QApplication([])
-    window = CMJ_UI()
+    app = QApplication(sys.argv)
+    window = ImageDisplayApp()
     window.show()
-    app.exec()
-
+    sys.exit(app.exec())

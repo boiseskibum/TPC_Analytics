@@ -1,6 +1,6 @@
 # jt_trial.py
-# purpose - store and retrieve trial runs.  A trial conclude a dataframe with data along with one or more videos associated
-#
+# purpose - 1) store a trial run.  A trial conclude a dataframe with data along with one or more videos associated
+#           2) holds components that uniquely identify a given trial and process those rules
 # Notes:
 #  - upon creation of the object this grabs the date and timestamp for future saving operations
 #  - for saving or retrieving there is no reset of this class, use once and discard
@@ -12,17 +12,65 @@ import pandas as pd
 import jt_util as util
 import jt_video as jtv
 
+import sys
+
+sys.path.append('../JT_analytics')
+
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
 
+# purpose is to parse filenames in a consistent manner
+# the filename can and should contain the complete path to the file
+def parse_filename(file_path):
+
+    short_filename = os.path.splitext(os.path.basename(file_path))[0]
+    extension = os.path.splitext(os.path.basename(file_path))[1]
+    filename = short_filename + extension
+    directory_path = os.path.dirname(file_path)
+    tokens = short_filename.split('_')
+
+    try:
+        protocol = tokens[0]
+        athlete = tokens[1]
+        date_string = tokens[2]
+        time_string = tokens[3]
+
+        #if old school format with no hyphens then reformat the string
+        if '-' not in date_string:
+            date_object = datetime.strptime(date_string, "%Y%m%d")
+            date_string = date_object.strftime("%Y-%m-%d")
+
+        if '-' not in time_string:
+            time_obj = datetime.strptime(time_string, "%H%M%S")
+            time_string = time_obj.strftime("%H-%M-%S")
+
+        timestamp_str = date_string + "_" + time_string
+    except:
+        log.info(f"File name didn't meet specification (protocol_username_date_time) so ignoring: {short_filename}")
+        return None
+
+    my_dict = {
+        "filename": filename,
+        "short_filename": short_filename,
+        "path": directory_path,
+        "file_path": file_path,
+        "athlete": athlete,
+        "protocol": protocol,
+        "date_str": date_string,
+        "time_str": time_string,
+        "timestamp_str": timestamp_str
+    }
+
+    return my_dict
+
+##########################################################
 class JT_Trial:
     def __init__(self, athlete, protocol):
         self.athlete = athlete
         self.protocol = protocol
+        self.original_filename = ""
         self.timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.date = datetime.now().strftime("%Y-%m-%d")
-        self.long_date = datetime.now().strftime("%Y-%m-%d")
-        self.orginal_filename = ""
 
         self.results_df = pd.DataFrame()
         self.jt_videos = {}
@@ -49,9 +97,6 @@ class JT_Trial:
 
         self.graph_images[key] = image
 
-    # needs some thinking here, does it get a list of trials that it can then get a single trial for it.  Should a list of results be its own class?
-    def get_athlete(self):
-        pass
 
     # this is called when all results are to be saved
     # path app is the base of where the app lives.  It will create any necessary directories required to save
@@ -90,7 +135,7 @@ class JT_Trial:
 
         ##### Graphs/Images and Videos Saving
         # check if the results/athlete/date path exists and if not makes it
-        path_results = path_app + "/results/" + self.athlete + "/" + self.long_date + "/"
+        path_results = path_app + "/results/" + self.athlete + "/" + self.date + "/"
         if not os.path.exists(path_results):
             # Create the directory if it doesn't exist
             os.makedirs(path_results)
@@ -124,3 +169,10 @@ class JT_Trial:
                 log.error(f"FAILED to saved graph/image key: {key}: file: {path_filename}")
 
         return(self.trial_dict)
+
+
+#####################################################################################
+if __name__ == "__main__":
+
+    my_dict = parse_filename('Avery McBride/JTSextR_Avery McBride_20230717_164704.csv')
+    print(f"Results from parsing filename: {my_dict}")

@@ -9,18 +9,12 @@ from PyQt6.QtGui import QAction
 from PIL import Image, ImageTk   # used for icon
 
 # Import necessary modules
-import os
-import platform
-import glob
-import sys
-import time
+import os, platform, glob, sys, time, json
 import datetime
 from datetime import datetime
 import pandas as pd
-import json
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import seaborn as sns   # pip install seaborn
 
 # this appends to the path so that files can be found in the different sub directories
@@ -96,6 +90,7 @@ import jt_trial_manager as jttm
 import jt_video as jtv
 import jt_preferences as jtpref
 import process_files as  jtpf
+import jt_main_analytics as jtanalytics
 
 # Testing data
 # if set to >= 0 it utilizes test data instead of data from serial line
@@ -104,6 +99,8 @@ test_data_file = None
 
 
 #####File Path Setups
+
+trial_mgr_filename = 'all_athletes.json'
 
 #configuration file name, holds last port #, and anothr other state information
 app_config_file = path_config + "jt_cmj_main_config.json"
@@ -197,10 +194,11 @@ class CMJ_UI(QMainWindow):
         self.video1 = None
         self.video2 = None
         self.trial = None
-
+        self.analytics_ui = None
+        self.trial_display = None
         ##### serial port setup #####
 
-        # get my my customized serial object
+        # get my customized serial object
         self.jt_reader = jts.SerialDataReader()
 
         self.serial_ports_list = self.jt_reader.get_available_ports()
@@ -275,7 +273,12 @@ class CMJ_UI(QMainWindow):
             value = jtd.JT_Dialog(parent=self, title="Athletes List Error", msg="Go to Settings tab and set the location for the athletes list", type="ok") # this is custom dialog class created above
             self.athletes = []
 
+        #Trial Manager
+        self.trial_mgr_obj = jttm.JT_JsonTrialManager(path_db, trial_mgr_filename)
+
         self.last_run_athlete = self.config_obj.get_config("last_athlete")
+
+        self.last_original_filename = self.config_obj.get_config("last_original_filename")
 
         self.output_file_dir = self.config_obj.get_config(my_platform + "-output_file_dir")
 
@@ -420,7 +423,7 @@ class CMJ_UI(QMainWindow):
         self.stop_button.setEnabled(False)
         self.grid_layout.addWidget(self.stop_button, trow, 1)
 
-        self.data_button = QPushButton("Analytics", clicked=self.data_mgmt)
+        self.data_button = QPushButton("Analytics", clicked=self.jt_analytics)
         self.data_button.setEnabled(True)
         self.grid_layout.addWidget(self.data_button, trow, 2)
 
@@ -769,9 +772,28 @@ class CMJ_UI(QMainWindow):
                 r_force = self.get_force_lbs(right_weight, self.r_zero, self.r_mult)
                 self.r_calibration_display.setText("{:.0f}".format(r_force))
 
-    def data_mgmt(self):
-        log.debug("JAKE TAYLOR this is where we put code to be called")
-        pass
+    def jt_analytics(self):
+
+        if self.analytics_ui == None:
+            self.analytics_ui = jtanalytics.JT_Analytics_UI(parent=self)
+
+            if self.last_original_filename:
+                self.trial_mgr_obj.load_all_trials()
+
+            if self.trial_display != None:
+                self.analytics_ui.set_trial_display( self.trial_display)
+
+#            self.analytics_ui.set_video1('resources/testing/test_video.mp4')
+
+            self.analytics_ui.show()
+
+            # connect to closed event of analytics window
+            self.analytics_ui.closed.connect(self.analytics_ui_closed)
+
+    # catch closed event
+    def analytics_ui_closed(self):
+        log.debug("analytics window closed.")
+        self.analytics_ui = None
 
     ########  SAVE DATA ########
     def save_data_to_csv(self, lose_last_run=False):
@@ -801,31 +823,35 @@ class CMJ_UI(QMainWindow):
 
                 # add videos
                 if self.video1 != None:
-                    self.trial.attach_video(self.video1)
+                    self.trial.attach_video('#VIDEO_1', self.video1)
 
-                # add images
-#                self.trial.attach_image()
+                if self.video2 != None:
+                    self.trial.attach_video('#VIDEO_2', self.video2)
 
-                # save run/videos/images to disk
+                # save to disk (run/videos/images)
                 trial_dict = self.trial.save_trial(path_app)
-                filename = path_data + '/' + self.last_run_athlete + '/' + trial_dict['original_filename']
+                self.last_original_filename = trial_dict['original_filename']
+                filepath = path_data + '/' + self.last_run_athlete + '/' + self.last_original_filename
 
-                # process the file  - this creates the summary data and there is also some graphs that are produced
-                return_dict = jtpf.process_single_file(filename)
+                # process the file
+                # this creates the summary data and there is also some graphs that are produced
+                # the graph location(s) are returned in the return_dict
+                return_dict = jtpf.process_single_file(filepath)
                 print(f'type of return dict is: {type(return_dict)}')
                 if(return_dict != None):
                     trial_dict.update(return_dict)
                 else:
-                    log.error(f'No Dictionary returned from process_single_file while processing: {filename}')
+                    log.error(f'No Dictionary returned from process_single_file while processing: {filepath}')
 
-                #save trail structural information to disk
-                filename = 'all_athletes.json'
-                tm = jttm.JT_JsonTrialManager(path_db, filename)
-                tm.write_trial_dict(trial_dict)
+                self.config_obj.set_config("last_original_filename", self.last_original_filename)
+
+
+                #save trial structural information to disk
+                self.trial_display = self.trial_mgr_obj.write_trial_dict(trial_dict)
 
                 self.saved = True
                 self.save_button.setEnabled(False)
-                self.message_line(f"saved file: {filename}")
+                self.message_line(f"saved file: {self.last_original_filename}")
 
 
     #get weight (lbs or kg) using zero, multiplier, and wether or not kb or lbs
@@ -876,7 +902,8 @@ if __name__ == "__main__":
 
     # update clock initially which also starts timer for it
     window.update_fields()
-    sys.exit(app.exec())
+    result = app.exec()
+    sys.exit(result)
 
 
 

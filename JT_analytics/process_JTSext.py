@@ -97,7 +97,7 @@ def iso_knee_ext_calc(torque, elapsed_time, start_torque, leg):  # leg - "left",
     # log.debug(f"torque:{torque}")
 
     # normalizing for time
-    freq = 80
+    freq = 74
     time = np.arange(0, len(torque) / freq, 1 / freq)
     # log.debug(f"time: {time}")
 
@@ -215,5 +215,11 @@ def iso_knee_ext_calc(torque, elapsed_time, start_torque, leg):  # leg - "left",
     results_dict['early_rfd_impulse'] = peak_early_rfd_impulse
     results_dict['late_rfd_torque'] = late_rfd_torque
     results_dict['late_rfd_impulse'] = peak_late_rfd_impulse
+
+    # add in elapsed time for the key indexes
+    results_dict['onset_moment_time'] = elapsed_time[onset_moment_index]
+    results_dict['early_rfd_time'] = elapsed_time[early_rfd_index]
+    results_dict['late_rfd_time'] = elapsed_time[late_rfd_index]
+    results_dict['peak_torque_time'] = elapsed_time[peak_torque_index]
 
     return results_dict
