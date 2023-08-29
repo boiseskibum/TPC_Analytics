@@ -12,8 +12,8 @@ import pytz   # used for timezones
 import matplotlib.gridspec as gridspec
 from dateutil import parser
 #!pip install fpdf2
-from fpdf import FPDF
-from fpdf.enums import XPos, YPos
+# from fpdf import FPDF
+# from fpdf.enums import XPos, YPos
 from datetime import date
 
 

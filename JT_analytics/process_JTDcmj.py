@@ -43,7 +43,7 @@ def asym_index(i_r, i_l, injured, col_name):
 def process_JTDcmj_df(df, injured, short_filename, graph_athlete_graph, athlete, date):
     log.f()
 
-    # rename columns so they are easier to deal with AND does abvolute value columns
+    # rename columns so they are easier to deal with AND does absolute value columns
     list_right = []
     df.rename(columns={'r_force_N': 'Right'}, inplace=True)
     # log.debug(df['Right'])
@@ -60,7 +60,13 @@ def process_JTDcmj_df(df, injured, short_filename, graph_athlete_graph, athlete,
     force_total = [sum(i) for i in zip(list_right, list_left)]  # sums the 2 lists so that total force can be calculated
     # log.debug(force_total)
 
-    freq = 74  # frequency
+    elapsed_time = df['elapsed_time_sec'].to_list()
+
+    overall_time = elapsed_time[-1]
+    num_values = len(elapsed_time)
+    freq = num_values/overall_time   # calculate the frequency
+    log.debug(f"overall time: {overall_time}, num_value: {num_values}, freq: {freq}")
+
     g = 9.81  # gravity
     h = 0.3  # I don't know
 
@@ -70,11 +76,24 @@ def process_JTDcmj_df(df, injured, short_filename, graph_athlete_graph, athlete,
     ('Subject Mass  {:.3f} kg'.format(mass))
     log.debug(f"mass: {mass}")
 
+    plt.figure(figsize=(10,6))
+    title = athlete + ' force_total ' + date
+    plt.title(title, fontdict={'fontweight':'bold', 'fontsize': 12})
+    plt.plot(force_total, 'b.-', linewidth=1)
+    plt.xlabel('Time')
+    plt.ylabel('Force')
+    plt.show()
+
     # normalizing for bodyweight - See slides // subtract bodyweight and make BM = 0
     force_norm = np.subtract(force_total, mass * g)
     # log.debug(f"force_norm: {force_norm}")
-    # plt.figure(figsize=(10,6))
-    # plt.plot(force_norm, 'b.-', linewidth=1)
+    plt.figure(figsize=(10,6))
+    title = athlete + ' force_norm ' + date
+    plt.title(title, fontdict={'fontweight':'bold', 'fontsize': 12})
+    plt.plot(force_norm, 'b.-', linewidth=1)
+    plt.xlabel('Time')
+    plt.ylabel('Force')
+    plt.show()
 
     # normalizing for bodyweight - R
     force_norm_r = np.subtract(list_right, (m_r * g))
@@ -88,14 +107,17 @@ def process_JTDcmj_df(df, injured, short_filename, graph_athlete_graph, athlete,
     # plt.figure(figsize=(10,6))
     # plt.plot(force_norm_r,'g.-', linewidth=1)
 
-    # plt.figure()
-    # title = athlete + ' CMJ ' + date
-    # plt.title(title, fontdict={'fontweight':'bold', 'fontsize': 12})
-    # plt.plot(force_norm_r, linestyle = '-', label = 'Right', color=colors_seismic[2], linewidth = 1)
-    # plt.plot(force_norm_l, linestyle = '-', label = 'Left', color=colors_icefire[4], linewidth = 1)
-    # plt.xlabel('Time')
-    # plt.ylabel('Force')
-    # plt.legend()
+### SRT DEBUG GRAPH
+#    plt.figure()
+    plt.figure(figsize=(10, 6))
+    title = athlete + ' CMJ ' + date
+    plt.title(title, fontdict={'fontweight':'bold', 'fontsize': 12})
+    plt.plot(force_norm_r, linestyle = '-', label = 'Right', color=colors_seismic[2], linewidth = 1)
+    plt.plot(force_norm_l, linestyle = '-', label = 'Left', color=colors_icefire[4], linewidth = 1)
+    plt.xlabel('Time')
+    plt.ylabel('Force')
+    plt.legend()
+    plt.show()
 
     # graph_name = graph_athlete_graph + short_filename
     # log.debug(f"graph_name: {graph_name}")
@@ -106,15 +128,14 @@ def process_JTDcmj_df(df, injured, short_filename, graph_athlete_graph, athlete,
     #             bbox_inches="tight")
 
     ##### Calling cmj calculation functions for both legs as well as left and right
-    elapsed_time = df['elapsed_time_sec'].to_list()
+    results_dict = cmj_calc(force_norm, mass, elapsed_time, freq)
 
-    results_dict = cmj_calc(force_norm, mass, elapsed_time)
-
-    results_dict_l = cmj_sl_calc(force_norm_l, "left", m_l)
+    # process each the left and then the right legs
+    results_dict_l = cmj_sl_calc(force_norm_l, "left", m_l, freq)
     cmj_arr_l = results_dict_l.get('cmj_arr')
     del results_dict_l['cmj_arr']
 
-    results_dict_r = cmj_sl_calc(force_norm_r, "right", m_r)
+    results_dict_r = cmj_sl_calc(force_norm_r, "right", m_r, freq)
     cmj_arr_r = results_dict_r.get('cmj_arr')
     del results_dict_r['cmj_arr']
 
@@ -201,14 +222,14 @@ def process_sl_cmj_df(df):
 
     return results_dict
 
+####################################################
 ##### cmj_calc() - does all calculations for a cmj
-def cmj_calc(trial, mass, elapsed_time):
+def cmj_calc(trial, mass, elapsed_time, freq):
     log.f("** CMJ calc")
 
     force = np.array(trial)
     # log.debug(f"cmj force:{force}")
     # normalizing for time
-    freq = 2400
     g = 9.81  # gravity
     time = np.arange(0, len(force) / freq, 1 / freq)
     # log.debug(f"time: {time}")
@@ -329,9 +350,13 @@ def cmj_calc(trial, mass, elapsed_time):
     # ** Calculating Jump Height Through TIA (Control)****************************
 
     # Calculating time in air
-    start_land = np.where(
-        force[0:] == (np.amax(force)))  # need to create if statement so that left and right can be calculated
-    landing_moment = start_land[0][0]
+    #start_land = np.where(force[0:] == (np.amax(force)))  # need to create if statement so that left and right can be calculated
+
+    max_value = np.amax(force[takeoff_moment_index:])
+    start_land = np.where( force[takeoff_moment_index:] == max_value)[0] + takeoff_moment_index
+
+    landing_moment = start_land[0]
+    log.debug(f"  takeoff_moment_index: {takeoff_moment_index},  landing_moment_index: {landing_moment}")
     tia_ss = time[takeoff_moment_index:landing_moment]
     tia_ss_total = tia_ss[-1] - tia_ss[0]
     # log.debug(f"tia_ss_total: {tia_ss_total}")
@@ -556,12 +581,12 @@ def cmj_calc(trial, mass, elapsed_time):
 
 ##### single leg CMJ function
 
-def cmj_sl_calc(trial, leg, mass):  # leg - "left", "right"
+def cmj_sl_calc(trial, leg, mass, freq):  # leg - "left", "right"
     log.f(f"**** {leg} ")
     force_leg = np.array(trial)
 
     # normalizing for time
-    freq = 2400
+
     g = 9.81  # gravity
     time = np.arange(0, len(force_leg) / freq, 1 / freq)
     # log.debug(f"time: {time}")
@@ -608,6 +633,7 @@ def cmj_sl_calc(trial, leg, mass):  # leg - "left", "right"
     peak_impulse = impulse_arr.max()
     log.debug(f"peak_impulse: {peak_impulse}")
     global g_single_file_debug
+    g_single_file_debug = False # should go at bottom and graph all curves
     if (g_single_file_debug == True):
         # plt.figure(figsize=(10,6))
         # plt.title('force and impulse', fontdict={'fontweight':'bold', 'fontsize': 12})
