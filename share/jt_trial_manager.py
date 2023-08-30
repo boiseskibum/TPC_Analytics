@@ -22,6 +22,7 @@ class JT_JsonTrialManager:
         self.df = None      # if populated contains all trials that have been run
         print(f"JsonTrialManager results stored in: {self.file_path}")
 
+    ###############################################
     # Appends the information from one Trial to the master file containing all trials
     # for convenience this returns a jt_trial_display for future usage
     def write_trial_dict(self, trial_dict):
@@ -48,7 +49,7 @@ class JT_JsonTrialManager:
 
         return trial_display
 
-
+    ###############################################
     # Returns a list of all Trials tha have been stored
     def load_all_trials(self, force_reload=False):
 
@@ -72,6 +73,7 @@ class JT_JsonTrialManager:
 
         return self.df
 
+    ###############################################
     def get_trial_display(self, file_path, trial_text=""):
         if self.df is None:
             self.load_all_trials()
@@ -108,6 +110,7 @@ class JT_JsonTrialManager:
 
         return td
 
+    ###############################################
     # this creates back up individual files for each Trial and puts them in the backup directory.  Hopefully never utilized
     def backup_trial(self, trial_dict):
         backup_directory = self.path + 'json_backup/'
@@ -136,6 +139,9 @@ class JT_JsonTrialManager:
             'timestamp': data.get('timestamp', ''),
             'original_json': json_str
         }
+###############################################
+###############################################
+###############################################
 # Example usage:
 if __name__ == "__main__":
     file_path = 'trials.json'

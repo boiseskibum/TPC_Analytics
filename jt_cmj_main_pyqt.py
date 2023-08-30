@@ -825,7 +825,7 @@ class CMJ_UI(QMainWindow):
                 protocol_filename = self.protocol_obj.get_protocol_by_name((self.protocol_name_selected))
                 self.config_obj.set_config("last_athlete", self.last_run_athlete)
 
-                # Dreate Trial which will allow dataframe, videos and images to be saved
+                # Create Trial which will allow dataframe, videos and images to be saved
                 self.trial = jtt.JT_Trial(self.last_run_athlete, protocol_filename)
                 self.trial.attach_results_df(self.results_df)
 
@@ -845,7 +845,7 @@ class CMJ_UI(QMainWindow):
                 # this creates the summary data and there is also some graphs that are produced
                 # the graph location(s) are returned in the return_dict
                 return_dict = jtpf.process_single_file(filepath)
-                print(f'type of return dict is: {type(return_dict)}')
+                log.debug(f'type of return dict is: {type(return_dict)}')
                 if(return_dict != None):
                     trial_dict.update(return_dict)
                 else:

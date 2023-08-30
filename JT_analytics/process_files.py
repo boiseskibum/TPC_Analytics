@@ -64,6 +64,7 @@ log.msg(f"path_base: {path_base}")
 log.msg(f"my_username: {my_username}")
 log.msg(f"my_system: {my_platform}")
 
+###############################################
 #protocol configs holds all the infor about single, double, name and actual protocol used
 protocol_config_file = path_config + "jt_protocol_config.csv"
 protocol_obj = None
@@ -86,6 +87,7 @@ except:
 do_work = True
 
 
+###############################################
 #### delete given athlete from output tiles
 def delete_athlete(protocol, athlete):
 
@@ -107,6 +109,7 @@ def delete_athlete(protocol, athlete):
     else:
         pass
 
+###############################################
 #### log results to csv file ####
 def log_results(my_dict, protocol):
 
@@ -237,6 +240,7 @@ def process_single_file( filename, debug=False):
             filename = path_data + athlete + '/' + filename
             log.debug(f'Debug on: and making sure filename is complete:   {filename} ')
 
+        #
         if not os.path.exists(filename):
             log.critical(f"process_single_file, file does not exist: {filename}")
             return
@@ -256,7 +260,6 @@ def process_single_file( filename, debug=False):
         return False
 
     injured = athletes_obj.get_injured_side(athlete)
-
 
     path_athlete_results = path_results + athlete + '/' + long_date_str + '/'
     # Check if the directory already exists

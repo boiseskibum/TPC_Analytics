@@ -1,6 +1,6 @@
 from jt_main_analytics_designer import Ui_MainAnalyticsWindow
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QTreeWidgetItem
-from PyQt6.QtGui import QImage, QPixmap
+from PyQt6.QtGui import QImage, QPixmap, QPainter, QPen, QColor
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 import sys, cv2, platform
 
@@ -67,6 +67,31 @@ import jt_trial_manager as jttm
 
 trial_mgr_filename = 'all_athletes.json'
 
+######################################################################################
+# Special use QLabel class tht has a vertical line on it so that when the
+# user moves the bar left and right it moves a vertical bar to indicate where time is at
+class ImageWithLineWidget(QLabel):
+    def __init__(self, image_path, parent=None):
+        super().__init__(parent)
+        self.image = QPixmap(image_path)
+        self.line_x = 0
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.drawPixmap(self.rect(), self.image)
+
+        pen = QPen(QColor("red"))
+        pen.setWidth(2)
+        painter.setPen(pen)
+        painter.drawLine(self.line_x, 0, self.line_x, self.height())
+
+    def moveLine(self, new_x):
+        self.line_x = new_x
+        self.update()
+
+######################################################################################
+######################################################################################
+######################################################################################
 class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
     closed = pyqtSignal()
     def __init__(self, parent=None):
@@ -93,6 +118,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.current_frame = 0
         self.video1_capture = None
         self.video2_capture = None
+        self.srt_label_graphic = None
 
         #if this is launched from parent window then grab its child mgr object
         if parent != None:
@@ -101,6 +127,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             self.trial_mgr_obj = jttm.JT_JsonTrialManager(path_db, trial_mgr_filename)
 
         self.load_tree()
+
     def closeEvent(self, event):
         self.closed.emit()
 
@@ -183,12 +210,21 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             key, image_path = next(iter(trial.graph_images.items()))
 
             try:
+
+                # change out the existing QLabel button for my custom Lable Widget
+                if self.srt_label_graphic is None:
+                    self.srt_label_graphic = ImageWithLineWidget(image_path)
+                    self.verticalLayout.replaceWidget(self.label_graphic, self.srt_label_graphic)
+                    self.label_graphic.deleteLater()  # Remove the label from the layout and delete it
+
                 pixmap = QPixmap(image_path)
-                label_size = self.label_graphic.size()
+                label_size = self.srt_label_graphic.size()
                 w = label_size.width()
                 h = label_size.height()
+                w = 400  # the width is the driving factor, needs to be figured out somehow better than this hack
+                h = 200
                 scaled_pixmap = pixmap.scaled(w, h, Qt.AspectRatioMode.KeepAspectRatio)
-                self.label_graphic.setPixmap(scaled_pixmap)
+                self.srt_label_graphic.setPixmap(scaled_pixmap)
             except:
                 log.error(f"Failed to scale pixmap for: {image_path}")
 
@@ -300,6 +336,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             q_pixmap = QPixmap.fromImage(image)
             self.label_video1.setPixmap(q_pixmap)
 
+            self.srt_label_graphic.moveline()
 
             #update the slider position
             self.videoSlider.valueChanged.disconnect(self.slider_value_changed) # disconnect the signla
@@ -312,14 +349,14 @@ if __name__ == "__main__":
 
     window = JT_Analytics_UI()
 
-    path_zTest = path_data + 'zTest/'
+    path_zTest = path_app + 'zTest/'
     fp = path_zTest + 'JTSextL_Mickey_2023-08-08_17-36-53.csv'
     fp_video1 = path_zTest + 'test_video1.mp4'
     fp_graph = path_zTest + 'graph1.png'
 
     trial = jttd.JT_TrialDisplay(fp)
     trial.attach_video("video1", fp_video1)
-    trial.attach_graph("video1", fp_graph)
+    trial.attach_graph("graph1", fp_graph)
 
     window.set_trial_display(trial)
 #    window.load_tree()

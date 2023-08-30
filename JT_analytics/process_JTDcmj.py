@@ -187,41 +187,6 @@ def process_JTDcmj_df(df, injured, short_filename, graph_athlete_graph, athlete,
     return results_dict
 
 
-"""# process_sl_cmj_df()"""
-
-
-##### process a single leg cmj file  NOTE: single leg
-
-def process_sl_cmj_df(df):
-    log.f()
-    force_total = []
-    df.rename(columns={'Fz': 'force'}, inplace=True)
-
-    # log.debug('force')
-    # log.debug(df['force'])
-    df['force'] = df['force'].abs()  # absolute value of 'Right'
-    force_total = df['force'].to_list()  # adds data to form a list
-    # log.debug(force_total)
-
-    freq = 2400  # frequency
-    g = 9.81  # gravity
-    h = 0.3  # I don't know
-
-    mass = (np.mean(force_total[0:int(freq * 2)]) / g)
-    ('Subject Mass  {:.3f} kg'.format(mass))
-    mass = abs(float(mass))  # calculation of bodyweight total
-    ('Subject Mass  {:.3f} kg'.format(mass))
-    log.debug(f"mass: {mass}")
-
-    # normalizing for bodyweight - See slides // subtract bodyweight and make BM = 0
-    force_norm = np.subtract(force_total, mass * g)
-    log.debug(f"force_norm: {force_norm}")
-
-    ##### Calling CMJ function for both legs as well as left and right
-    results_dict = cmj_calc(force_norm, mass)
-
-    return results_dict
-
 ####################################################
 ##### cmj_calc() - does all calculations for a cmj
 def cmj_calc(trial, mass, elapsed_time, freq):
@@ -576,11 +541,8 @@ def cmj_calc(trial, mass, elapsed_time, freq):
 
     return results_dict
 
-
-"""# cmj_sl_calc() - CMJ Single leg"""
-
+###############################################
 ##### single leg CMJ function
-
 def cmj_sl_calc(trial, leg, mass, freq):  # leg - "left", "right"
     log.f(f"**** {leg} ")
     force_leg = np.array(trial)

@@ -18,7 +18,20 @@ log = util.jt_logging()
 
 #object that accepts full file path to the trial.csv file
 class JT_TrialDisplay:
-    def __init__(self, filepath, trial_name=""):
+    def __init__(self, filepath=None, trial_name=""):
+
+        if filepath is not None:
+            self.attach_filepath(filepath, trial_name)
+
+        self.jt_videos = {}
+        self.graph_images = {}
+
+        self.trial_dict = {}
+
+    def attach_filepath(self, filepath, trial_name=""):
+
+        if not os.path.exists(filepath):
+            log.error(f"In JT_TrialDisplay init, the filepath: {filepath} does not exist")
 
         file_dict = jtt.parse_filename(filepath)
         self.athlete = file_dict["athlete"]
@@ -29,17 +42,19 @@ class JT_TrialDisplay:
         self.filepath = filepath
         self.trial_name = trial_name
 
-        self.jt_videos = {}
-        self.graph_images = {}
-
-        self.trial_dict = {}
-
     def attach_video(self, key, filepath):
+
+        if not os.path.exists(filepath):
+            log.error(f"In JT_TrialDisplay attach_video, the filepath: {filepath} does not exist")
+
         self.jt_videos[key] = filepath
 
     # images keys should be: main, ????
     # images value shoiuld be: BytesIO imported from io
     def attach_graph(self, key, filepath):
+        if not os.path.exists(filepath):
+            log.error(f"In JT_TrialDisplay attach_video, the filepath: {filepath} does not exist")
+
         self.graph_images[key] = filepath
 
 
