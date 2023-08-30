@@ -288,19 +288,19 @@ class CMJ_UI(QMainWindow):
         self.collecting_data = False
 
         # Calibration - attempt to read prior calibration information
-        self.l_zero = self.config_obj.get_config("l_zero")
+        self.l_zero = self.config_obj.get_config("l_zero__" + self.serial_port_name)
         if self.l_zero == None:
             self.l_zero = -1
 
-        self.r_zero = self.config_obj.get_config("r_zero")
+        self.r_zero = self.config_obj.get_config("r_zero__" + self.serial_port_name)
         if self.r_zero == None:
             self.r_zero = -1
 
-        self.l_mult = self.config_obj.get_config("l_mult")
+        self.l_mult = self.config_obj.get_config("l_mult__" + self.serial_port_name)
         if self.l_mult == None:
             self.l_mult = -1
 
-        self.r_mult = self.config_obj.get_config("r_mult")
+        self.r_mult = self.config_obj.get_config("r_mult__" + self.serial_port_name)
         if self.r_mult == None:
             self.r_mult = -1
 
@@ -556,8 +556,8 @@ class CMJ_UI(QMainWindow):
                 weighted_reading = self.get_average_reading('s1_clean', entered_weight, self.calibration_measurement_count)
                 self.l_zero = zero_reading
                 self.l_mult = (weighted_reading - zero_reading)/entered_weight
-                self.config_obj.set_config("l_zero", self.l_zero)
-                self.config_obj.set_config("l_mult", self.l_mult)
+                self.config_obj.set_config("l_zero__" + self.serial_port_name, self.l_zero)
+                self.config_obj.set_config("l_mult__" + self.serial_port_name, self.l_mult)
                 self.l_calibration = True
 
                 log.debug(f"Left Calibration - entered_weight: {entered_weight}, zero: {zero_reading}, weighted: {weighted_reading}, multiplier: {self.l_mult}")
@@ -588,8 +588,8 @@ class CMJ_UI(QMainWindow):
                 weighted_reading = self.get_average_reading('s2_clean', entered_weight, self.calibration_measurement_count)
                 self.r_zero = zero_reading
                 self.r_mult = (weighted_reading - zero_reading)/entered_weight
-                self.config_obj.set_config("r_zero", self.r_zero)
-                self.config_obj.set_config("r_mult", self.r_mult)
+                self.config_obj.set_config("r_zero__" + self.serial_port_name, self.r_zero)
+                self.config_obj.set_config("r_mult__" + self.serial_port_name, self.r_mult)
                 self.r_calibration = True
 
                 log.debug(f"Right Calibration - entered_weight: {entered_weight}, zero: {zero_reading}, weighted: {weighted_reading}, multiplier: {self.r_mult}")
