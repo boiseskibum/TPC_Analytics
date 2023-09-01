@@ -32,19 +32,19 @@ def parse_filename(file_path):
     try:
         protocol = tokens[0]
         athlete = tokens[1]
-        date_string = tokens[2]
-        time_string = tokens[3]
+        date_str = tokens[2]
+        time_str = tokens[3]
 
         #if old school format with no hyphens then reformat the string
-        if '-' not in date_string:
-            date_object = datetime.strptime(date_string, "%Y%m%d")
-            date_string = date_object.strftime("%Y-%m-%d")
+        if '-' not in date_str:
+            date_object = datetime.strptime(date_str, "%Y%m%d")
+            date_str = date_object.strftime("%Y-%m-%d")
 
-        if '-' not in time_string:
-            time_obj = datetime.strptime(time_string, "%H%M%S")
-            time_string = time_obj.strftime("%H-%M-%S")
+        if '-' not in time_str:
+            time_obj = datetime.strptime(time_str, "%H%M%S")
+            time_str = time_obj.strftime("%H-%M-%S")
 
-        timestamp_str = date_string + "_" + time_string
+        timestamp_str = date_str + "_" + time_str
     except:
         log.info(f"File name didn't meet specification (protocol_username_date_time) so ignoring: {short_filename}")
         return None
@@ -56,8 +56,8 @@ def parse_filename(file_path):
         "file_path": file_path,
         "athlete": athlete,
         "protocol": protocol,
-        "date_str": date_string,
-        "time_str": time_string,
+        "date_str": date_str,
+        "time_str": time_str,
         "timestamp_str": timestamp_str
     }
 
@@ -65,18 +65,69 @@ def parse_filename(file_path):
 
 ##########################################################
 class JT_Trial:
-    def __init__(self, athlete, protocol):
-        self.athlete = athlete
-        self.protocol = protocol
-        self.original_filename = ""
-        self.timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        self.date = datetime.now().strftime("%Y-%m-%d")
+    def __init__(self):
+        self.original_filename = None   #this is the filename with no path included
+        self.file_path = None           #full path and filename
+        self.timestamp_str = None
+        self.date_now = None            #used for saving files
 
         self.results_df = pd.DataFrame()
         self.jt_videos = {}
         self.graph_images = {}
-
         self.trial_dict = {}
+
+    def parse_filename(self, file_path):
+        self.short_filename = os.path.splitext(os.path.basename(file_path))[0]
+        self.extension = os.path.splitext(os.path.basename(file_path))[1]
+        filename = self.short_filename + self.extension
+        directory_path = os.path.dirname(file_path)
+
+        tokens = self.short_filename.split('_')
+        try:
+            self.protocol = tokens[0]
+            self.athlete = tokens[1]
+            self.date_str = tokens[2]
+            self.time_str = tokens[3]
+
+            #if old school format with no hyphens then reformat the string
+            if '-' not in self.date_str:
+                date_object = datetime.strptime(self.date_str, "%Y%m%d")
+                self.date_str = date_object.strftime("%Y-%m-%d")
+
+            if '-' not in self.time_str:
+                time_obj = datetime.strptime(self.time_str, "%H%M%S")
+                time_str = time_obj.strftime("%H-%M-%S")
+
+            self.timestamp_str = self.date_str + "_" + self.time_str
+
+        except:
+            log.info(f"File name didn't meet specification (protocol_username_date_time) so ignoring: {self.short_filename}")
+            return None
+
+    #Set =object up to save data for an athlete and Protocol
+    def setup_for_save(self, athlete, protocol):
+        self.athlete = athlete
+        self.protocol = protocol
+
+    #basedup upon a filepath get components used for a given trial
+    # the file_path should be completely provided.  HOWEVER if not then path_data
+    # can be added for it to attempt to find the file.   this is done for debugging purposes
+    # so as the path changes from one OS to another OS.  It isn't used elsewhere
+
+    def retrieve_trial(self, file_path, path_data = ""):
+
+        self.file_path = file_path
+        self.parse_filename(file_path)
+
+        # check if path-data is in file_path.   if blanks is provided it will not execute
+        if len(path_data) > 0 and path_data not in file_path:
+            self.file_path = path_data + self.athlete + '/' + self.file_path
+            log.debug(f'Debug on: and making sure file_path is complete:   {self.file_path} ')
+
+        # check if file_path exists
+        if not os.path.exists(self.file_path):
+            log.critical(f"process_single_file, file does not exist: {self.file_path}")
+            return
 
     def attach_results_df(self, results_df):
         self.results_df = results_df
@@ -103,12 +154,16 @@ class JT_Trial:
     # .csv's, graphs, videos. Directories such as data/athlete, results/athlete/date, etc.
     def save_trial(self, path_app):
 
+        #save timestamp_str to right now
+        self.timestamp_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        self.date_now = datetime.now().strftime("%Y-%m-%d")
+
         ###### data CSV saving
         #create path
         path_athlete = path_app + "data/" + self.athlete + "/"
 
         #create filename
-        self.original_filename = f"{self.protocol}_{self.athlete}_{self.timestamp}.csv"
+        self.original_filename = f"{self.protocol}_{self.athlete}_{self.timestamp_str}.csv"
 
         log.debug(f'path_athlete: {path_athlete}')
 
@@ -121,8 +176,8 @@ class JT_Trial:
         self.trial_dict['original_filename'] = self.original_filename
         self.trial_dict['athlete'] = self.athlete
         self.trial_dict['protocol'] = self.protocol
-        self.trial_dict['date'] = self.date
-        self.trial_dict['timestamp'] = self.timestamp
+        self.trial_dict['date'] = self.date_now
+        self.trial_dict['timestamp'] = self.timestamp_str
 
         path_filename = path_athlete + self.original_filename
 
@@ -135,7 +190,7 @@ class JT_Trial:
 
         ##### Graphs/Images and Videos Saving
         # check if the results/athlete/date path exists and if not makes it
-        path_results = path_app + "/results/" + self.athlete + "/" + self.date + "/"
+        path_results = path_app + "/results/" + self.athlete + "/" + self.date_now + "/"
         if not os.path.exists(path_results):
             # Create the directory if it doesn't exist
             os.makedirs(path_results)
@@ -145,7 +200,7 @@ class JT_Trial:
 
         # save videos in results directory
         for key, value in self.jt_videos.items():
-            filename = f"{self.protocol}_{self.athlete}_{self.timestamp}_{key}.mp4"
+            filename = f"{self.protocol}_{self.athlete}_{self.timestamp_str}_{key}.mp4"
             path_filename = path_results + filename
             try:
                 value.save_video(path_filename)
@@ -157,7 +212,7 @@ class JT_Trial:
 
         # save images in results directory
         for key, value in self.graph_images.items():
-            filename = f"{self.protocol}_{self.athlete}_{self.timestamp}_{key}."
+            filename = f"{self.protocol}_{self.athlete}_{self.timestamp_str}_{key}."
             path_filename = path_results + filename
             try:
                 with open(path_filename, 'wb') as f:

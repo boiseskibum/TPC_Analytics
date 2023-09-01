@@ -826,7 +826,8 @@ class CMJ_UI(QMainWindow):
                 self.config_obj.set_config("last_athlete", self.last_run_athlete)
 
                 # Create Trial which will allow dataframe, videos and images to be saved
-                self.trial = jtt.JT_Trial(self.last_run_athlete, protocol_filename)
+                self.trial = jtt.JT_Trial()
+                self.trial.setup_for_save(self.last_run_athlete, protocol_filename )
                 self.trial.attach_results_df(self.results_df)
 
                 # add videos

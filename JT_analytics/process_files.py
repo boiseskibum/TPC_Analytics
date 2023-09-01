@@ -21,10 +21,8 @@ my_platform = platform.system()
 import jt_util as util
 import jt_athletes as jta
 import jt_protocol as jtp
+import jt_trial as jtt
 
-import process_cmj as p_cmj
-import process_dj as p_dj
-import process_sj as p_sj
 import process_JTSext as p_JTSext
 import process_JTDcmj as p_JTDcmj
 
@@ -181,9 +179,6 @@ def process_all_athletes():
     log.msg(f'Completed processing for all athletes')
 
 
-
-
-
 #### process_athlete ##############################################################
 # Iterate through the athletes then process all files for each athlete, this forces all files to be redone
 def process_athlete( athlete ):
@@ -222,64 +217,47 @@ def process_athlete( athlete ):
 # valid protocols are filename starting with cmj or sl_
 # this returns a dictionary containing any files created while running.  Mostly likely Graphs
 
-def process_single_file( filename, debug=False):
+def process_single_file( file_path, debug=False):
 
-    #get just filename and parse the components:
-    short_filename = os.path.splitext(os.path.basename(filename))[0]
-    tokens = short_filename.split('_')
+    # get trial information
+    trial = jtt.JT_Trial()
 
     # get dates and directories
     try:
-        protocol = tokens[0]
-        athlete = tokens[1]
-        date_string = tokens[2]
-        time_string = tokens[3]
+        log.f(f"file_path: {file_path}, path_data: {path_data}")
 
-        # check if path-data is in filename,
-        if path_data not in filename:
-            filename = path_data + athlete + '/' + filename
-            log.debug(f'Debug on: and making sure filename is complete:   {filename} ')
+        # get trial object which has all the details
+        trial.retrieve_trial(file_path, path_data)
 
-        #
-        if not os.path.exists(filename):
-            log.critical(f"process_single_file, file does not exist: {filename}")
-            return
-
-        # Parse the date string into a datetime object
-        date_object = datetime.strptime(date_string, "%Y-%m-%d")
-        # Convert the datetime object to the desired format
-        long_date_str = date_object.strftime("%Y-%m-%d")
-
-        # Parse the time string to a datetime object
-        time_obj = datetime.strptime(time_string, "%H-%M-%S")
-        # Format the datetime object to a string with the desired format
-        time_str = time_obj.strftime("%H-%M-%S")
-        timestamp_str = long_date_str + " " + time_str
     except:
-        log.info(f"File name didn't meet specification (protocol_username_date_time) so ignoring: {short_filename}")
+        log.info(f"File name didn't meet specification or exist (protocol_username_date_time) so ignoring: {file_path}")
         return False
 
-    injured = athletes_obj.get_injured_side(athlete)
+    injured = athletes_obj.get_injured_side(trial.athlete)
 
-    path_athlete_results = path_results + athlete + '/' + long_date_str + '/'
-    # Check if the directory already exists
+    path_athlete_results = path_results + trial.athlete + '/' + trial.date_str + '/'
+    # Check if the directory already exists for results and if not creates it
     if not os.path.exists(path_athlete_results):
         # Create the directory if it doesn't exist
         os.makedirs(path_athlete_results)
         log.debug(f'Directory created: {path_athlete_results}')
 
-    log.f(f'File:  {filename}, {timestamp_str}, {long_date_str}')
+    #update file_path in case the JT_Trial object improved it by adding the full path to it
+    file_path = trial.file_path
+
+    log.f(f'File:  {file_path}, {trial.timestamp_str}, {trial.date_str}')
 
     ##### Process the File #####
+
     #debug code to create debug_log_data.csv
     log_dict = {}
     log_dict['status'] = 'success'
-    log_dict['athlete'] = athlete
-    log_dict['protocol'] = protocol
-    log_dict['short_filename'] = short_filename
-    log_dict["timestamp_str"] = timestamp_str
-    log_dict["date_str"] = long_date_str
-    log_dict['filename'] = filename
+    log_dict['athlete'] = trial.athlete
+    log_dict['protocol'] = trial.protocol
+    log_dict['short_filename'] = trial.short_filename
+    log_dict["timestamp_str"] = trial.timestamp_str
+    log_dict["date_str"] = trial.date_str
+    log_dict['filename'] = trial.file_path
 
     #set up my_dict to pass variables to the csv file
     my_dict = {}
@@ -290,23 +268,23 @@ def process_single_file( filename, debug=False):
 
         try:
             standard_dict = {}
-            standard_dict['original_filename'] = short_filename + '.csv'
-            standard_dict['athlete_name'] = athlete
-            standard_dict["col_timestamp_str"] = timestamp_str
-            standard_dict["date_str"] = long_date_str
+            standard_dict['original_filename'] = trial.short_filename + '.csv'
+            standard_dict['athlete_name'] = trial.athlete
+            standard_dict["col_timestamp_str"] = trial.timestamp_str
+            standard_dict["date_str"] = trial.date_str
 
             # read in csv file to be processed
-            df = pd.read_csv(filename)
+            df = pd.read_csv(file_path)
 
             # JT Single Extension, both R and L are processed the same way.  The leg is
             #included in the file as one of the columns so they are distinguished that way
-            if protocol == "JTSextR" or protocol == "JTSextL":
+            if trial.protocol == "JTSextR" or trial.protocol == "JTSextL":
 
                 # get the leg being tested.   This is different than injured which is not used here
-                leg = protocol_obj.get_leg_by_protocol(protocol)
-                shank_length = athletes_obj.get_shank_length(athlete)
+                tested_leg = protocol_obj.get_leg_by_protocol(trial.protocol)
+                shank_length = athletes_obj.get_shank_length(trial.athlete)
 
-                my_dict = p_JTSext.process_iso_knee_ext(df, leg, shank_length, short_filename, path_athlete_results, athlete, long_date_str)
+                my_dict = p_JTSext.process_iso_knee_ext(df, trial, tested_leg, shank_length, path_athlete_results)
                 my_dict.update(standard_dict)
 
                 if debug:
@@ -316,32 +294,34 @@ def process_single_file( filename, debug=False):
                     log_results(my_dict, "JTSext")
                     return_dict = {key: value for key, value in my_dict.items() if "GRAPH_" in key}
 
-            elif protocol == "JTDcmj":
+            elif trial.protocol == "JTDcmj":
 
                 # Process the cmj file
-                my_dict = p_JTDcmj.process_JTDcmj_df(df, injured, short_filename, path_athlete_results, athlete, long_date_str)
+                process_obj = p_JTDcmj.JTDcmj(df, trial, injured, path_athlete_results)
+
+                my_dict = process_obj.process()
                 my_dict.update(standard_dict)
 
                 if debug:
                     log_debug_results(my_dict)
                 else:
-                    log_results(my_dict, protocol)
+                    log_results(my_dict, trial.protocol)
                     return_dict = {key: value for key, value in my_dict.items() if "GRAPH_" in key}
 
             else:
-                log.error(f'FILE: {filename} no such protocol: {protocol}')
+                log.error(f'FILE: {file_path} no such protocol: {trial.protocol}')
                 return None
 
         except:
-            log.error(f"FAILED TO PROCESS FILE: {filename}, {protocol}, {athlete}, {injured}")
+            log.error(f"FAILED TO PROCESS FILE: {file_path}, {trial.protocol}, {trial.athlete}, {injured}")
 
             log_dict = {}
             #debug_log - write what information we can to even though there was an error processing the file
             log_dict['status'] = 'error'
-            log_dict['athlete'] = athlete
-            log_dict['protocol'] = protocol
-            log_dict['short_filename'] = short_filename + '.csv'
-            log_dict['filename'] = filename
+            log_dict['athlete'] = trial.athlete
+            log_dict['protocol'] = trial.protocol
+            log_dict['short_filename'] = trial.short_filename + '.csv'
+            log_dict['filename'] = file_path
 
             log_results(log_dict, 'debug_log')
 
