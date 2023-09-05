@@ -5,13 +5,12 @@
 import datetime
 from datetime import datetime
 import io, os
-import pandas as pd
-import jt_util as util
-import jt_video as jtv
-
-import sys
-
-import jt_trial as jtt
+if __name__ == "__main__":
+    import jt_util as util
+    import jt_trial as jtt
+else:
+    from . import jt_util as util
+    from . import jt_trial as jtt
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()

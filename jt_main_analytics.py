@@ -56,9 +56,19 @@ log.set_logging_level("WARNING")  # this will show errors but not files actually
 # setup path variables for base and misc
 path_app = path_base + 'Force Plate Testing/'
 
-import jt_trial_display as jttd
-import jt_trial_manager as jttm
-import jt_config as jtc
+# if __name__ == "__main__":
+#     import jt_util as util
+#     import jt_trial_display as jttd
+#     import jt_trial_manager as jttm
+#     import jt_config as jtc
+#
+# else:
+from share import jt_util as util
+from share import jt_trial_display as jttd
+from share import jt_trial_manager as jttm
+from share import jt_config as jtc
+
+
 
 
 trial_mgr_filename = 'all_athletes.json'

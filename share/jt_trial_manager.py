@@ -4,9 +4,12 @@
 import pandas as pd
 import json
 import os
-import jt_util as util
-
-import jt_trial_display as jttd
+if __name__ == "__main__":
+    import jt_util as util
+    import jt_trial_display as jttd
+else:
+    from . import jt_util as util
+    from . import jt_trial_display as jttd
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()

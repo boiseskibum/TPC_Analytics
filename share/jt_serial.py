@@ -7,7 +7,11 @@ import threading
 
 import tkinter as tk
 
-import jt_util as util
+#from . import jt_util as util
+if __name__ == "__main__":
+    import jt_util as util
+else:
+    from . import jt_util as util
 
 default_baud_rate = 115200
 

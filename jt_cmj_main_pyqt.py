@@ -18,9 +18,9 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 import seaborn as sns   # pip install seaborn
 
 # this appends to the path so that files can be found in the different sub directories
-sys.path.append('./share')
-sys.path.append('./JT_analytics')
-sys.path.append('./JT_capture')
+# sys.path.append('./share')
+# sys.path.append('./JT_analytics')
+# sys.path.append('./JT_capture')
 
 # Importing Colors
 colors_blue = sns.color_palette('Blues', 10)
@@ -55,7 +55,7 @@ if my_platform == "Linux":
     # required to import jt_util
     sys.path.append('/gdrive/MyDrive/Colab Notebooks')
 
-import jt_util as util
+from share import jt_util as util
 
 # set base and application path
 path_base = util.jt_path_base()  # this figures out right base path for Colab, MacOS, and Windows
@@ -80,16 +80,16 @@ if not os.path.isdir(path_app):
     print(f'ERROR path: {path_app} does not exist')
 
 # import Jakes files
-import jt_dialog as jtd
-import jt_serial as jts
-import jt_protocol as jtp
-import jt_athletes as jta
-import jt_config as jtc
-import jt_trial as jtt
-import jt_trial_manager as jttm
-import jt_video as jtv
-import jt_preferences as jtpref
-import process_files as  jtpf
+from share import jt_dialog as jtd
+from share import jt_serial as jts
+from share import jt_protocol as jtp
+from share import jt_athletes as jta
+from share import jt_config as jtc
+from share import jt_trial as jtt
+from share import jt_trial_manager as jttm
+from share import jt_video as jtv
+from share import jt_preferences as jtpref
+from share import process_files as  jtpf
 import jt_main_analytics as jtanalytics
 
 # Testing data

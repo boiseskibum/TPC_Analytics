@@ -3,12 +3,16 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVB
 from PyQt6.QtWidgets import    QPushButton, QComboBox, QTextEdit, QGroupBox, QSizePolicy
 from PyQt6.QtCore import Qt  # Import the Qt module
 
-sys.path.append('../share')
-import jt_serial as jts
-import jt_config as jtc
-import jt_util as util
-import jt_video as jtv
-import jt_dialog as jtd
+if __name__ == "__main__":
+    import jt_serial as jts
+    import jt_config as jtc
+    import jt_util as util
+    import jt_video as jtv
+else:
+    from . import jt_serial as jts
+    from . import jt_config as jtc
+    from . import jt_util as util
+    from . import jt_video as jtv
 
 log = util.jt_logging()
 

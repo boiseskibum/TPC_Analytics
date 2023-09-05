@@ -1,5 +1,8 @@
 import pandas as pd
-import jt_util as util
+if __name__ == "__main__":
+    import jt_util as util
+else:
+    from . import jt_util as util
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()

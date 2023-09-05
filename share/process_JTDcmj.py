@@ -1,5 +1,3 @@
-import sys
-sys.path.append('../share')
 
 import pandas as pd
 import numpy as np
@@ -8,7 +6,10 @@ from scipy.integrate import cumtrapz
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-import jt_util as util
+if __name__ == "__main__":
+    import jt_util as util
+else:
+    from . import jt_util as util
 
 log = util.jt_logging()
 log.set_logging_level("WARNING")   # this will show errors but not files actually processed

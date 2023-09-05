@@ -1,16 +1,10 @@
 import sys
-sys.path.append('../share')
 
 # Import necessary modules
 import os
 import platform
 import glob
-import shutil
 
-import datetime
-from datetime import datetime
-from datetime import timezone
-import pytz  # used for timezones
 import pandas as pd
 
 #retrieve username and platform information
@@ -18,14 +12,20 @@ import getpass as gt
 my_username = gt.getuser()
 my_platform = platform.system()
 
-import jt_util as util
-import jt_athletes as jta
-import jt_protocol as jtp
-import jt_trial as jtt
-import jt_config as jtc
+if __name__ == "__main__":
+    import jt_util as util
+    import jt_athletes as jta
+    import jt_protocol as jtp
+    import jt_trial as jtt
+    import jt_config as jtc
+else:
+    from . import jt_util as util
+    from . import jt_athletes as jta
+    from . import jt_protocol as jtp
+    from . import jt_trial as jtt
+    from . import jt_config as jtc
 
-import process_JTSext as p_JTSext
-import process_JTDcmj as p_JTDcmj
+from share import process_JTDcmj as p_JTDcmj, process_JTSext as p_JTSext
 
 #set base and application path
 path_base = util.jt_path_base()   # this figures out right base path for Colab, MacOS, and Windows

@@ -1,7 +1,4 @@
 
-import sys
-sys.path.append('../share')
-
 import math
 import numpy as np
 from scipy.integrate import cumtrapz
@@ -16,7 +13,10 @@ colors_icefire = sns.color_palette('icefire', 10)
 colors3 = sns.color_palette('rainbow', 5)
 colors_seismic = sns.color_palette('seismic', 10)
 
-import jt_util as util
+if __name__ == "__main__":
+    import jt_util as util
+else:
+    from . import jt_util as util
 
 log = util.jt_logging()
 log.set_logging_level("WARNING")   # this will show errors but not files actually processed
