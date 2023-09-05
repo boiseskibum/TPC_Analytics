@@ -55,15 +55,11 @@ log.set_logging_level("WARNING")  # this will show errors but not files actually
 
 # setup path variables for base and misc
 path_app = path_base + 'Force Plate Testing/'
-path_data = path_app + 'data/'
-path_results = path_app + 'results/'
-path_log = path_app + 'log/'
-#path_graphs = path_app + 'graphs/'
-path_config = path_app + 'config/'
-path_db = path_app + 'db/'
 
 import jt_trial_display as jttd
 import jt_trial_manager as jttm
+import jt_config as jtc
+
 
 trial_mgr_filename = 'all_athletes.json'
 
@@ -99,6 +95,9 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         # calls the setup methon instead of the python class created from the UI
         self.setupUi(self)
 
+        # configuration object for keys and values setup
+        self.config_obj = jtc.JT_Config(path_app)
+
         # set up callbacks
         self.pushButton_play.clicked.connect(self.play)
         self.pushButton_forward_1.clicked.connect(self.forward_1)
@@ -124,7 +123,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         if parent != None:
             self. trial_mgr_obj = parent.trial_mgr_obj
         else:
-            self.trial_mgr_obj = jttm.JT_JsonTrialManager(path_db, trial_mgr_filename)
+            self.trial_mgr_obj = jttm.JT_JsonTrialManager(self.config_obj)
 
         self.load_tree()
 

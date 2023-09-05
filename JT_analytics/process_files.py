@@ -22,13 +22,13 @@ import jt_util as util
 import jt_athletes as jta
 import jt_protocol as jtp
 import jt_trial as jtt
+import jt_config as jtc
 
 import process_JTSext as p_JTSext
 import process_JTDcmj as p_JTDcmj
 
 #set base and application path
 path_base = util.jt_path_base()   # this figures out right base path for Colab, MacOS, and Windows
-
 
 # setup path variables for base and misc
 path_app = path_base + 'Force Plate Testing/'
@@ -40,14 +40,12 @@ path_temp = path_app + 'temp/'
 path_temp2 = path_app + 'temp2/'
 path_config = path_app + 'config/'
 
-print(f"path_app: {path_app}")
 
 # Check if the directory already exists
 if not os.path.exists(path_db):
     # Create the directory if it doesn't exist
     os.makedirs(path_db)
     print(f'Directory created: {path_db}')
-
 
 #logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
@@ -63,23 +61,25 @@ log.msg(f"my_username: {my_username}")
 log.msg(f"my_system: {my_platform}")
 
 ###############################################
+# configuration object for keys and values setup
+config_obj = jtc.JT_Config(path_app)
+
 #protocol configs holds all the infor about single, double, name and actual protocol used
-protocol_config_file = path_config + "jt_protocol_config.csv"
 protocol_obj = None
 try:
-    protocol_obj = jtp.JT_protocol(protocol_config_file)
+    protocol_obj = jtp.JT_protocol(config_obj)
 except:
-    log.critical(f"could not find protocol config file to open: {protocol_config_file}.   Exiting program" )
+    log.critical(f"could not find protocol config file to open: {config_obj.protocol_file_path}.   Exiting program" )
     sys.exit(1)
 
 ##### Get Athletes #####
-athletes_list_filename = path_config + 'athletes.csv'
+
 athletes_obj = None
 try:
     # create the athletes Object
-    athletes_obj = jta.JT_athletes(athletes_list_filename)  # get list of valid athletes from CSV file
+    athletes_obj = jta.JT_athletes(config_obj)  # get list of valid athletes from CSV file
 except:
-    log.critical(f"could not find athletes file to open: {athletes_list_filename}.   Exiting program")
+    log.critical(f"could not find athletes file to open: {config_obj.athletes_file_path}.   Exiting program")
     sys.exit(1)
 
 do_work = True
@@ -218,14 +218,12 @@ def process_athlete( athlete ):
 # this returns a dictionary containing any files created while running.  Mostly likely Graphs
 
 def process_single_file( file_path, debug=False):
+    log.f(f"file_path: {file_path}, path_data: {path_data}")
 
     # get trial information
     trial = jtt.JT_Trial()
-
     # get dates and directories
     try:
-        log.f(f"file_path: {file_path}, path_data: {path_data}")
-
         # get trial object which has all the details
         trial.retrieve_trial(file_path, path_data)
 
@@ -235,6 +233,7 @@ def process_single_file( file_path, debug=False):
 
     injured = athletes_obj.get_injured_side(trial.athlete)
 
+    #create path where results go
     path_athlete_results = path_results + trial.athlete + '/' + trial.date_str + '/'
     # Check if the directory already exists for results and if not creates it
     if not os.path.exists(path_athlete_results):
@@ -274,16 +273,17 @@ def process_single_file( file_path, debug=False):
             standard_dict["date_str"] = trial.date_str
 
             # read in csv file to be processed
-            df = pd.read_csv(file_path)
+
 
             # JT Single Extension, both R and L are processed the same way.  The leg is
             #included in the file as one of the columns so they are distinguished that way
-            if trial.protocol == "JTSextR" or trial.protocol == "JTSextL":
+            if trial.protocol.startswith("JTSext"):
 
                 # get the leg being tested.   This is different than injured which is not used here
                 tested_leg = protocol_obj.get_leg_by_protocol(trial.protocol)
                 shank_length = athletes_obj.get_shank_length(trial.athlete)
 
+                df = pd.read_csv(file_path)
                 my_dict = p_JTSext.process_iso_knee_ext(df, trial, tested_leg, shank_length, path_athlete_results)
                 my_dict.update(standard_dict)
 
@@ -297,7 +297,7 @@ def process_single_file( file_path, debug=False):
             elif trial.protocol == "JTDcmj":
 
                 # Process the cmj file
-                process_obj = p_JTDcmj.JTDcmj(df, trial, injured, path_athlete_results)
+                process_obj = p_JTDcmj.JTDcmj(trial, injured, path_athlete_results)
 
                 my_dict = process_obj.process()
                 my_dict.update(standard_dict)

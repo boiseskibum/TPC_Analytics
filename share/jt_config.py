@@ -4,13 +4,30 @@
 import json
 
 class JT_Config:
-    def __init__(self, file_path):
-        self.file_path = file_path
+    def __init__(self, path_app):
+
+        # if filename with .csv sent in then we know this is just testing and don't set up everthing
+        if ".csv" in path_app:
+            self.config_file_path = path_app
+        else:
+            # setup path variable
+            self.path_data = path_app + 'data/'
+            self.path_results = path_app + 'results/'
+            self.path_log = path_app + 'log/'
+            self.path_db = path_app + 'db/'
+            self.path_config = path_app + 'config/'
+
+            # default db/tables names - can be changed but probably shouldn't be
+            # These will go into a real database someday
+            self.config_file_path = self.path_config + "jt_cmj_main_config.json"
+            self.protocol_file_path = self.path_config + "jt_protocol_config.csv"
+            self.athletes_file_path = self.path_config + "athletes.csv"
+            self.trial_mgr_filename = self.path_db + 'all_athletes.json'
 
     # get key value
     def get_config(self, my_key):
         try:
-            with open(self.file_path, "r") as f:
+            with open(self.config_file_path, "r") as f:
                 config = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             config = {}
@@ -24,13 +41,13 @@ class JT_Config:
     def set_config(self, my_key, new_key_value):
         my_return = False
         try:
-            with open(self.file_path, "r") as f:
+            with open(self.config_file_path, "r") as f:
                 config = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             config = {}
 
         config[my_key] = new_key_value
-        with open(self.file_path, "w") as f:
+        with open(self.config_file_path, "w") as f:
             json.dump(config, f)
             my_return = True
 

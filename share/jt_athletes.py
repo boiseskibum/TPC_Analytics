@@ -5,8 +5,17 @@ import jt_util as util
 log = util.jt_logging()
 
 class JT_athletes:
-    def __init__(self, file_path):
-        self.file_path = file_path
+    def __init__(self, config_obj, testing_file_path=""):
+
+        if config_obj is not None:
+            self.config_obj = config_obj
+
+            self.file_path = self.config_obj.athletes_file_path
+        elif len(testing_file_path) > 0:
+            self.file_path = testing_file_path
+        else:
+            log.critical(f'JT_Athletes creation')
+
         self.df = pd.DataFrame()
 
     #always reopen list and get it whenever called
@@ -57,7 +66,7 @@ if __name__ == "__main__":
     file_path = 'athletes_testing.csv'  # Replace with the actual path to your CSV file
 
     # Create an instance of the DataProcessor
-    athletes_obj = JT_athletes(file_path)
+    athletes_obj = JT_athletes(None, file_path)
 
     # Get all unique types
     athletes = athletes_obj.get_athletes()

@@ -6,7 +6,7 @@
 #   name - long version displayed to the user
 #   leg - will be either left or right
 #
-
+import os
 import pandas as pd
 import jt_util as util
 
@@ -14,8 +14,26 @@ import jt_util as util
 log = util.jt_logging()
 
 class JT_protocol:
-    def __init__(self, file_path):
-        self.df = pd.read_csv(file_path)
+    def __init__(self, config_obj, testing_file_path=""):
+
+        if config_obj is not None:
+            self.config_obj = config_obj
+            self.file_path = self.config_obj.protocol_file_path
+
+        elif len(testing_file_path) > 0:
+            self.file_path = testing_file_path
+        else:
+            log.critical(f'JT_Athletes creation')
+
+        try:
+            if os.path.exists(self.file_path):
+                self.df = pd.read_csv(self.file_path)
+            else:
+                log.critical(f'JT_Athletes creation, filepath does not exist: {self.file_path}')
+
+        except:
+            log.critical(f'JT_protocol object: could not open file_path {self.file_path}')
+
         log.debug("list of athletes")
         log.debug(self.df)
 
@@ -73,7 +91,7 @@ if __name__ == "__main__":
     file_path = 'jt_protocol_config_testing.csv'  # Replace with the actual path to your CSV file
 
     # Create an instance of the DataProcessor
-    protocol_obj = JT_protocol(file_path)
+    protocol_obj = JT_protocol(None, file_path)
 
     # Get all unique types
     unique_types = protocol_obj.get_unique_types()

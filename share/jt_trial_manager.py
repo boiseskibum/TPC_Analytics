@@ -12,13 +12,16 @@ import jt_trial_display as jttd
 log = util.jt_logging()
 
 class JT_JsonTrialManager:
-    def __init__(self, path, filename):
-        self.path = path
+    def __init__(self, config_obj):
+
+        self.config_obj = config_obj
+
+        self.path = config_obj.path_db
         #if path doesn't exist create it
-        if len(path) > 0 and not os.path.exists(path):
-            os.makedirs(path)
-        self.filename = filename    #filename to hold the json strings
-        self.file_path = path + filename
+        if len(self.path) > 0 and not os.path.exists(self.path):
+            os.makedirs(self.path)
+
+        self.file_path = config_obj.trial_mgr_filename
         self.df = None      # if populated contains all trials that have been run
         print(f"JsonTrialManager results stored in: {self.file_path}")
 
@@ -147,6 +150,7 @@ if __name__ == "__main__":
     file_path = 'trials.json'
 
     json_manager = JT_JsonTrialManager("", "test_trial_manager.json")
+
 
 
     # Write some trial dictionaries to the file

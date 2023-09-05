@@ -68,16 +68,16 @@ log.set_logging_level("WARNING")  # this will show errors but not files actually
 
 # setup path variables for base and misc
 path_app = path_base + 'Force Plate Testing/'
-path_data = path_app + 'data/'
-path_results = path_app + 'results/'
-path_log = path_app + 'log/'
-#path_graphs = path_app + 'graphs/'
-path_config = path_app + 'config/'
-path_db = path_app + 'db/'
+# path_data = path_app + 'data/'
+# path_results = path_app + 'results/'
+# path_log = path_app + 'log/'
+# #path_graphs = path_app + 'graphs/'
+# path_config = path_app + 'config/'
+# path_db = path_app + 'db/'
 
 # validate that data paths exist
-if not os.path.isdir(path_data):
-    print(f'ERROR path: {path_data} does not exist')
+if not os.path.isdir(path_app):
+    print(f'ERROR path: {path_app} does not exist')
 
 # import Jakes files
 import jt_dialog as jtd
@@ -100,21 +100,18 @@ test_data_file = None
 
 #####File Path Setups
 
-trial_mgr_filename = 'all_athletes.json'
-
 #configuration file name, holds last port #, and anothr other state information
-app_config_file = path_config + "jt_cmj_main_config.json"
-athletes_list_file = path_config + "athletes.csv"
+#app_config_file = path_config + "jt_cmj_main_config.json"
+#athletes_list_file = path_config + "athletes.csv"
 
 #protocol configs holds all the infor about single, double, name and actual protocol used
-protocol_config_file = path_config + "jt_protocol_config.csv"
+#protocol_config_file = path_config + "jt_protocol_config.csv"
 
 jt_icon_path = "jt.png"    #icon for message boxes
 log.msg(f"path_base: {path_base}")
+log.msg(f"path_app: {path_app}")
 log.msg(f"my_username: {my_username}")
 log.msg(f"my_system: {my_platform}")
-log.msg(f"app_config_file: {app_config_file}")
-log.msg(f"protocol_config_file: {protocol_config_file}")
 
 ##################################################################################################
 
@@ -190,7 +187,7 @@ class CMJ_UI(QMainWindow):
 #        self.setGeometry(500, 100, 500, 700)
 
         # configuration object for keys and values setup
-        self.config_obj = jtc.JT_Config(app_config_file)
+        self.config_obj = jtc.JT_Config(path_app)
 
         self.video1 = None
         self.video2 = None
@@ -230,7 +227,7 @@ class CMJ_UI(QMainWindow):
         ##### Protocol #####
         # Get list of protocols, throw error message if unsuccessful at getting list
         try:
-            self.protocol_obj = jtp.JT_protocol(protocol_config_file)
+            self.protocol_obj = jtp.JT_protocol(self.config_obj)
             ret = self.protocol_obj.validate_data()
             if len(ret) > 0:
                 value = jtd.JT_Dialog(parent=self, title="ERROR: Protocol Config Validation",
@@ -268,14 +265,14 @@ class CMJ_UI(QMainWindow):
 
         try:
             # create the athletes Object
-            self.athletes_obj = jta.JT_athletes(athletes_list_file) # get list of valid athletes from CSV file
+            self.athletes_obj = jta.JT_athletes(self.config_obj) # get list of valid athletes from CSV file
             self.athletes = self.athletes_obj.get_athletes()
         except:
             value = jtd.JT_Dialog(parent=self, title="Athletes List Error", msg="Go to Settings tab and set the location for the athletes list", type="ok") # this is custom dialog class created above
             self.athletes = []
 
         #Trial Manager
-        self.trial_mgr_obj = jttm.JT_JsonTrialManager(path_db, trial_mgr_filename)
+        self.trial_mgr_obj = jttm.JT_JsonTrialManager(self.config_obj)
 
         self.last_run_athlete = self.config_obj.get_config("last_athlete")
 
@@ -287,20 +284,25 @@ class CMJ_UI(QMainWindow):
         self.results_df = pd.DataFrame()  # Empty DataFrame
         self.collecting_data = False
 
+        if self.serial_port_name is None:
+            temp_serial_port_name = "not_defined"
+        else:
+            temp_serial_port_name = self.serial_port_name
+
         # Calibration - attempt to read prior calibration information
-        self.l_zero = self.config_obj.get_config("l_zero__" + self.serial_port_name)
+        self.l_zero = self.config_obj.get_config("l_zero__" + temp_serial_port_name)
         if self.l_zero == None:
             self.l_zero = -1
 
-        self.r_zero = self.config_obj.get_config("r_zero__" + self.serial_port_name)
+        self.r_zero = self.config_obj.get_config("r_zero__" + temp_serial_port_name)
         if self.r_zero == None:
             self.r_zero = -1
 
-        self.l_mult = self.config_obj.get_config("l_mult__" + self.serial_port_name)
+        self.l_mult = self.config_obj.get_config("l_mult__" + temp_serial_port_name)
         if self.l_mult == None:
             self.l_mult = -1
 
-        self.r_mult = self.config_obj.get_config("r_mult__" + self.serial_port_name)
+        self.r_mult = self.config_obj.get_config("r_mult__" + temp_serial_port_name)
         if self.r_mult == None:
             self.r_mult = -1
 

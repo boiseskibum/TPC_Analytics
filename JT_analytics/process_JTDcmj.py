@@ -1,6 +1,7 @@
 import sys
 sys.path.append('../share')
 
+import pandas as pd
 import numpy as np
 from scipy.integrate import cumtrapz
 
@@ -43,9 +44,9 @@ def asym_index(i_r, i_l, injured, col_name):
 #### assymmetry index calcuation ****
 class JTDcmj:
 
-    def __init__(self, df, trial, injured, path_athlete_graph):
+    def __init__(self, trial, injured, path_athlete_graph):
 
-        self.df = df
+        self.df = None
         self.trial = trial
         self.injured = injured
         self.path_athlete_graph = path_athlete_graph
@@ -54,111 +55,144 @@ class JTDcmj:
         self.debug_graphs = False
         self.gravity = 9.81
 
-    ##### process a cmj dataframe, must include which leg is injured ('Right', or 'Left')
-    def process(self):
-        log.f()
+    def setup_data(self):
+
+        # read in the data
+        try:
+            self.df = pd.read_csv(self.trial.file_path)
+        except:
+            log.critical(f"process_single_file, file does not exist: {self.file_path}")
+            return
+
+        self.elapsed_time = self.df['elapsed_time_sec'].to_list()
+
+        overall_time = self.elapsed_time[-1]
+        num_values = len(self.elapsed_time)
+        self.freq = num_values/overall_time   # calculate the frequency
+        log.debug(f"freq: {self.freq}, overall time: {overall_time}, num_value: {num_values}")
 
         # rename columns so they are easier to deal with AND does absolute value columns
-        list_right = []
         self.df.rename(columns={'r_force_N': 'Right'}, inplace=True)
-        # log.debug(self.df['Right'])
         self.df['Right'] = self.df['Right'].abs()  # absolute value of 'Right'
         list_right = self.df['Right'].to_list()  # adds data to form a list
-        # log.debug(list_right)
 
-        list_left = []
         self.df.rename(columns={'l_force_N': 'Left'}, inplace=True)
         self.df['Left'] = self.df['Left'].abs()  # absolute value of 'Left'
         list_left = self.df['Left'].to_list()  # adds data to form a list
-        # log.debug(list_left)
 
-        force_total = [sum(i) for i in zip(list_right, list_left)]  # sums the 2 lists so that total force can be calculated
-        # log.debug(force_total)
-
-        elapsed_time = self.df['elapsed_time_sec'].to_list()
-
-        overall_time = elapsed_time[-1]
-        num_values = len(elapsed_time)
-        self.freq = num_values/overall_time   # calculate the frequency
-        log.debug(f"overall time: {overall_time}, num_value: {num_values}, freq: {self.freq}")
-
-        mass_r = (np.mean(list_right[0:int(self.freq * 2)]) / self.gravity)  # calculation of Bodyweight - R
-        mass_l = (np.mean(list_left[0:int(self.freq * 2)]) / self.gravity)  # calculation of bodyweight - L
-        mass = abs(float(mass_r)) + abs(float(mass_l))  # calculation of bodyweight total
-        ('Subject mass  {:.3f} kg'.format(mass))
-        log.debug(f"mass: {mass}")
-
-        plt.figure(figsize=(10,6))
-        title = self.athlete + ' force_total ' + self.date
-        plt.title(title, fontdict={'fontweight':'bold', 'fontsize': 12})
-        plt.plot(force_total, 'b.-', linewidth=1)
-        plt.xlabel('Time')
-        plt.ylabel('Force')
-        plt.show()
-
-        # normalizing for bodyweight - See slides // subtract bodyweight and make BM = 0
-        force_norm = np.subtract(force_total, mass * self.gravity)
-        # log.debug(f"force_norm: {force_norm}")
-        plt.figure(figsize=(10,6))
-        title = self.athlete + ' force_norm ' + self.date
-        plt.title(title, fontdict={'fontweight':'bold', 'fontsize': 12})
-        plt.plot(force_norm, 'b.-', linewidth=1)
-        plt.xlabel('Time')
-        plt.ylabel('Force')
-        plt.show()
+        # mass calculations
+        self.mass_r = (np.mean(list_right[0:int(self.freq * 2)]) / self.gravity)  # calculation of Bodyweight - R
+        self.mass_l = (np.mean(list_left[0:int(self.freq * 2)]) / self.gravity)  # calculation of bodyweight - L
+        self.mass = abs(float(self.mass_r)) + abs(float(self.mass_l))  # calculation of bodyweight total
+        ('Subject mass  {:.3f} kg'.format(self.mass))
+        # log.debug(f"mass: {self.mass}")
 
         # normalizing for bodyweight - R
-        force_norm_r = np.subtract(list_right, (mass_r * self.gravity))
-        # log.debug(f"force_r: {force_norm_r}")
+        self.force_total = [sum(i) for i in zip(list_right, list_left)]  # sums the 2 lists so that total force can be calculated
+
+        self.force_norm_r = np.subtract(list_right, (self.mass_r * self.gravity))
+        # log.debug(f"force_r: {self.force_norm_r}")
         # plt.figure(figsize=(10,6))
         # plt.plot(force_norm_r, 'b.-', linewidth=1)
 
         # normalizing for bodyweight - L
-        force_norm_l = np.subtract(list_left, (mass_l * self.gravity))
-        # log.debug(f"force_l: {force_norm_l}")
+        self.force_norm_l = np.subtract(list_left, (self.mass_l * self.gravity))
+
+        # log.debug(f"force_l: {self.force_norm_l}")
         # plt.figure(figsize=(10,6))
         # plt.plot(force_norm_r,'g.-', linewidth=1)
+        ##### process a cmj dataframe, must include which leg is injured ('Right', or 'Left')
 
-    ### SRT DEBUG GRAPH
-    #    plt.figure()
-        plt.figure(figsize=(10, 6))
+        ### Full timeline graph
         title = self.athlete + ' CMJ ' + self.date
+        xlabel = "Time"
+        ylabel = "Force N"
+
+        plt.figure(figsize=(10, 6))
         plt.title(title, fontdict={'fontweight':'bold', 'fontsize': 12})
-        plt.plot(force_norm_r, linestyle = '-', label = 'Right', color=colors_seismic[2], linewidth = 1)
-        plt.plot(force_norm_l, linestyle = '-', label = 'Left', color=colors_icefire[4], linewidth = 1)
-        plt.xlabel('Time')
-        plt.ylabel('Force')
+        plt.plot(self.force_norm_r, linestyle = '-', label = 'Right', color=colors_seismic[2], linewidth = 1)
+        plt.plot(self.force_norm_l, linestyle = '-', label = 'Left', color=colors_icefire[4], linewidth = 1)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
         plt.legend()
         plt.show()
 
-        # graph_name = self.path_athlete_graph + short_filename
-        # log.debug(f"graph_name: {graph_name}")
+        # store the lines away for later use in the Trial Object
+        graph = {}
+        graph['title'] = title
+        graph['xlabel'] = xlabel
+        graph['ylabel'] = ylabel
+        graph['lines'] = {'Left': self.force_norm_l, 'Right': self.force_norm_r }
+        self.trial.graphs['entire timeline'] = graph
 
-        # plt.savefig(graph_name,
-        #             transparent=False,
-        #             facecolor='white', dpi=300,
-        #             bbox_inches="tight")
+    def process(self):
+        log.f()
 
-        ##### CMJ calculation functions for both legs as well as left and right
-        results_dict = self.cmj_calc(force_norm, mass, elapsed_time)
+        # read in and get all data necessary to process
+        self.setup_data()
 
-        ##### process each the left and then the right legs
-        results_dict_l = self.cmj_sl_calc(force_norm_l, "left", mass_l)
-        cmj_arr_l = results_dict_l.get('cmj_arr')
-        del results_dict_l['cmj_arr']
+        # normalizing for bodyweight - See slides // subtract bodyweight and make BM = 0
+        force_norm = np.subtract(self.force_total, self.mass * self.gravity)
+        # log.debug(f"force_norm: {force_norm}")
 
-        results_dict_r = self.cmj_sl_calc(force_norm_r, "right", mass_r)
-        cmj_arr_r = results_dict_r.get('cmj_arr')
-        del results_dict_r['cmj_arr']
+        if (self.debug_graphs is True):
+
+            # force total graph
+            plt.figure(figsize=(10,6))
+            title = self.athlete + ' force_total ' + self.date
+            plt.title(title, fontdict={'fontweight':'bold', 'fontsize': 12})
+            plt.plot(self.force_total, 'b.-', linewidth=1)
+            plt.xlabel('Time')
+            plt.ylabel('Force')
+            plt.show()
+
+            # force norm graph
+            plt.figure(figsize=(10,6))
+            title = self.athlete + ' force_norm ' + self.date
+            plt.title(title, fontdict={'fontweight':'bold', 'fontsize': 12})
+            plt.plot(force_norm, 'b.-', linewidth=1)
+            plt.xlabel('Time')
+            plt.ylabel('Force')
+            plt.show()
+
+        ######################################
+        ##### CMJ calculation functions for both legs, Left, and right
+        ######################################
+        try:
+            results_dict = self.cmj_calc(force_norm, self.mass)
+        except:
+            log.critical("Failed cmj_calc")
+            return
+
+        try:
+            results_dict_l = self.cmj_sl_calc(self.force_norm_l, "left", self.mass_l)
+            cmj_arr_l = results_dict_l.get('cmj_arr')
+            del results_dict_l['cmj_arr']
+        except:
+            log.critical("Failed cmjP_sl_calc LEFT")
+            return
+
+        try:
+            results_dict_r = self.cmj_sl_calc(self.force_norm_r, "right", self.mass_r)
+            cmj_arr_r = results_dict_r.get('cmj_arr')
+            del results_dict_r['cmj_arr']
+        except:
+            log.critical("Failed cmjP_sl_calc LEFT")
+            return
+
+        ######################################
 
         # create graph and have it stored permanently to file
-        fig = plt.figure()
         title = self.athlete + ' CMJ ' + self.date
+        xlabel = "Time"
+        ylabel = "Force N"
+
+        fig = plt.figure()
         plt.title(title, fontdict={'fontweight': 'bold', 'fontsize': 12})
         plt.plot(cmj_arr_l, linestyle='-', label='Left', color=colors_seismic[2], linewidth=1)
         plt.plot(cmj_arr_r, linestyle='-', label='Right', color=colors_icefire[4], linewidth=1)
-        plt.xlabel('Time')
-        plt.ylabel('Force')
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
         plt.legend()
 
         graph_filename = self.path_athlete_graph + self.trial.short_filename
@@ -200,7 +234,7 @@ class JTDcmj:
 
     ####################################################
     ##### cmj_calc() - does all calculations for a cmj
-    def cmj_calc(self, single_force, mass, elapsed_time):
+    def cmj_calc(self, single_force, mass):
         log.f("** CMJ calc")
 
         force = np.array(single_force)
@@ -537,23 +571,23 @@ class JTDcmj:
         results_dict['concentric_time'] = concentric_time
 
         # add in elapsed time for the key indexes
-        results_dict['jump_onset_moment_time'] = elapsed_time[jump_onset_moment_index]
-        results_dict['takeoff_moment_time'] = elapsed_time[takeoff_moment_index]
-        results_dict['unloading_end_time'] = elapsed_time[unloading_end_index]
-        results_dict['braking_end_time'] = elapsed_time[braking_end_index]
+        results_dict['jump_onset_moment_time'] = self.elapsed_time[jump_onset_moment_index]
+        results_dict['takeoff_moment_time'] = self.elapsed_time[takeoff_moment_index]
+        results_dict['unloading_end_time'] = self.elapsed_time[unloading_end_index]
+        results_dict['braking_end_time'] = self.elapsed_time[braking_end_index]
 
-        results_dict['velocity_min_time'] = elapsed_time[velocity_min_index]
-        results_dict['velocity_zero_time'] = elapsed_time[velocity_zero_index]
-        results_dict['velocity_max_time'] = elapsed_time[velocity_max_index]
-        results_dict['concentric_end_time'] = elapsed_time[concentric_end_index]
+        results_dict['velocity_min_time'] = self.elapsed_time[velocity_min_index]
+        results_dict['velocity_zero_time'] = self.elapsed_time[velocity_zero_index]
+        results_dict['velocity_max_time'] = self.elapsed_time[velocity_max_index]
+        results_dict['concentric_end_time'] = self.elapsed_time[concentric_end_index]
 
         return results_dict
 
     ###############################################
     ##### single leg CMJ function
-    def cmj_sl_calc(self, trial, leg, mass):  # leg - "left", "right"
+    def cmj_sl_calc(self, single_leg_force, leg, mass):  # leg - "left", "right"
         log.f(f"**** {leg} ")
-        force_leg = np.array(trial)
+        force_leg = np.array(single_leg_force)
 
         # normalizing for time
 

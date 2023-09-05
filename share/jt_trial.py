@@ -7,14 +7,15 @@
 
 import datetime
 from datetime import datetime
-import io, os
+import io, os, sys
 import pandas as pd
 import jt_util as util
 import jt_video as jtv
 
-import sys
-
 sys.path.append('../JT_analytics')
+import process_JTSext as p_JTSext
+import process_JTDcmj as p_JTDcmj
+
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
@@ -75,6 +76,9 @@ class JT_Trial:
         self.jt_videos = {}
         self.graph_images = {}
         self.trial_dict = {}
+        self.graphs ={}     #graphs that can be saved for later use.  They are made up of title, xlabel, ylobel, and lines
+                            # set process_JTDcmj.p for example.   There can be one or more of these that are made available
+                            # and can be rendered by the UI
 
     def parse_filename(self, file_path):
         self.short_filename = os.path.splitext(os.path.basename(file_path))[0]
@@ -109,7 +113,7 @@ class JT_Trial:
         self.athlete = athlete
         self.protocol = protocol
 
-    #basedup upon a filepath get components used for a given trial
+    # basedup upon a filepath get components used for a given trial
     # the file_path should be completely provided.  HOWEVER if not then path_data
     # can be added for it to attempt to find the file.   this is done for debugging purposes
     # so as the path changes from one OS to another OS.  It isn't used elsewhere
@@ -128,6 +132,18 @@ class JT_Trial:
         if not os.path.exists(self.file_path):
             log.critical(f"process_single_file, file does not exist: {self.file_path}")
             return
+
+    def get_trial_data(self):
+
+        if self.protocol.startswith("JTSext"):
+            log.debug("NEED TO IMPLEMENT SOMETHING HERE for JTSEXT")
+
+        elif self.protocol == "JTDcmj":
+
+            # Process the cmj file
+            process_obj = p_JTDcmj.JTDcmj(self, injured, path_athlete_results)
+
+            my_dict = process_obj.process()
 
     def attach_results_df(self, results_df):
         self.results_df = results_df
