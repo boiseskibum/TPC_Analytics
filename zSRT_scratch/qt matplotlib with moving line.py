@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QPushButton, QWidget
 #from matplotlib.backends.backend_qt6agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
 class GraphApp(QMainWindow):
     def __init__(self):

@@ -74,14 +74,26 @@ class JT_Trial:
         self.file_path = None           #full path and filename
         self.timestamp_str = None
         self.date_now = None            #used for saving files
-
+        self.trial_name = None
         self.results_df = pd.DataFrame()
-        self.jt_videos = {}
-        self.graph_images = {}
-        self.trial_dict = {}
-        self.graphs ={}     #graphs that can be saved for later use.  They are made up of title, xlabel, ylobel, and lines
+        self.protocol_obj = None
+        self.config_obj = None
+
+        #for retrieving information
+        self.graphs = {}    #graphs that can be saved for later use.  They are made up of title, xlabel, ylobel, and lines
                             # set process_JTDcmj.p for example.   There can be one or more of these that are made available
                             # and can be rendered by the UI
+        self.video_files = {}
+
+        #for saving trial information
+        self.trial_dict = {}
+        self.jt_videos = {}
+        self.graph_images = {}      # IBSOLETE - Not used any more
+
+    # the config and protocol objects must be set to retrieve objects
+    def set_athletes_protocol_objects(self, athletes_obj, protocol_obj):
+        self.athletes_obj = athletes_obj
+        self.protocol_obj = protocol_obj
 
     def parse_filename(self, file_path):
         self.short_filename = os.path.splitext(os.path.basename(file_path))[0]
@@ -91,10 +103,12 @@ class JT_Trial:
 
         tokens = self.short_filename.split('_')
         try:
+
             self.protocol = tokens[0]
             self.athlete = tokens[1]
             self.date_str = tokens[2]
             self.time_str = tokens[3]
+            self.trial_name = f'{self.protocol} - not set'
 
             #if old school format with no hyphens then reformat the string
             if '-' not in self.date_str:
@@ -108,13 +122,12 @@ class JT_Trial:
             self.timestamp_str = self.date_str + "_" + self.time_str
 
         except:
-            log.info(f"File name didn't meet specification (protocol_username_date_time) so ignoring: {self.short_filename}")
+            log.info(f"File name didn't meet specification (protocol_username_date_time) OR couldn't look up athlete: {self.short_filename}")
             return None
 
-    #Set =object up to save data for an athlete and Protocol
-    def setup_for_save(self, athlete, protocol):
-        self.athlete = athlete
-        self.protocol = protocol
+    ##########################################
+    # Retrieve Trial
+    ##########################################
 
     # basedup upon a filepath get components used for a given trial
     # the file_path should be completely provided.  HOWEVER if not then path_data
@@ -126,6 +139,7 @@ class JT_Trial:
         self.file_path = file_path
         self.parse_filename(file_path)
 
+
         # check if path-data is in file_path.   if blanks is provided it will not execute
         if len(path_data) > 0 and path_data not in file_path:
             self.file_path = path_data + self.athlete + '/' + self.file_path
@@ -136,18 +150,54 @@ class JT_Trial:
             log.critical(f"process_single_file, file does not exist: {self.file_path}")
             return
 
+    def attach_video_file(self, key, video):
+        self.video_files[key] = video
+
     def get_trial_data(self):
+
+        #make sure that we can join in extra athletes and protocol data.   Must Call set_athletes_protocol_objects()
+        if (self.athletes_obj is None or self.protocol_obj is None):
+            log.critical(f"Must Call set_athletes_protocol_objects or can not retrieve: {self.file_path}")
+            return
+
+        self.injured = self.athletes_obj.get_injured_side(self.athlete)
+        self.tested_leg = self.protocol_obj.get_leg_by_protocol(self.protocol)
+        self.shank_length = self.athletes_obj.get_shank_length(self.athlete)
 
         if self.protocol.startswith("JTSext"):
             log.debug("NEED TO IMPLEMENT SOMETHING HERE for JTSEXT")
+        #            process_obj = p_JTSext.JTSext(self, injured, path_athlete_results)
 
         elif self.protocol == "JTDcmj":
 
             # Process the cmj file
-            process_obj = p_JTDcmj.JTDcmj(self, injured, path_athlete_results)
+            process_obj = p_JTDcmj.JTDcmj(self, self.injured)
+
+            my_dict = process_obj.setup_data()
+
+    def process(self):
+
+        if self.protocol.startswith("JTSext"):
+            log.debug("NEED TO IMPLEMENT SOMETHING HERE for JTSEXT")
+        #            process_obj = p_JTSext.JTSext(self, injured, path_athlete_results)
+
+        elif self.protocol == "JTDcmj":
+
+            # Process the cmj file
+            process_obj = p_JTDcmj.JTDcmj(self, self.injured)
 
             my_dict = process_obj.process()
 
+    ##########################################
+    # Saving Trial
+    ##########################################
+
+    #Set =object up to save data for an athlete and Protocol
+    def setup_for_save(self, athlete, protocol):
+        self.athlete = athlete
+        self.protocol = protocol
+
+    # add information in for saving
     def attach_results_df(self, results_df):
         self.results_df = results_df
 

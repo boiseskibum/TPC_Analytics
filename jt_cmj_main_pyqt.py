@@ -262,7 +262,6 @@ class CMJ_UI(QMainWindow):
         self.saved = True  #flag so that the user can be asked if they want to save the previous set of data before recording new data
 
         ##### Athletes #####
-
         try:
             # create the athletes Object
             self.athletes_obj = jta.JT_athletes(self.config_obj) # get list of valid athletes from CSV file

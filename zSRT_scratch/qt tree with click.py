@@ -15,7 +15,7 @@ class TreeWidgetExample(QMainWindow):
 
         self.populate_tree()
         self.tree_widget.itemClicked.connect(self.item_clicked)
-
+        #self.tree_widget.itemClicked.connect(self.on_item_clicked)
     def populate_tree(self):
         athletes = ["Athlete 1", "Athlete 2", "Athlete 3"]
 
@@ -35,9 +35,9 @@ class TreeWidgetExample(QMainWindow):
                     trial_item = QTreeWidgetItem([trial])
                     date_item.addChild(trial_item)
                     trial_item.setData(0, Qt.ItemDataRole.UserRole, athlete+'/'+date+'/'+trial)
+
     def item_clicked(self, item, column):
-        #print(f"item {item}, column: {col
-        # umn}")
+        print(f"Item clicked: {item.text(column)}")
         if item.childCount() == 0:
             parent_path = ""
             current_item = item

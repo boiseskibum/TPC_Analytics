@@ -45,7 +45,7 @@ def asym_index(i_r, i_l, injured, col_name):
 #### assymmetry index calcuation ****
 class JTDcmj:
 
-    def __init__(self, trial, injured, path_athlete_graph):
+    def __init__(self, trial, injured, path_athlete_graph=None):
 
         self.df = None
         self.trial = trial
@@ -70,7 +70,7 @@ class JTDcmj:
         overall_time = self.elapsed_time[-1]
         num_values = len(self.elapsed_time)
         self.freq = num_values/overall_time   # calculate the frequency
-        log.debug(f"freq: {self.freq}, overall time: {overall_time}, num_value: {num_values}")
+#        log.debug(f"JTDcmj - data point freq: {self.freq}, overall time: {overall_time}, num_value: {num_values}")
 
         # rename columns so they are easier to deal with AND does absolute value columns
         self.df.rename(columns={'r_force_N': 'Right'}, inplace=True)
@@ -109,14 +109,15 @@ class JTDcmj:
         xlabel = "Time"
         ylabel = "Force N"
 
-        plt.figure(figsize=(10, 6))
-        plt.title(title, fontdict={'fontweight':'bold', 'fontsize': 12})
-        plt.plot(self.force_norm_r, linestyle = '-', label = 'Right', color=colors_seismic[2], linewidth = 1)
-        plt.plot(self.force_norm_l, linestyle = '-', label = 'Left', color=colors_icefire[4], linewidth = 1)
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-        plt.legend()
-        plt.show()
+        if(self.debug_graphs):
+            plt.figure(figsize=(10, 6))
+            plt.title(title, fontdict={'fontweight':'bold', 'fontsize': 12})
+            plt.plot(self.force_norm_r, linestyle = '-', label = 'Right', color=colors_seismic[2], linewidth = 1)
+            plt.plot(self.force_norm_l, linestyle = '-', label = 'Left', color=colors_icefire[4], linewidth = 1)
+            plt.xlabel(xlabel)
+            plt.ylabel(ylabel)
+            plt.legend()
+            plt.show()
 
         # store the lines away for later use in the Trial Object
         graph = {}
@@ -124,7 +125,10 @@ class JTDcmj:
         graph['xlabel'] = xlabel
         graph['ylabel'] = ylabel
         graph['lines'] = {'Left': self.force_norm_l, 'Right': self.force_norm_r }
+        graph['elapsed_time'] = self.elapsed_time[-1]   #get the total time of the run
         self.trial.graphs['entire timeline'] = graph
+
+        log.debug(f'Setup data {self.athlete}, {self.date}')
 
     def process(self):
         log.f()
@@ -196,16 +200,17 @@ class JTDcmj:
         plt.ylabel(ylabel)
         plt.legend()
 
-        graph_filename = self.path_athlete_graph + self.trial.short_filename
-        log.debug(f"graph_filename: {graph_filename}")
+        if self.path_athlete_graph is not None:
+            graph_filename = self.path_athlete_graph + self.trial.short_filename
+            log.debug(f"graph_filename: {graph_filename}")
 
-        plt.savefig(graph_filename,
-                    transparent=False,
-                    facecolor='white', dpi=300,
-                    bbox_inches="tight")
-        plt.close(fig)
+            plt.savefig(graph_filename,
+                        transparent=False,
+                        facecolor='white', dpi=300,
+                        bbox_inches="tight")
+            plt.close(fig)
 
-        results_dict['GRAPH_1'] = graph_filename
+            results_dict['GRAPH_1'] = graph_filename
 
         # log.debug(f' L: {results_dict_l} R: {results_dict_r}')
         results_dict.update(results_dict_l)

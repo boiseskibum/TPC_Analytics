@@ -32,6 +32,7 @@ class MainWindow(QMainWindow):
 
         # Hide the QTreeView initially
         self.tree_view.setVisible(False)
+        self.tree_view.clicked.connect(self.item_clicked)
 
         central_widget = QWidget()
         central_widget.setLayout(layout)
@@ -40,6 +41,9 @@ class MainWindow(QMainWindow):
     def toggle_tree_view(self):
         # Toggle the visibility of the QTreeView when the button is clicked
         self.tree_view.setVisible(self.toggle_button.isChecked())
+
+    def item_clicked(self, index):
+        print(f"item clicked")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

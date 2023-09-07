@@ -6,9 +6,11 @@ import json
 import os
 if __name__ == "__main__":
     import jt_util as util
+    import jt_trial as jtt
     import jt_trial_display as jttd
 else:
     from . import jt_util as util
+    from . import jt_trial as jtt
     from . import jt_trial_display as jttd
 
 # logging configuration - the default level if not set is DEBUG
@@ -80,41 +82,42 @@ class JT_JsonTrialManager:
         return self.df
 
     ###############################################
-    def get_trial_display(self, file_path, trial_text=""):
+    # given just a filename it finds the full file_path which is needed.   returns a trial
+    def get_trial_file_path(self, original_filename, trial_text=""):
         if self.df is None:
             self.load_all_trials()
 
-        td = jttd.JT_TrialDisplay(file_path, trial_text)
-        log.debug (f"all trials dataframe, getting {file_path}")
-#        print (df)
+        columns = self.df.columns
 
         # Filter the DataFrame based on original_filename
-        filtered_df = self.df[self.df["original_filename"] == file_path]
+        filtered_df = self.df[self.df["original_filename"] == original_filename]
 
         # Retrieve the corresponding original_json value
         if not filtered_df.empty:
             original_json = filtered_df.iloc[0]["original_json"]
-            log.debug(f"Original JSON value for {file_path}: {original_json}")
+            log.debug(f"Original JSON value for {original_filename}: {original_filename}")
         else:
-            log.debug(f"No matching entry found for {file_path}")
+            log.debug(f"No matching entry found for {original_filename}")
+            return None
 
         data = json.loads(original_json)
+
+        file_path = data['results_csv']
+        log.debug(f"***Trial_manager.get_file_path: {file_path}***")
+
+        trial = jtt.JT_Trial()
+        trial.retrieve_trial(file_path)
+
         graphs_num = 0
         videos_num = 0
         #loop through keys looking for graphs and videos
         for key, value in data.items():
-
-            # get graphs associated with this trial
-            if key.startswith("GRAPH"):
-                print(f"Key: {key}, Value: {value}")
-                td.attach_graph(key, value)
-
             # get videos associated with this trial
             if key.startswith("VIDEO"):
                 print(f"Key: {key}, Value: {value}")
-                td.attach_video(key, value)
+                trial.attach_video_file(key, value)
 
-        return td
+        return trial
 
     ###############################################
     # this creates back up individual files for each Trial and puts them in the backup directory.  Hopefully never utilized
