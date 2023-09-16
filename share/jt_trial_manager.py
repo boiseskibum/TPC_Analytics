@@ -105,8 +105,12 @@ class JT_JsonTrialManager:
         file_path = data['results_csv']
         log.debug(f"***Trial_manager.get_file_path: {file_path}***")
 
+        # account for different OS
+        converted_file_path = self.config_obj.convert_file_path(file_path)
+        log.debug(f"***Trial_manager.get_file_path: {file_path}***")
+
         trial = jtt.JT_Trial()
-        trial.retrieve_trial(file_path)
+        trial.retrieve_trial(converted_file_path)
 
         graphs_num = 0
         videos_num = 0

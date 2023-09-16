@@ -34,7 +34,7 @@ def asym_index(i_r, i_l, injured, col_name):
     total_impulse = i_r + i_l
 
     asymmetry_index = ((non_injured_leg - injured_leg) / total_impulse) * 100
-    log.debug(f"{col_name}: {asymmetry_index}")
+#    log.debug(f"{col_name}: {asymmetry_index}")
 
     results_dict = {}
     results_dict[col_name] = asymmetry_index
@@ -45,11 +45,11 @@ def asym_index(i_r, i_l, injured, col_name):
 #### assymmetry index calcuation ****
 class JTDcmj:
 
-    def __init__(self, trial, injured, path_athlete_graph=None):
+    def __init__(self, trial, path_athlete_graph=None):
 
         self.df = None
         self.trial = trial
-        self.injured = injured
+        self.injured = trial.injured
         self.path_athlete_graph = path_athlete_graph
         self.athlete = trial.athlete
         self.date = trial.date_str
@@ -107,7 +107,7 @@ class JTDcmj:
         ### Full timeline graph
         title = self.athlete + ' CMJ ' + self.date
         xlabel = "Time"
-        ylabel = "Force N"
+        ylabel = "Force (Nm)"
 
         if(self.debug_graphs):
             plt.figure(figsize=(10, 6))
@@ -126,7 +126,8 @@ class JTDcmj:
         graph['ylabel'] = ylabel
         graph['lines'] = {'Left': self.force_norm_l, 'Right': self.force_norm_r }
         graph['elapsed_time'] = self.elapsed_time[-1]   #get the total time of the run
-        self.trial.graphs['entire timeline'] = graph
+        self.trial.main_graph = graph
+
 
         log.debug(f'Setup data {self.athlete}, {self.date}')
 
@@ -587,6 +588,18 @@ class JTDcmj:
         results_dict['velocity_max_time'] = self.elapsed_time[velocity_max_index]
         results_dict['concentric_end_time'] = self.elapsed_time[concentric_end_index]
 
+        # add in indexes (cause why not, it is easier than picking the time)
+        results_dict['jump_onset_moment_index'] = jump_onset_moment_index
+        results_dict['takeoff_moment_index'] = takeoff_moment_index
+        results_dict['unloading_end_index'] = unloading_end_index
+        results_dict['braking_end_index'] = braking_end_index
+
+        results_dict['velocity_min_index'] = velocity_min_index
+        results_dict['velocity_zero_index'] = velocity_zero_index
+        results_dict['velocity_max_index'] = velocity_max_index
+        results_dict['concentric_end_index'] = concentric_end_index
+
+
         return results_dict
 
     ###############################################
@@ -637,7 +650,7 @@ class JTDcmj:
 
         # ** calculating impulse **
         impulse_arr = cumtrapz(cmj_arr, x=time_ss, initial=0)  # integrates force_leg curve to produce impulse
-        log.debug(f"impulse_{leg}: {impulse_arr}")
+        #log.debug(f"impulse_{leg}: {impulse_arr}")
 
         peak_impulse = impulse_arr.max()
         log.debug(f"peak_impulse: {peak_impulse}")

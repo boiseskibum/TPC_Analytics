@@ -90,6 +90,9 @@ class JT_Trial:
         self.jt_videos = {}
         self.graph_images = {}      # IBSOLETE - Not used any more
 
+        self.short_start_index = None
+        self.short_end_index = None
+
     # the config and protocol objects must be set to retrieve objects
     def set_athletes_protocol_objects(self, athletes_obj, protocol_obj):
         self.athletes_obj = athletes_obj
@@ -153,6 +156,8 @@ class JT_Trial:
     def attach_video_file(self, key, video):
         self.video_files[key] = video
 
+    # retrieves data for a give trial which has been set up first by calling
+    # retrieve_trial(filepath) - see above
     def get_trial_data(self):
 
         #make sure that we can join in extra athletes and protocol data.   Must Call set_athletes_protocol_objects()
@@ -175,18 +180,27 @@ class JT_Trial:
 
             my_dict = process_obj.setup_data()
 
+    #processes a given trial
     def process(self):
 
+        # sets up preliminary data
+        self.get_trial_data()
+
         if self.protocol.startswith("JTSext"):
-            log.debug("NEED TO IMPLEMENT SOMETHING HERE for JTSEXT")
-        #            process_obj = p_JTSext.JTSext(self, injured, path_athlete_results)
+            # Process the cmj file
+            process_obj = p_JTSext.JTSext(self)
+
+            my_dict = process_obj.process()
 
         elif self.protocol == "JTDcmj":
 
             # Process the cmj file
-            process_obj = p_JTDcmj.JTDcmj(self, self.injured)
+            process_obj = p_JTDcmj.JTDcmj(self)
 
             my_dict = process_obj.process()
+            self.short_start_index = my_dict['jump_onset_moment_index']
+            self.short_end_index = my_dict['takeoff_moment_index']
+
 
     ##########################################
     # Saving Trial

@@ -1,7 +1,7 @@
 # jt_config.py
 # purpose: ability to store configuration data (keys and values) into a file
 
-import json
+import json, os
 
 class JT_Config:
     def __init__(self, path_app):
@@ -11,6 +11,7 @@ class JT_Config:
             self.config_file_path = path_app
         else:
             # setup path variable
+            self.path_app = path_app
             self.path_data = path_app + 'data/'
             self.path_results = path_app + 'results/'
             self.path_log = path_app + 'log/'
@@ -53,6 +54,30 @@ class JT_Config:
 
         return my_return
 
+    def convert_file_path(self, file_path):
+
+        #only convert if file path does NOT exist
+        if os.path.exists(file_path):
+            return file_path
+
+        self.app_dir = 'Force Plate Testing/'
+
+        # Find the index where "/Force Plate Testing/" ends
+        index = file_path.find(self.app_dir)
+
+        if index != -1:
+            result = file_path[index + len(self.app_dir):]  # Extract everything after that part
+            result = self.path_app + result
+        else:
+            print("ERROR '/Force Plate Testing/' not found in the file path")
+            result = file_path
+
+        if file_path != result:
+            print(f"Converted: {file_path}\n    to:  {result}")
+
+        return result
+
+
 ########################################################
 
 if __name__ == "__main__":
@@ -70,3 +95,12 @@ if __name__ == "__main__":
     print( f"test3: get def2 value, should fail: {config_obj.get_config('def2')}")
 
 
+    path_app = 'c:/abc/def/my app directory/'  # Replace with the actual path to your CSV file
+
+    # Create an instance of the DataProcessor
+    config_obj = JT_Config(path_app)
+
+    fp = "/Users/stephentaylor/Library/CloudStorage/GoogleDrive-boiseskibum@gmail.com/My Drive/Force Plate Testing//results/huey/2023-08-17/JTDcmj_huey_2023-08-17_00-40-26_VIDEO_1.mp4"
+
+    new_path = config_obj.convert_file_path(fp)
+    print( f"test file conversion: {new_path}")
