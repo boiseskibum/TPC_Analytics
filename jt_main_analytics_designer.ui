@@ -283,7 +283,7 @@
        </widget>
       </widget>
       <widget class="QWidget" name="layoutWidget">
-       <layout class="QHBoxLayout" name="horizontalLayout">
+       <layout class="QHBoxLayout" name="horizontalLayout_video_panels">
         <item>
          <layout class="QVBoxLayout" name="verticalLayout_Lvideo">
           <item>
