@@ -1,0 +1,11 @@
+pip install --upgrade pip
+pyinstaller
+fpdf
+matplotlib
+opencv-python
+pandas
+pyserial
+scipy
+seaborn
+pyqt6
+pyqt6-tools
