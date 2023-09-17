@@ -1,9 +1,9 @@
 from jt_main_analytics_designer import Ui_MainAnalyticsWindow
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QTreeWidgetItem
-from PyQt6.QtGui import QImage, QPixmap, QPainter, QPen, QColor
+from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QTreeWidgetItem,  QRadioButton
+from PyQt6.QtGui import QImage, QPixmap, QPainter, QPen, QColor, QIcon, QTransform
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 
-import sys, cv2, platform
+import sys, cv2, platform, time
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -117,11 +117,41 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.checkBox_video1_enable.stateChanged.connect(self.checkbox_video2_enable_changed)
         self.checkBox_video1_overlay.stateChanged.connect(self.checkbox_video1_overlay_changed)
         self.checkBox_video2_overlay.stateChanged.connect(self.checkbox_video2_overlay_changed)
+        self.checkBox_short_video.stateChanged.connect(self.checkBox_short_video_changed)
+
+        # video playback speed
+        self.radioButton_full.setChecked(True)
+        self.radioButton_full.toggled.connect(self.radio_button_callback)
+        self.radioButton_slow.toggled.connect(self.radio_button_callback)
+        self.radioButton_super_slow.toggled.connect(self.radio_button_callback)
+
         self.videoSlider.setMinimum(0)
 
         self.treeWidget.itemClicked.connect(self.item_clicked)
 
+        #player buttons
+        # utility function to set icons on pushbuttons
+        def add_pb_icon(image_path, pb, flip=False):
+            pixmap = QPixmap(image_path)  # Replace with the path to your image
+            if pixmap.isNull():
+                print(f"Image '{image_path}' does not exist or is invalid.\n")
+            if flip:
+                pixmap = pixmap.transformed(QTransform().scale(-1, 1))
+            icon = QIcon(pixmap)  # Replace with the path to your image
+            pb.setIcon(icon)
+            pb.setText("")
+
+        add_pb_icon ( "resources/img/rewind-to-start.png", self.pushButton_rewind_to_start)
+        add_pb_icon ( "resources/img/next-button-ff.png", self.pushButton_rewind_chunk, True)
+        add_pb_icon ( "resources/img/next-button.png", self.pushButton_rewind_1, True)
+        add_pb_icon ( "resources/img/stop-button.png", self.pushButton_stop)
+        add_pb_icon ( "resources/img/play-button.png", self.pushButton_play)
+        add_pb_icon ( "resources/img/next-button.png", self.pushButton_forward_1)
+        add_pb_icon ( "resources/img/next-button-ff.png", self.pushButton_forward_chunk)
+
         self.chunk = 10
+
+        self.speed_multiplier = 1
 
         # starting are always 0
         # min is where the video will start
@@ -142,6 +172,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.video1_cv2 = None
         self.video2_capture = None
         self.srt_label_graphic = None
+        self.video_play_timer = None
 
         #if this is launched from parent window then grab its child mgr object
         if parent != None:
@@ -155,8 +186,8 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         # change out the existing QLabel button to canvas
         self.figure = plt.figure()
         self.canvas = FigureCanvas(self.figure)
-        self.verticalLayout.addWidget(self.canvas)
-        self.verticalLayout.replaceWidget(self.label_graphic, self.canvas)
+        self.verticalLayout_graph.addWidget(self.canvas)
+        self.verticalLayout_graph.replaceWidget(self.label_graphic, self.canvas)
 
         #add graph
         self.ax = self.figure.add_subplot(111)
@@ -228,6 +259,9 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             parent_path = ""
             current_item = item
             item_text = item.text(0)
+
+            if self.video_play_timer:
+                self.video_play_timer.stop()
 
             while current_item.parent():
                 parent_path = f"/{current_item.text(0)}{parent_path}"
@@ -339,11 +373,17 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             pass
 
         #connect to video
+        if self.video_play_timer:
+            self.video_play_timer.stop()
+
         self.video1_cv2 = cv2.VideoCapture(filename)
         self.video_play_timer = QTimer(self)
         self.video_play_timer.timeout.connect(self.update_frame)
 
-        self.video_speed = int( 1000/30 )   #frames per second
+        self.video_speed_full = int( 1000/30 )   #frames per second
+
+        self.video_speed = int(self.video_speed_full/self.speed_multiplier)
+
 
         #set iniitial frames mins and maxes and current
         self.starting_frame = 0   # this will always be zero
@@ -376,6 +416,8 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             self.video_play_timer.stop()
         else:
             self.video_play_timer.start(self.video_speed)  #FPS
+            log.debug(f'play - milliseconds/frame: {self.video_speed}')
+
 
     def stop(self):
 #        print(f"pressed stop; {self.current_frame}")
@@ -463,15 +505,42 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             self.video1_overlay = False
         self.update_frame()
 
-    def checkbox_video2_overlay_changed2(self, checked):
+    def checkbox_video2_overlay_changed(self, checked):
         if checked != 0:
             self.video2_overlay = True
         else:
             self.video2_overlay = False
         self.update_frame()
 
+    def radio_button_callback(self, sender ):
+        sender = window.sender()  # Get the sender of the signal
+
+        # ignore when something is turned off
+        if sender.isChecked() == False:
+            return
+
+        if isinstance(sender, QRadioButton):
+#            print(f"Radio button {sender.text()} toggled: {sender.isChecked()}")
+            pass
+
+        answer = sender.text()
+        if "Full" in answer:
+            self.speed_multiplier = 1
+        elif "Super" in answer:
+            self.speed_multiplier = .1
+        else:
+            self.speed_multiplier = .4
+
+        self.video_speed = int(self.video_speed_full/self.speed_multiplier)
+
+        if self.video_play_timer.isActive():
+            self.video_play_timer.stop()
+#            time.sleep(0.05)
+            self.video_play_timer.start(self.video_speed)  #FPS
+            log.debug(f'radio_button_speed - milliseconds/frame: {self.video_speed}')
+
     # def checkbox_short_video_changed(self, checked):
-    def checkbox_video2_overlay_changed(self, checked):
+    def checkBox_short_video_changed(self, checked):
 
         if checked != 0:
             self.short_video = True
