@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1688</width>
-    <height>980</height>
+    <width>1512</width>
+    <height>892</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -44,7 +44,7 @@
         </column>
        </widget>
        <widget class="QWidget" name="layoutWidget">
-        <layout class="QVBoxLayout" name="verticalLayout_2">
+        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,1,0,0">
          <item>
           <layout class="QGridLayout" name="gridLayout">
            <item row="2" column="0">
@@ -148,7 +148,7 @@
           </layout>
          </item>
          <item>
-          <layout class="QVBoxLayout" name="verticalLayout">
+          <layout class="QVBoxLayout" name="verticalLayout_graph">
            <item>
             <widget class="QLabel" name="label_graphic">
              <property name="text">
@@ -166,7 +166,7 @@
           </layout>
          </item>
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <layout class="QHBoxLayout" name="horizontalLayout_play">
            <item>
             <widget class="QPushButton" name="pushButton_rewind_to_start">
              <property name="text">
@@ -218,13 +218,74 @@
            </item>
           </layout>
          </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_play_options">
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_speed">
+             <item>
+              <widget class="QRadioButton" name="radioButton_full">
+               <property name="text">
+                <string>Full Speed</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="radioButton_slow">
+               <property name="text">
+                <string>Slow Motion</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="radioButton_super_slow">
+               <property name="text">
+                <string>Super Slow Motion</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_labels">
+             <item>
+              <widget class="QCheckBox" name="checkBox_short_video">
+               <property name="text">
+                <string>Short Video</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="qlabel_time">
+               <property name="text">
+                <string>time</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_L1">
+               <property name="text">
+                <string>l1</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_L2">
+               <property name="text">
+                <string>l2</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </item>
         </layout>
        </widget>
       </widget>
       <widget class="QWidget" name="layoutWidget">
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
-         <layout class="QVBoxLayout" name="verticalLayout_3">
+         <layout class="QVBoxLayout" name="verticalLayout_Lvideo">
           <item>
            <widget class="QLabel" name="label_video1">
             <property name="minimumSize">
@@ -253,12 +314,15 @@
             <property name="text">
              <string>overlay</string>
             </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
            </widget>
           </item>
          </layout>
         </item>
         <item>
-         <layout class="QVBoxLayout" name="verticalLayout_4">
+         <layout class="QVBoxLayout" name="verticalLayout_Rvideo">
           <item>
            <widget class="QLabel" name="label_video2">
             <property name="minimumSize">
@@ -287,6 +351,9 @@
             <property name="text">
              <string>overlay</string>
             </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
            </widget>
           </item>
          </layout>
@@ -302,7 +369,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1688</width>
+     <width>1512</width>
      <height>22</height>
     </rect>
    </property>
