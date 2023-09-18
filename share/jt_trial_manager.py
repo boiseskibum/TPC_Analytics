@@ -118,8 +118,11 @@ class JT_JsonTrialManager:
         for key, value in data.items():
             # get videos associated with this trial
             if key.startswith("VIDEO"):
-                print(f"Key: {key}, Value: {value}")
-                trial.attach_video_file(key, value)
+
+                #convert the path if needed to handle OS changes
+                converted_file_path = self.config_obj.convert_file_path(value)
+                log.debug(f"Key: {key}, Value: {converted_file_path}")
+                trial.attach_video_file(key, converted_file_path)
 
         return trial
 

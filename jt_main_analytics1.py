@@ -368,13 +368,18 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
 
     def set_video1(self, filename):
-        if len(filename) < 1:
-            # Do something to disable video
-            pass
 
         #connect to video
         if self.video_play_timer:
             self.video_play_timer.stop()
+
+        if self.video1_cv2:
+            self.video1_cv2.release()
+            self.video1_cv2 = None
+
+        if len(filename) < 1:
+            # Do something to disable video
+            pass
 
         self.video1_cv2 = cv2.VideoCapture(filename)
         self.video_play_timer = QTimer(self)

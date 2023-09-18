@@ -15,10 +15,17 @@ if __name__ == "__main__":
     import process_JTSext as p_JTSext
     import process_JTDcmj as p_JTDcmj
 else:
-    from . import jt_util as util
-    from . import jt_video as jtv
-    from . import process_JTSext as p_JTSext
-    from . import process_JTDcmj as p_JTDcmj
+
+    try:
+        from . import jt_util as util
+        from . import jt_video as jtv
+        from . import process_JTSext as p_JTSext
+        from . import process_JTDcmj as p_JTDcmj
+    except:
+        import jt_util as util
+        import jt_video as jtv
+        import process_JTSext as p_JTSext
+        import process_JTDcmj as p_JTDcmj
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()

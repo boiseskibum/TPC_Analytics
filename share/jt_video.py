@@ -7,7 +7,10 @@ from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLa
 if __name__ == "__main__":
     import jt_util as util
 else:
-    from . import jt_util as util
+    try:
+        from . import jt_util as util
+    except ImportError:
+        import jt_util as util
 
 log = util.jt_logging()
 

@@ -18,6 +18,8 @@ if __name__ == "__main__":
     import jt_protocol as jtp
     import jt_trial as jtt
     import jt_config as jtc
+#    import JT_AFA.jt_athletes as jta
+#    import JT_AFA.jt_protocol as jtp
 else:
     from . import jt_util as util
     from . import jt_athletes as jta
@@ -281,10 +283,11 @@ def process_single_file( file_path, debug=False):
 
                 # get the leg being tested.   This is different than injured which is not used here
                 tested_leg = protocol_obj.get_leg_by_protocol(trial.protocol)
-                shank_length = athletes_obj.get_shank_length(trial.athlete)
+                trial.shank_length = athletes_obj.get_shank_length(trial.athlete)
 
                 df = pd.read_csv(file_path)
-                my_dict = p_JTSext.process_iso_knee_ext(df, trial, tested_leg, shank_length, path_athlete_results)
+                process_obj = p_JTSext.process_iso_knee_ext(trial,  path_athlete_results)
+                my_dict = process_obj.process()
                 my_dict.update(standard_dict)
 
                 if debug:
@@ -297,7 +300,7 @@ def process_single_file( file_path, debug=False):
             elif trial.protocol == "JTDcmj":
 
                 # Process the cmj file
-                process_obj = p_JTDcmj.JTDcmj(trial, injured, path_athlete_results)
+                process_obj = p_JTDcmj.JTDcmj(trial, path_athlete_results)
 
                 my_dict = process_obj.process()
                 my_dict.update(standard_dict)
@@ -354,5 +357,6 @@ if __name__ == "__main__":
     #process_single_file('Mickey/JTSextL_Mickey_20230627_201411.csv', True)   #True is for debug mode
     #process_single_file('Mickey/JTDcmj_Mickey_20230708_224659.csv', True)   #True is for debug mode
 #    process_single_file('Avery McBride/JTSextR_Avery McBride_20230717_164704.csv', False)   #True is for debug mode
-    process_single_file('JTDcmj_huey_2023-08-17_00-46-31.csv', False)   #True is for debug mode
+#    process_single_file('JTDcmj_huey_2023-08-17_00-46-31.csv', False)   #True is for debug mode
 
+    process_single_file('JTDcmj_huey_2023-08-17_00-27-47.csv', False)  # True is for debug mode

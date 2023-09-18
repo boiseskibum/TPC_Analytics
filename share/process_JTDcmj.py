@@ -9,7 +9,10 @@ import seaborn as sns
 if __name__ == "__main__":
     import jt_util as util
 else:
-    from . import jt_util as util
+    try:
+        from . import jt_util as util
+    except ImportError:
+        import jt_util as util
 
 log = util.jt_logging()
 log.set_logging_level("WARNING")   # this will show errors but not files actually processed

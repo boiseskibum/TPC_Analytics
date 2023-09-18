@@ -2,7 +2,10 @@ import pandas as pd
 if __name__ == "__main__":
     import jt_util as util
 else:
-    from . import jt_util as util
+    try:
+        from . import jt_util as util
+    except ImportError:
+        import jt_util as util
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
