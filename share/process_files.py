@@ -227,7 +227,7 @@ def process_single_file( file_path, debug=False):
     # get dates and directories
     try:
         # get trial object which has all the details
-        trial.retrieve_trial(file_path, path_data)
+        trial.validate_trial_path(file_path, path_data)
 
     except:
         log.info(f"File name didn't meet specification or exist (protocol_username_date_time) so ignoring: {file_path}")

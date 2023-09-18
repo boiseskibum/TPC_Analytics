@@ -30,50 +30,6 @@ else:
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
 
-# purpose is to parse filenames in a consistent manner
-# the filename can and should contain the complete path to the file
-def parse_filename(file_path):
-
-    short_filename = os.path.splitext(os.path.basename(file_path))[0]
-    extension = os.path.splitext(os.path.basename(file_path))[1]
-    filename = short_filename + extension
-    directory_path = os.path.dirname(file_path)
-    tokens = short_filename.split('_')
-
-    try:
-        protocol = tokens[0]
-        athlete = tokens[1]
-        date_str = tokens[2]
-        time_str = tokens[3]
-
-        #if old school format with no hyphens then reformat the string
-        if '-' not in date_str:
-            date_object = datetime.strptime(date_str, "%Y%m%d")
-            date_str = date_object.strftime("%Y-%m-%d")
-
-        if '-' not in time_str:
-            time_obj = datetime.strptime(time_str, "%H%M%S")
-            time_str = time_obj.strftime("%H-%M-%S")
-
-        timestamp_str = date_str + "_" + time_str
-    except:
-        log.info(f"File name didn't meet specification (protocol_username_date_time) so ignoring: {short_filename}")
-        return None
-
-    my_dict = {
-        "filename": filename,
-        "short_filename": short_filename,
-        "path": directory_path,
-        "file_path": file_path,
-        "athlete": athlete,
-        "protocol": protocol,
-        "date_str": date_str,
-        "time_str": time_str,
-        "timestamp_str": timestamp_str
-    }
-
-    return my_dict
-
 ##########################################################
 class JT_Trial:
     def __init__(self):
@@ -85,6 +41,9 @@ class JT_Trial:
         self.results_df = pd.DataFrame()
         self.protocol_obj = None
         self.config_obj = None
+        self.summary_results_dict = None
+        self.protocol_summary_name = None        # holds the protocol filename to save the raw data with.
+        self.debug = False      # used to write data to debug locations
 
         #for retrieving information
         self.graphs = {}    #graphs that can be saved for later use.  They are made up of title, xlabel, ylobel, and lines
@@ -144,29 +103,32 @@ class JT_Trial:
     # can be added for it to attempt to find the file.   this is done for debugging purposes
     # so as the path changes from one OS to another OS.  It isn't used elsewhere
 
-    def retrieve_trial(self, file_path, path_data = ""):
+    def validate_trial_path(self, file_path, path_data = ""):
 
         self.file_path = file_path
         self.parse_filename(file_path)
-
 
         # check if path-data is in file_path.   if blanks is provided it will not execute
         if len(path_data) > 0 and path_data not in file_path:
             self.file_path = path_data + self.athlete + '/' + self.file_path
             log.debug(f'Debug on: and making sure file_path is complete:   {self.file_path} ')
+            return False
 
         # check if file_path exists
         if not os.path.exists(self.file_path):
-            log.critical(f"process_single_file, file does not exist: {self.file_path}")
-            return
+            log.critical(f"validate_trial_path, file does not exist: {self.file_path}")
+            return False
+
+        return True
 
     def attach_video_file(self, key, video):
         self.video_files[key] = video
 
-    # retrieves data for a give trial which has been set up first by calling
-    # retrieve_trial(filepath) - see above
-    def get_trial_data(self):
+    #########################
+    # processes a given trial
+    def process_summary(self):
 
+        # sets up preliminary data
         #make sure that we can join in extra athletes and protocol data.   Must Call set_athletes_protocol_objects()
         if (self.athletes_obj is None or self.protocol_obj is None):
             log.critical(f"Must Call set_athletes_protocol_objects or can not retrieve: {self.file_path}")
@@ -176,38 +138,114 @@ class JT_Trial:
         self.tested_leg = self.protocol_obj.get_leg_by_protocol(self.protocol)
         self.shank_length = self.athletes_obj.get_shank_length(self.athlete)
 
+        #### different types of protocols
         if self.protocol.startswith("JTSext"):
-            log.debug("NEED TO IMPLEMENT SOMETHING HERE for JTSEXT")
-        #            process_obj = p_JTSext.JTSext(self, injured, path_athlete_results)
+            self.protocol_summary_name = 'JTSext'   # this make it not include the L or R for the different protocols
+            protocol_specific_obj = p_JTSext.JTSext(self)
+            self.summary_results_dict = protocol_specific_obj.process()
 
         elif self.protocol == "JTDcmj":
+            self.protocol_summary_name = self.protocol
 
-            # Process the cmj file
-            process_obj = p_JTDcmj.JTDcmj(self, self.injured)
+            protocol_specific_obj = p_JTDcmj.JTDcmj(self)
+            self.summary_results_dict = protocol_specific_obj.process()
 
-            my_dict = process_obj.setup_data()
+            self.short_start_index = self.summary_results_dict['jump_onset_moment_index']
+            self.short_end_index = self.summary_results_dict['takeoff_moment_index']
 
-    #processes a given trial
-    def process(self):
 
-        # sets up preliminary data
-        self.get_trial_data()
+    def save_summary(self):
 
-        if self.protocol.startswith("JTSext"):
-            # Process the cmj file
-            process_obj = p_JTSext.JTSext(self)
+        if not protocol_file_name:
+            log.error(f"Trial has not successfully had process_summary called:  {self.original_filename}")
 
-            my_dict = process_obj.process()
+        log_dict = {}
+        log_dict['status'] = 'success'
+        log_dict['athlete'] = self.athlete
+        log_dict['protocol'] = self.protocol
+        log_dict['protocol_summary_name'] = self.protocol_summary_name
+        log_dict['short_filename'] = self.short_filename
+        log_dict["timestamp_str"] = self.timestamp_str
+        log_dict["date_str"] = self.date_str
+        log_dict['filename'] = self.file_path
 
-        elif self.protocol == "JTDcmj":
+        standard_dict = {}
+        standard_dict['original_filename'] = self.short_filename + '.csv'
+        standard_dict['athlete_name'] = self.athlete
+        standard_dict["col_timestamp_str"] = self.timestamp_str
+        standard_dict["date_str"] = self.date_str
+        my_dict = {}
+        return_dict = {}
 
-            # Process the cmj file
-            process_obj = p_JTDcmj.JTDcmj(self)
+        # append the standard stuff to the results and
+        try:
+            self.summary_results_dict.update(standard_dict)
+            self._save_results(my_dict, self.protocol)
 
-            my_dict = process_obj.process()
-            self.short_start_index = my_dict['jump_onset_moment_index']
-            self.short_end_index = my_dict['takeoff_moment_index']
+            #grab the graphs to be returned if there are any
+            return_dict = {key: value for key, value in self.summary_results_dict.items() if "GRAPH_" in key}
 
+        except:
+
+            log.error(f'FILE: {self.file_path} no such protocol: {self.protocol_summary_name}')
+            log_dict = {}
+            #debug_log - write what information we can to even though there was an error processing the file
+            log_dict['status'] = 'error'
+            log_dict['athlete'] = self.athlete
+            log_dict['protocol'] = self.protocol
+            log_dict['short_filename'] = self.short_filename + '.csv'
+            log_dict['filename'] = self.file_path
+
+            if self.debug == False:
+                self._save_results(log_dict, 'debug_log')
+            else:
+                #debug code to create debug_log_data.csv
+                self._save_debug_results(log_dict)
+
+            return None
+
+        return return_dict
+
+    ###############################################
+    #### log results to csv file ####
+    def _save_results(self, my_dict, protocol):
+
+        my_list = [my_dict]
+        if len(my_list) < 1:
+            log.msg(f'NO rows to store for {protocol}: Nothing written to file')
+            return
+
+        # create dataframe from my_list
+        df = pd.DataFrame(my_list)
+
+        # set up where file is written and sort the dataframe if it is the debug_log
+        if protocol == 'debug_log':
+            my_csv_filename = path_log + protocol + '_data.csv'
+        else:
+            my_csv_filename = path_db + protocol + '_data.csv'
+
+        # log.msg(f'Results for {protocol}: number of rows {len(my_list)} written to file: {my_csv_filename}')
+
+        # append if file exists,  if not then create it
+        log.debug(f'SAVING RESULTS to file: {my_csv_filename}')
+        if os.path.exists(my_csv_filename):
+            # append results
+            df.to_csv(my_csv_filename, mode='a', header=not os.path.isfile(my_csv_filename), index=True)
+        else:
+            # create new file
+            df.to_csv(my_csv_filename)
+
+    def _save_debug_results(self, my_dict):
+        results_df = pd.DataFrame([my_dict])
+        my_csv = path_temp2 + 'debug_data.csv'
+        results_df.to_csv(my_csv)
+
+        my_flatfile = path_temp2 + 'debug_data_flat.txt'
+        # create flat file with value
+        with open(my_flatfile, "w") as file:
+            # Write each key/value pair to a new line
+            for key, value in my_dict.items():
+                file.write(f"{key} {value}\n")
 
     ##########################################
     # Saving Trial
@@ -242,7 +280,7 @@ class JT_Trial:
     # this is called when all results are to be saved
     # path app is the base of where the app lives.  It will create any necessary directories required to save
     # .csv's, graphs, videos. Directories such as data/athlete, results/athlete/date, etc.
-    def save_trial(self, path_app):
+    def save_raw_trial(self, path_app):
 
         #save timestamp_str to right now
         self.timestamp_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -319,5 +357,6 @@ class JT_Trial:
 #####################################################################################
 if __name__ == "__main__":
 
-    my_dict = parse_filename('Avery McBride/JTSextR_Avery McBride_20230717_164704.csv')
-    print(f"Results from parsing filename: {my_dict}")
+    # my_dict = parse_filename('Avery McBride/JTSextR_Avery McBride_20230717_164704.csv')
+    # print(f"Results from parsing filename: {my_dict}")
+    pass

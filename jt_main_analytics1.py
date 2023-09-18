@@ -272,8 +272,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
                 trial = self.trial_mgr_obj.get_trial_file_path(original_filename, item_text)
 
                 trial.set_athletes_protocol_objects(self.athletes_obj, self.protocol_obj)
-    #            trial.get_trial_data()
-                trial.process()
+                trial.process_summary()
 
                 trial.trial_name = item_text
 
@@ -717,9 +716,8 @@ if __name__ == "__main__":
 
     trial = jtt.JT_Trial()
     trial.set_athletes_protocol_objects(window.athletes_obj, window.protocol_obj)
-    trial.retrieve_trial(fp)
-    trial.process()
-#    trial.get_trial_data()
+    trial.validate_trial_path(fp)
+    trial.process_summary()
     trial.trial_name = "srt test trial"
     trial.video_files["video1"]: fp_video1
 

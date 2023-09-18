@@ -47,7 +47,7 @@ class JTSext:
         try:
             self.df = pd.read_csv(self.trial.file_path)
         except:
-            log.critical(f"process_single_file, file does not exist: {self.file_path}")
+            log.critical(f"process, file does not exist: {self.file_path}")
             return
 
         self.elapsed_time = self.df['elapsed_time_sec'].to_list()

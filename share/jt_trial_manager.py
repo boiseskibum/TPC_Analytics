@@ -110,7 +110,7 @@ class JT_JsonTrialManager:
         log.debug(f"***Trial_manager.get_file_path: {file_path}***")
 
         trial = jtt.JT_Trial()
-        trial.retrieve_trial(converted_file_path)
+        trial.validate_trial_path(converted_file_path)
 
         graphs_num = 0
         videos_num = 0

@@ -839,19 +839,19 @@ class CMJ_UI(QMainWindow):
                     self.trial.attach_video('VIDEO_2', self.video2)
 
                 # save to disk (run/videos/images)
-                trial_dict = self.trial.save_trial(path_app)
+                trial_dict = self.trial.save_raw_trial(path_app)
                 self.last_original_filename = trial_dict['original_filename']
                 filepath = path_data + '/' + self.last_run_athlete + '/' + self.last_original_filename
 
                 # process the file
                 # this creates the summary data and there is also some graphs that are produced
                 # the graph location(s) are returned in the return_dict
-                return_dict = jtpf.process_single_file(filepath)
+                return_dict = self.trial.save_summary()
                 log.debug(f'type of return dict is: {type(return_dict)}')
                 if(return_dict != None):
                     trial_dict.update(return_dict)
                 else:
-                    log.error(f'No Dictionary returned from process_single_file while processing: {filepath}')
+                    log.error(f'No Dictionary returned trial.save_summary while processing: {filepath}')
 
                 self.config_obj.set_config("last_original_filename", self.last_original_filename)
 
