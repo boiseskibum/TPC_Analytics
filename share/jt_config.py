@@ -3,8 +3,23 @@
 
 import json, os
 
+try:
+    from . import jt_util as util
+    from . import jt_protocol as jtp
+    from . import jt_athletes as jta
+except:
+    import jt_util as util
+    import jt_protocol as jtp
+    import jt_athletes as jta
+
+# logging configuration - the default level if not set is DEBUG
+log = util.jt_logging()
+
 class JT_Config:
     def __init__(self, path_app):
+
+        self.error_msg = ""
+        self.error = False
 
         # if filename with .csv sent in then we know this is just testing and don't set up everthing
         if ".csv" in path_app:
@@ -24,6 +39,30 @@ class JT_Config:
             self.protocol_file_path = self.path_config + "jt_protocol_config.csv"
             self.athletes_file_path = self.path_config + "athletes.csv"
             self.trial_mgr_filename = self.path_db + 'all_athletes.json'
+            self.protocol_obj = None
+            self.athletes_obj = None
+
+            #get protocol object
+            try:
+                self.protocol_obj = jtp.JT_protocol(self)
+                ret = self.protocol_obj.validate_data()
+                if len(ret) > 0:
+                    self.error_msg = "ERROR: Protocol Config Validation"
+                    self.error = True
+                    self.protocol_obj = None
+            except:
+                self.error_msg = f"Protocol Config File ERROR: {self.protocol_file_path} could not be opened or found"
+                log.error(self.error_msg)
+
+            # get athletes object
+            try:
+                # create the athletes Object
+                self.athletes_obj = jta.JT_athletes(self) # get list of valid athletes from CSV file
+                self.athletes_obj.get_athletes()
+            except:
+                self.error_msg = "Error: Athletes List Unable to be opened"
+                log.error(self.error_msg)
+                self.athletes_obj = None
 
     # get key value
     def get_config(self, my_key):
@@ -94,13 +133,15 @@ if __name__ == "__main__":
     print( f"test3: get abc2 value: {config_obj.get_config('abc2')}")
     print( f"test3: get def2 value, should fail: {config_obj.get_config('def2')}")
 
-
-    path_app = 'c:/abc/def/my app directory/'  # Replace with the actual path to your CSV file
+    # set base and application path
+    path_base = util.jt_path_base()  # this figures out right base path for Colab, MacOS, and Windows
+    path_app = path_base + 'Force Plate Testing/'
 
     # Create an instance of the DataProcessor
     config_obj = JT_Config(path_app)
 
+    #macOS path converted to windows test
     fp = "/Users/stephentaylor/Library/CloudStorage/GoogleDrive-boiseskibum@gmail.com/My Drive/Force Plate Testing//results/huey/2023-08-17/JTDcmj_huey_2023-08-17_00-40-26_VIDEO_1.mp4"
-
     new_path = config_obj.convert_file_path(fp)
     print( f"test file conversion: {new_path}")
+

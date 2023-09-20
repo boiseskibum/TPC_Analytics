@@ -8,13 +8,10 @@
 #
 import os
 import pandas as pd
-if __name__ == "__main__":
+try:
+    from . import jt_util as util
+except ImportError:
     import jt_util as util
-else:
-    try:
-        from . import jt_util as util
-    except ImportError:
-        import jt_util as util
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
@@ -40,8 +37,8 @@ class JT_protocol:
         except:
             log.critical(f'JT_protocol object: could not open file_path {self.file_path}')
 
-        log.debug("list of athletes")
-        log.debug(self.df)
+        self.summary_file_protocol_list = ['JTDcmj', 'JTSext']
+
 
     def get_names_by_type(self, type):
         return self.df.loc[self.df['type'] == type, 'name'].tolist()

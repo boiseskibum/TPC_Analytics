@@ -223,7 +223,7 @@ def process_single_file( file_path, debug=False):
     log.f(f"file_path: {file_path}, path_data: {path_data}")
 
     # get trial information
-    trial = jtt.JT_Trial()
+    trial = jtt.JT_Trial(config_obj)
     # get dates and directories
     try:
         # get trial object which has all the details

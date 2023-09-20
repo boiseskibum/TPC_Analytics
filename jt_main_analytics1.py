@@ -60,14 +60,6 @@ log.set_logging_level("WARNING")  # this will show errors but not files actually
 # setup path variables for base and misc
 path_app = path_base + 'Force Plate Testing/'
 
-# if __name__ == "__main__":
-#     import jt_util as util
-#     import jt_trial_display as jttd
-#     import jt_trial_manager as jttm
-#     import jt_config as jtc
-#
-# else:
-#from share import jt_trial_display as jttd
 from share import jt_dialog as jtd
 from share import jt_trial as jtt
 from share import jt_trial_manager as jttm
@@ -271,7 +263,6 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             try:
                 trial = self.trial_mgr_obj.get_trial_file_path(original_filename, item_text)
 
-                trial.set_athletes_protocol_objects(self.athletes_obj, self.protocol_obj)
                 trial.process_summary()
 
                 trial.trial_name = item_text
@@ -710,12 +701,7 @@ if __name__ == "__main__":
     fp_video1 = path_zTest + 'test_video1.mp4'
     fp_graph = path_zTest + 'graph1.png'
 
-#    trial = jttd.JT_TrialDisplay(fp)
-#    trial.attach_video("video1", fp_video1)
-#    trial.attach_graph("graph1", fp_graph)
-
-    trial = jtt.JT_Trial()
-    trial.set_athletes_protocol_objects(window.athletes_obj, window.protocol_obj)
+    trial = jtt.JT_Trial(window.config_obj)
     trial.validate_trial_path(fp)
     trial.process_summary()
     trial.trial_name = "srt test trial"

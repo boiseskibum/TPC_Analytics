@@ -68,9 +68,9 @@ log.set_logging_level("WARNING")  # this will show errors but not files actually
 
 # setup path variables for base and misc
 path_app = path_base + 'Force Plate Testing/'
+path_log = path_app + 'log/'
 # path_data = path_app + 'data/'
 # path_results = path_app + 'results/'
-# path_log = path_app + 'log/'
 # #path_graphs = path_app + 'graphs/'
 # path_config = path_app + 'config/'
 # path_db = path_app + 'db/'
@@ -90,7 +90,7 @@ from share import jt_trial_manager as jttm
 from share import jt_video as jtv
 from share import jt_preferences as jtpref
 from share import process_files as  jtpf
-import jt_main_analytics as jtanalytics
+import jt_main_analytics1 as jtanalytics
 
 # Testing data
 # if set to >= 0 it utilizes test data instead of data from serial line
@@ -98,14 +98,6 @@ test_data_file = None
 #test_data_file = 'test_output_ex1.txt'
 
 
-#####File Path Setups
-
-#configuration file name, holds last port #, and anothr other state information
-#app_config_file = path_config + "jt_cmj_main_config.json"
-#athletes_list_file = path_config + "athletes.csv"
-
-#protocol configs holds all the infor about single, double, name and actual protocol used
-#protocol_config_file = path_config + "jt_protocol_config.csv"
 
 jt_icon_path = "jt.png"    #icon for message boxes
 log.msg(f"path_base: {path_base}")
@@ -188,19 +180,26 @@ class CMJ_UI(QMainWindow):
 
         # configuration object for keys and values setup
         self.config_obj = jtc.JT_Config(path_app)
+        if self.config_obj.error:
+            value = jtd.JT_Dialog(parent=self, title="Config Error",
+                                  msg=f"{self.config_obj.error_msg}",
+                                  type="ok")  # this is custom dialog class created above
 
         self.video1 = None
         self.video2 = None
         self.trial = None
         self.analytics_ui = None
-        self.trial_display = None
         self.video_on = False
+        self.is_recording = False
+        # initial state is saved as there is no data at this time to be saved
+        self.saved = True  #flag so that the user can be asked if they want to save the previous set of data before recording new data
 
         ##### serial port setup #####
 
         # get my customized serial object
         self.jt_reader = jts.SerialDataReader()
 
+        ##### Serial Ports ####
         self.serial_ports_list = self.jt_reader.get_available_ports()
         self.baud_rate = 115200
         self.calibration_measurement_count = 20 # for calibration readings
@@ -222,21 +221,8 @@ class CMJ_UI(QMainWindow):
             if self.check_serial_port() != True:
                 self.serial_port_name = None
 
-        self.is_recording = False
-
         ##### Protocol #####
-        # Get list of protocols, throw error message if unsuccessful at getting list
-        try:
-            self.protocol_obj = jtp.JT_protocol(self.config_obj)
-            ret = self.protocol_obj.validate_data()
-            if len(ret) > 0:
-                value = jtd.JT_Dialog(parent=self, title="ERROR: Protocol Config Validation",
-                                       msg=f"{ret}",
-                                       type="ok")  # this is custom dialog class created above
-        except:
-            value = jtd.JT_Dialog(parent=self, title="Protocol Config File ERROR",
-                                   msg=f"{protocol_config_file} could not be opened or found",
-                                   type="ok")  # this is custom dialog class created above
+        self.protocol_obj = self.config_obj.protocol_obj
 
         # protocol type
         self.protocol_type_selected = self.config_obj.get_config("protocol_type")
@@ -244,27 +230,21 @@ class CMJ_UI(QMainWindow):
         if self.protocol_type_selected == None or len(self.protocol_type_selected) < 1:
             self.protocol_type_selected = "single"
         self.protocol_name_list = self.protocol_obj.get_names_by_type(self.protocol_type_selected)
-
         log.debug(f"protocol type_selected: {self.protocol_type_selected} name_list: {self.protocol_name_list}")
 
-        # protocol name
+        # protocol name and validate it
         self.protocol_name_selected = self.config_obj.get_config("protocol_name")
 
-        # validate protocol_name
         if ( self.protocol_name_selected == None or len(self.protocol_name_selected) < 1 or
                 self.protocol_obj.validate_type_name_combination(self.protocol_type_selected, self.protocol_name_selected) == False ):
             self.protocol_name_selected = self.protocol_name_list[0]
-
         log.debug(f"protocol type_selected: {self.protocol_type_selected}, name_selected: {self.protocol_name_selected} name_list: {self.protocol_name_list}")
 
-
-        # initial state is saved as there is no data at this time to be saved
-        self.saved = True  #flag so that the user can be asked if they want to save the previous set of data before recording new data
 
         ##### Athletes #####
         try:
             # create the athletes Object
-            self.athletes_obj = jta.JT_athletes(self.config_obj) # get list of valid athletes from CSV file
+            self.athletes_obj = self.config_obj.athletes_obj
             self.athletes = self.athletes_obj.get_athletes()
         except:
             value = jtd.JT_Dialog(parent=self, title="Athletes List Error", msg="Go to Settings tab and set the location for the athletes list", type="ok") # this is custom dialog class created above
@@ -789,8 +769,8 @@ class CMJ_UI(QMainWindow):
             if self.last_original_filename:
                 self.trial_mgr_obj.load_all_trials()
 
-            if self.trial_display != None:
-                self.analytics_ui.set_trial_display( self.trial_display)
+            if self.trial != None:
+                self.analytics_ui.set_trial( self.trial)
 
 #            self.analytics_ui.set_video1('resources/testing/test_video.mp4')
 
@@ -823,11 +803,11 @@ class CMJ_UI(QMainWindow):
 
             else:
 
-                protocol_filename = self.protocol_obj.get_protocol_by_name((self.protocol_name_selected))
+                protocol_filename = self.protocol_obj.get_protocol_by_name(self.protocol_name_selected)
                 self.config_obj.set_config("last_athlete", self.last_run_athlete)
 
                 # Create Trial which will allow dataframe, videos and images to be saved
-                self.trial = jtt.JT_Trial()
+                self.trial = jtt.JT_Trial(self.config_obj)
                 self.trial.setup_for_save(self.last_run_athlete, protocol_filename )
                 self.trial.attach_results_df(self.results_df)
 
@@ -841,14 +821,20 @@ class CMJ_UI(QMainWindow):
                 # save to disk (run/videos/images)
                 trial_dict = self.trial.save_raw_trial(path_app)
                 self.last_original_filename = trial_dict['original_filename']
-                filepath = path_data + '/' + self.last_run_athlete + '/' + self.last_original_filename
+                filepath = self.config_obj.path_data + '/' + self.last_run_athlete + '/' + self.last_original_filename
 
                 # process the file
                 # this creates the summary data and there is also some graphs that are produced
                 # the graph location(s) are returned in the return_dict
+                if self.trial.process_summary() == False:
+                    # do something - throw message up on screen maybe
+                    pass
+
+                # save the summary
                 return_dict = self.trial.save_summary()
+
                 log.debug(f'type of return dict is: {type(return_dict)}')
-                if(return_dict != None):
+                if(return_dict != False):
                     trial_dict.update(return_dict)
                 else:
                     log.error(f'No Dictionary returned trial.save_summary while processing: {filepath}')
@@ -857,7 +843,7 @@ class CMJ_UI(QMainWindow):
 
 
                 #save trial structural information to disk
-                self.trial_display = self.trial_mgr_obj.write_trial_dict(trial_dict)
+                self.trial_mgr_obj.save_trial_indexing(trial_dict)
 
                 self.saved = True
                 self.save_button.setEnabled(False)

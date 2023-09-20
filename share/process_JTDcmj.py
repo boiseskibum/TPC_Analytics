@@ -6,13 +6,10 @@ from scipy.integrate import cumtrapz
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-if __name__ == "__main__":
+try:
+    from . import jt_util as util
+except ImportError:
     import jt_util as util
-else:
-    try:
-        from . import jt_util as util
-    except ImportError:
-        import jt_util as util
 
 log = util.jt_logging()
 log.set_logging_level("WARNING")   # this will show errors but not files actually processed
@@ -58,8 +55,11 @@ class JTDcmj:
         self.date = trial.date_str
         self.debug_graphs = False
         self.gravity = 9.81
+        self.error = False
+        self.error_msg = ""
 
-    def setup_data(self):
+    def process(self):
+        log.f()
 
         # read in the data
         try:
@@ -131,14 +131,7 @@ class JTDcmj:
         graph['elapsed_time'] = self.elapsed_time[-1]   #get the total time of the run
         self.trial.main_graph = graph
 
-
         log.debug(f'Setup data {self.athlete}, {self.date}')
-
-    def process(self):
-        log.f()
-
-        # read in and get all data necessary to process
-        self.setup_data()
 
         # normalizing for bodyweight - See slides // subtract bodyweight and make BM = 0
         force_norm = np.subtract(self.force_total, self.mass * self.gravity)
@@ -170,7 +163,9 @@ class JTDcmj:
         try:
             results_dict = self.cmj_calc(force_norm, self.mass)
         except:
-            log.critical("Failed cmj_calc")
+            self.error_msg = "Failed cmj_calc"
+            self.error = True
+            log.error(self.error_msg)
             return
 
         try:
@@ -178,7 +173,9 @@ class JTDcmj:
             cmj_arr_l = results_dict_l.get('cmj_arr')
             del results_dict_l['cmj_arr']
         except:
-            log.critical("Failed cmjP_sl_calc LEFT")
+            self.error_msg = "Failed cmjP_sl_calc LEFT"
+            self.error = True
+            log.error(self.error_msg)
             return
 
         try:
@@ -186,7 +183,9 @@ class JTDcmj:
             cmj_arr_r = results_dict_r.get('cmj_arr')
             del results_dict_r['cmj_arr']
         except:
-            log.critical("Failed cmjP_sl_calc LEFT")
+            self.error_msg = "Failed cmjP_sl_calc Right"
+            self.error = True
+            log.error(self.error_msg)
             return
 
         ######################################
@@ -420,6 +419,11 @@ class JTDcmj:
         # ** Calculating Lower Limb Stiffness **
 
         # Currently using peak force - need to attain force that correlates to peak displacement
+        # SRT ERROR CHECK FOR divide by zero
+        if CoM_displacement_value == 0:
+            log.debug("Would be divide by zero so changing CoM_displacement_value to 1")
+            CoM_displacement_value = 1
+
         limb_stiffness = peak_force / CoM_displacement_value
         limb_stiffness_norm = limb_stiffness / mass
         log.debug(f"  limb_stiffness_norm: {limb_stiffness_norm}")
@@ -683,18 +687,24 @@ class JTDcmj:
         # print(f"velocity_min_index: {velocity_min_index}")
 
         unloading_end_index = (jump_onset_moment_index + velocity_min_index)
-        # print(f"unloading_end_index: {unloading_end_index}")
-        unloading_force_arr = force_leg[jump_onset_moment_index:unloading_end_index]
-        unloading_time_arr = time[jump_onset_moment_index:unloading_end_index]
-        # print(f"eccentric_rfd_1_time_index: {ecc_rfd_1_time_index}")
+        #handle error condition where velocity min is zero
+        if velocity_min_index != 0:
+            # print(f"unloading_end_index: {unloading_end_index}")
+            unloading_force_arr = force_leg[jump_onset_moment_index:unloading_end_index]
+            unloading_time_arr = time[jump_onset_moment_index:unloading_end_index]
+            # print(f"eccentric_rfd_1_time_index: {ecc_rfd_1_time_index}")
 
-        unloading_impulse_arr = cumtrapz(unloading_force_arr, unloading_time_arr, initial=0)
-        # print(f"unloading_impulse_arr: {unloading_impulse_arr}")
+            unloading_impulse_arr = cumtrapz(unloading_force_arr, unloading_time_arr, initial=0)
+            # print(f"unloading_impulse_arr: {unloading_impulse_arr}")
 
-        ##JT FORCE INSTEAD OF IMPULSE CHECK
-        peak_unloading_force = unloading_force_arr.min()
-        peak_unloading_impulse = unloading_impulse_arr.min()
-        # print(f"peak_unloading_impulse: {peak_unloading_impulse}")
+            ##JT FORCE INSTEAD OF IMPULSE CHECK
+            peak_unloading_force = unloading_force_arr.min()
+            peak_unloading_impulse = unloading_impulse_arr.min()
+            # print(f"peak_unloading_impulse: {peak_unloading_impulse}")
+        else:
+            #error condition - probably not the right answer but better than crashing
+            peak_unloading_force = 0
+            peak_unloading_impulse = 0
 
         ##################################
         # Braking Phase

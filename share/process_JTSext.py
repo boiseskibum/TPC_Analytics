@@ -15,13 +15,10 @@ colors_icefire = sns.color_palette('icefire', 10)
 colors3 = sns.color_palette('rainbow', 5)
 colors_seismic = sns.color_palette('seismic', 10)
 
-if __name__ == "__main__":
+try:
+    from . import jt_util as util
+except ImportError:
     import jt_util as util
-else:
-    try:
-        from . import jt_util as util
-    except ImportError:
-        import jt_util as util
 
 
 log = util.jt_logging()
@@ -40,6 +37,8 @@ class JTSext:
         self.athlete = trial.athlete
         self.path_athlete_graph = path_athlete_graph
         self.debug_graphs = False
+        self.error = False
+        self.error_msg = ""
 
     def process(self):
         
@@ -47,7 +46,9 @@ class JTSext:
         try:
             self.df = pd.read_csv(self.trial.file_path)
         except:
-            log.critical(f"process, file does not exist: {self.file_path}")
+            self.error = True
+            self.error_msg = f"process, file does not exist: {self.file_path}"
+            log.critical(self.error_msg)
             return
 
         self.elapsed_time = self.df['elapsed_time_sec'].to_list()
