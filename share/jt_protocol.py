@@ -37,6 +37,10 @@ class JT_protocol:
         except:
             log.critical(f'JT_protocol object: could not open file_path {self.file_path}')
 
+        # this is the magic list to keep summary data store within.  For JTDcmj it is straight forward.
+        # for JTSext it is F'ed up because the raw files are stored ast JTSextR and JTSextL.   This list is used
+        # when storing and other places to provide the file name that will be saved as a summary.   Probably
+        # a bad design decision but it is what it is.
         self.summary_file_protocol_list = ['JTDcmj', 'JTSext']
 
 

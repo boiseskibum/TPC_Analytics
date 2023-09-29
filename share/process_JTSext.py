@@ -90,19 +90,20 @@ class JTSext:
 
         # log.debug(f"list_torque: {list_torque}")
 
-        # create graph and have it stored permanently to file
-        fig = plt.figure()
+        # show graphs if doing debug logging
         title = ' Iso Knee Extension'
         xlabel = "Time"
         ylabel = "Force (Nm)"
+        if "DEBUG" in log.get_level():
+            plt.figure(figsize=(10, 6))
+            plt.title(title, fontdict={'fontweight': 'bold', 'fontsize': 12})
+            plt.plot(torque, linestyle='-', label=ylabel, color=colors_seismic[2], linewidth=1)
+            plt.xlabel(xlabel)
+            plt.ylabel(ylabel)
+            plt.legend()
+            plt.show()
 
-        plt.title(title, fontdict={'fontweight': 'bold', 'fontsize': 12})
-        plt.plot(torque, linestyle='-', label=ylabel, color=colors_seismic[2], linewidth=1)
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-        plt.legend()
-        plt.show()
-
+        #create graph for later storage
         graph = {}
         graph['title'] = title
         graph['xlabel'] = xlabel

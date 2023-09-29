@@ -59,8 +59,6 @@ class JTDcmj:
         self.error_msg = ""
 
     def process(self):
-        log.f()
-
         # read in the data
         try:
             self.df = pd.read_csv(self.trial.file_path)
@@ -112,7 +110,7 @@ class JTDcmj:
         xlabel = "Time"
         ylabel = "Force (Nm)"
 
-        if(self.debug_graphs):
+        if "DEBUG" in log.get_level():
             plt.figure(figsize=(10, 6))
             plt.title(title, fontdict={'fontweight':'bold', 'fontsize': 12})
             plt.plot(self.force_norm_r, linestyle = '-', label = 'Right', color=colors_seismic[2], linewidth = 1)
@@ -244,7 +242,7 @@ class JTDcmj:
     ####################################################
     ##### cmj_calc() - does all calculations for a cmj
     def cmj_calc(self, single_force, mass):
-        log.f("** CMJ calc")
+        log.debug("** CMJ calc")
 
         force = np.array(single_force)
         # log.debug(f"cmj force:{force}")
@@ -612,7 +610,7 @@ class JTDcmj:
     ###############################################
     ##### single leg CMJ function
     def cmj_sl_calc(self, single_leg_force, leg, mass):  # leg - "left", "right"
-        log.f(f"**** {leg} ")
+        log.debug(f"**** {leg} ")
         force_leg = np.array(single_leg_force)
 
         # normalizing for time

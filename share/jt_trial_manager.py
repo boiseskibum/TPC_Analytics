@@ -82,8 +82,8 @@ class JT_JsonTrialManager:
             original_json = filtered_df.iloc[0]["original_json"]
             log.debug(f"Original JSON value for {original_filename}: {original_filename}")
         else:
-            error = True
-            error_msg = f"No matching entry found for {original_filename}"
+            self.error = True
+            self.error_msg = f"No matching entry found for {original_filename}"
             log.debug(f"No matching entry found for {original_filename}")
             return trial
 
@@ -179,7 +179,6 @@ class JT_JsonTrialManager:
     ##### UTILITY Functions  #####
     # return all athletes based upon existing folders list
     def get_list_of_all_athletes(self):
-        log.f()
 
         # get list of athletes (folders in data directory)
         folders = []
@@ -266,6 +265,7 @@ if __name__ == "__main__":
 
     trial_mgr_obj = JT_JsonTrialManager(config_obj)
 
+    log.set_logging_level("INFO")
     # file_path = 'trials.json'
     #
     #
@@ -315,7 +315,7 @@ if __name__ == "__main__":
         else:
             print("ERROR:  Athlete does not have directory")
 
-        # add athlete data back in
+        # add athlete data back in debug_log
 
 
     def testing_rebuild_all(tm):
@@ -325,30 +325,37 @@ if __name__ == "__main__":
         else:
             print(f'Failed to delete all files.  Error msg: {tm.error_msg}')
 
+        max_files = 100000
+        total = 0
+        completed = 0
         athletes = tm.get_list_of_all_athletes()
         for athlete in athletes:
-            print(f"Rebuilding summary data for: {athlete}")
-            files = tm.get_all_files_for_athlete(athlete)
-            print(f"    reprocessing: {len(files)} files for athlete: {athlete}")
 
+            files = tm.get_all_files_for_athlete(athlete)
+            print(f"    Processing {athlete} num files: {len(files)}")
             # reprocessing files
             for file in files:
-                trial = jtt.JT_Trial(config_obj)
-                trial.parse_filename(file)
-                if trial.error:
-                    print(f'trial error: {trial.error_msg}')
-                else:
-                    print(f"## about to process_summary file: {file}")
-                    trial.process_summary()
-                    if trial.error:
-                        print(f'Trial Error:  {trial.error_msg}')
+                # allow myself to do only so many
+                if total < max_files:
+                    total += 1
+                    trial = jtt.JT_Trial(config_obj)
+                    trial.parse_filename(file)
+                    if trial.error == True:
+                        print(f'trial error: {trial.error_msg}')
                     else:
-                        print(f"## about to save_summary file: {file}")
-                        trial.save_summary()
-                        if trial.error:
+#                        print(f"## about to process_summary file: {file}")
+                        trial.process_summary()
+                        if trial.error == True:
                             print(f'Trial Error:  {trial.error_msg}')
                         else:
-                            print(f'################MADE IT TO ONE DONE RIGHT')
+ #                           print(f"## about to save_summary file: {file}")
+                            trial.save_summary()
+                            if trial.error == True:
+                                print(f'Trial Error:  {trial.error_msg}')
+                            else:
+                                completed += 1
+                                print(f'## Successfully completed: {file}')
+        print(f'#### total processed: {total} success: {completed}: failed: {total - completed}')
         pass
 
 

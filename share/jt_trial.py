@@ -145,6 +145,7 @@ class JT_Trial:
                 self.summary_results_dict = protocol_specific_obj.process()
             except:
                 self.error_msg = f'failed to proceess protocol: {self.protocol_summary_name} file: {self.original_filename}'
+                self.error = True
                 log.error(self.error_msg)
                 return False
 
@@ -154,14 +155,18 @@ class JT_Trial:
             try:
                 protocol_specific_obj = p_JTDcmj.JTDcmj(self)
                 self.summary_results_dict = protocol_specific_obj.process()
-
                 self.short_start_index = self.summary_results_dict['jump_onset_moment_index']
                 self.short_end_index = self.summary_results_dict['takeoff_moment_index']
             except:
                 self.error_msg = f'failed to proceess protocol: {self.protocol_summary_name} file: {self.original_filename}'
-
+                self.error = True
                 log.error(self.error_msg)
                 return False
+
+        # if any of the above function sin 'case statement' have an error then return it as our error
+        if protocol_specific_obj.error:
+            self.error_msg = protocol_specific_obj.error_msg
+            return False
 
         return True
 
@@ -194,16 +199,17 @@ class JT_Trial:
         # append the standard stuff to the results and
         try:
             self.summary_results_dict.update(standard_dict)
-            self._save_results(my_dict, self.protocol)
+            self._save_results(self.summary_results_dict, self.protocol)
 
             #grab the graphs to be returned if there are any
             return_dict = {key: value for key, value in self.summary_results_dict.items() if "GRAPH_" in key}
 
         except:
 
-            log.error(f'FILE: {self.file_path} no such protocol: {self.protocol_summary_name}')
+            log.error(f'save_summary failed: {self.file_path} no such protocol: {self.protocol_summary_name}')
 
             #debug_log - write what information we can to even though there was an error processing the file
+            log_dict['current_timestamp'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             log_dict['status'] = 'error'       #change status to error
             log_dict['error_msg'] = self.error_msg
 
@@ -223,6 +229,13 @@ class JT_Trial:
     ###############################################
     #### log results to csv file ####
     def _save_results(self, my_dict, protocol):
+
+        # resolve the protocol name for use in the filename.   This will
+        # utilize
+        protocol_list = self.config_obj.protocol_obj.summary_file_protocol_list
+        for temp_protocol in protocol_list:
+            if temp_protocol in protocol:
+                protocol = temp_protocol
 
         my_list = [my_dict]
         if len(my_list) < 1:
@@ -386,7 +399,11 @@ if __name__ == "__main__":
     file3 = 'JTDcmj_huey_2023-08-17_00-38-07.csv'
     file4 = 'JTDcmj_huey_2023-08-17_00-16-09.csv'
 
-    fp = file4
+    # failing files
+#    file5 = 'JTDcmj_huey_2023-08-17_00-43-17.csv'
+    file5 = 'JTDcmj_huey_2023-08-17_00-27-47.csv'
+
+    fp = file5
     trial = trial_mgr_obj.get_trial_file_path(fp, 'srt')
     if trial_mgr_obj.error:
         print(f'trial manager error: {trial_mgr_obj.error_msg}')
