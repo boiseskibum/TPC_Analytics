@@ -303,11 +303,10 @@ class JT_Trial:
 
         self.graph_images[key] = image
 
-
     # this is called when all results are to be saved
     # path app is the base of where the app lives.  It will create any necessary directories required to save
     # .csv's, graphs, videos. Directories such as data/athlete, results/athlete/date, etc.
-    def save_raw_trial(self, path_app):
+    def save_raw_trial(self):
 
         #save timestamp_str to right now
         self.timestamp_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -315,7 +314,7 @@ class JT_Trial:
 
         ###### data CSV saving
         #create path
-        path_athlete = path_app + "data/" + self.athlete + "/"
+        path_athlete = self.config_obj.path_data + self.athlete + "/"
 
         #create filename
         self._create_orginal_filename()
@@ -324,31 +323,25 @@ class JT_Trial:
 
         # Check if the data/athlete directory already exists
         if not os.path.exists(path_athlete):
-            # Create the directory if it doesn't exist
             os.makedirs(path_athlete)
             log.debug(f'Directory created: {path_athlete}')
 
-        self.trial_dict['original_filename'] = self.original_filename
-        self.trial_dict['athlete'] = self.athlete
-        self.trial_dict['protocol'] = self.protocol
-        self.trial_dict['date'] = self.date_now
-        self.trial_dict['timestamp'] = self.timestamp_str
+        # sets up self.trial_dict which is used to hold the basics of what all was saved (not the raw data)
+        self._setup_trial_dict(self)
 
         path_filename = path_athlete + self.original_filename
 
         try:
             self.results_df.to_csv(path_filename, index=True)
             log.debug(f"Trial: appending to file: {path_filename}")
-            self.trial_dict['results_csv'] = path_filename
         except:
             self.error_msg = f"failed to save results_df: {path_filename}"
             log.error(self.error_msg)
 
         ##### Graphs/Images and Videos Saving
         # check if the results/athlete/date path exists and if not makes it
-        path_results = path_app + "/results/" + self.athlete + "/" + self.date_now + "/"
+        path_results = self.config_obj.path_results + self.athlete + "/"
         if not os.path.exists(path_results):
-            # Create the directory if it doesn't exist
             os.makedirs(path_results)
             log.debug(f'Directory created: {path_results}')
 
@@ -366,6 +359,7 @@ class JT_Trial:
             except:
                 self.error_msg = f"FAILED to saved Video key: {key}: file: {path_filename}"
                 log.error(self.error_msg)
+
         # save images in results directory
         for key, value in self.graph_images.items():
             filename = f"{self.protocol}_{self.athlete}_{self.timestamp_str}_{key}."
@@ -381,14 +375,50 @@ class JT_Trial:
                 log.error(self.error_msg)
         return(self.trial_dict)
 
+    # this is a utility function just used for recreating the JSON list of all information for all trials.
+    def recreate_trial_dict(self, filepath):
+        # get as much of the trial set up as possible
+        self.parse_filename(filepath)
+
+        # get the trial dict setup
+        self._setup_trial_dict()
+
+        #check if there are videos to attach and add them to the dictionary
+        path_results = self.config_obj.path_results + self.athlete + "/"
+        mp4_files = [file for file in os.listdir(path_results) if
+                     file.startswith(self.short_filename) and file.endswith(".mp4")]
+
+        for mp4_file in mp4_files:
+            tokens = self.short_filename.split('_')
+            try:
+                if tokens[4]  == "VIDEO":
+                    json_attribute_name = tokens[4] + "_" + tokens[5]
+                    self.trial_dict[json_attribute_name] = mp4_file
+            except:
+                log.error(f"something went wrong with finding videos for : {filepath} : file: {mp4_file}")
+
+        #check if there are videos to attach and add them to the dictionary
+        png_files = [file for file in os.listdir(path_results) if
+                     file.startswith(self.short_filename) and file.endswith(".png")]
+
+        for png_file in png_files:
+            self.trial_dict['GRAPH_1'] = png_file
+
+        return(self.trial_dict)
+    def _setup_trial_dict(self):
+        self.trial_dict = {}
+        self.trial_dict['original_filename'] = self.original_filename
+        self.trial_dict['athlete'] = self.athlete
+        self.trial_dict['protocol'] = self.protocol
+        self.trial_dict['date'] = self.date_now
+        self.trial_dict['timestamp'] = self.timestamp_str
+        self.trial_dict['results_csv'] = self.file_path
 
 #####################################################################################
 if __name__ == "__main__":
 
     # set base and application path
-    path_base = util.jt_path_base()  # this figures out right base path for Colab, MacOS, and Windows
-    path_app = path_base + 'Force Plate Testing/'
-    config_obj = jtc.JT_Config(path_app)
+    config_obj = jtc.JT_Config('taylor performance', 'TPC')
 
     trial_mgr_obj = jttm.JT_JsonTrialManager(config_obj)
 

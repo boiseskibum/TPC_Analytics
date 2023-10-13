@@ -275,11 +275,57 @@ def jt_path_base():
 
     return my_path
 
+def jt_path_config():
+
+    my_platform = platform.system()
+    #print(f"system: {my_platform}")
+
+    #get user
+    import getpass as gt
+    my_username = gt.getuser()
+    #print(f"my_username: {my_username}")
+
+
+    if my_platform == "Darwin":
+
+        #show files in cloud storage
+        path = '/Users/' + my_username + '/Library/CloudStorage'
+        files = os.listdir(path)
+        print('cloud storage files: ', files)
+
+        # mac_gdrive_path = '/Users/stephentaylor/Library/CloudStorage/GoogleDrive-boiseskibum@gmail.com/'
+        # MacOS - retrieve google Drive name portion fo the string
+        google_drive = [match for match in files if "GoogleDrive" in match]
+        print(f"google drive name: {google_drive}")
+
+        # MacOS google drive directory
+        my_path = '/Users/' + my_username + '/My Drive/'    # changed on 7/16/2023   Seems as though google changed?
+        if not os.path.isdir(my_path):
+            print(f"MacOS path didn't work:  {my_path}")
+            my_path = '/Users/' + my_username + '/Library/CloudStorage/' + google_drive[0] + '/My Drive/'
+            if not os.path.isdir(my_path):
+                print(f"MacOS old style path didn't work either:  {my_path}")
+            else:
+                print(f"MacOS path:  {my_path}")
+        else:
+            print(f"MacOS path:  {my_path}")
+
+    #Windows
+    elif my_platform == "Windows":
+
+        win_gdrive_path = 'C:/Users/' + my_username + '/My Drive/'
+        win_onedrive_path = 'C:/Users/' + my_username + '/OneDrive/'
+
+        my_path = win_gdrive_path
+
+    return my_path
+
+
 """#**EXAMPLES**"""
 
-###############################
+#######################################################################################################################
 ###  Examples
-###############################
+#######################################################################################################################
 # function nesting example
 def foo1(my_string):
     log = jt_logging()

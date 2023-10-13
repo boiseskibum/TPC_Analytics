@@ -17,32 +17,25 @@ except ImportError:
 log = util.jt_logging()
 
 class JT_protocol:
-    def __init__(self, config_obj, testing_file_path=""):
+    def __init__(self):
 
-        if config_obj is not None:
-            self.config_obj = config_obj
-            self.file_path = self.config_obj.protocol_file_path
+        # Column headers
+        columns = ["protocol", "type", "name", "leg"]
 
-        elif len(testing_file_path) > 0:
-            self.file_path = testing_file_path
-        else:
-            log.critical(f'JT_Athletes creation')
+        # Given data in rows
+        data = [
+            ["JTDcmj", "double", "CMJ", "both"],
+            ["JTSextL", "single", "ISO Quad Extension L", "left"],
+            ["JTSextR", "single", "ISO Quad Extension R", "right"]
+        ]
 
-        try:
-            if os.path.exists(self.file_path):
-                self.df = pd.read_csv(self.file_path)
-            else:
-                log.critical(f'JT_Athletes creation, filepath does not exist: {self.file_path}')
-
-        except:
-            log.critical(f'JT_protocol object: could not open file_path {self.file_path}')
+        self.df = pd.DataFrame(data, columns=columns)
 
         # this is the magic list to keep summary data store within.  For JTDcmj it is straight forward.
         # for JTSext it is F'ed up because the raw files are stored ast JTSextR and JTSextL.   This list is used
         # when storing and other places to provide the file name that will be saved as a summary.   Probably
         # a bad design decision but it is what it is.
         self.summary_file_protocol_list = ['JTDcmj', 'JTSext']
-
 
     def get_names_by_type(self, type):
         return self.df.loc[self.df['type'] == type, 'name'].tolist()
@@ -94,11 +87,8 @@ class JT_protocol:
 
 if __name__ == "__main__":
 
-    # Test code
-    file_path = 'jt_protocol_config_testing.csv'  # Replace with the actual path to your CSV file
-
     # Create an instance of the DataProcessor
-    protocol_obj = JT_protocol(None, file_path)
+    protocol_obj = JT_protocol()
 
     # Get all unique types
     unique_types = protocol_obj.get_unique_types()

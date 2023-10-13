@@ -3,16 +3,16 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVB
 from PyQt6.QtWidgets import    QPushButton, QComboBox, QTextEdit, QGroupBox, QSizePolicy
 from PyQt6.QtCore import Qt  # Import the Qt module
 
-if __name__ == "__main__":
-    import jt_serial as jts
-    import jt_config as jtc
-    import jt_util as util
-    import jt_video as jtv
-else:
+try:
     from . import jt_serial as jts
     from . import jt_config as jtc
     from . import jt_util as util
     from . import jt_video as jtv
+except:
+    import jt_serial as jts
+    import jt_config as jtc
+    import jt_util as util
+    import jt_video as jtv
 
 log = util.jt_logging()
 
@@ -32,8 +32,8 @@ class JT_PreferencesWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         layout = QGridLayout(central_widget)
 
-        self.reader_obj = jt_serial_reader
         self.config_obj = jt_config_obj
+        self.reader_obj = jt_serial_reader
 
         self.serial_port_name = self.config_obj.get_config("last_port")
 
@@ -120,8 +120,8 @@ class JT_PreferencesWindow(QMainWindow):
         # Set the vertical size policy of the preview_group_box to Expanding (it will expand vertically)
         preview_group_box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
-        self.video1 = jtv.JT_Video(video_label1)
-        self.video2 = jtv.JT_Video(video_label2)
+        self.video1 = jtv.JT_Video(self.config_obj, video_label1)
+        self.video2 = jtv.JT_Video(self.config_obj, video_label2)
 
         cam1_index = self.config_obj.get_config("camera1")
         cam2_index = self.config_obj.get_config("camera2")
@@ -302,8 +302,9 @@ if __name__ == '__main__':
             super().__init__()
 
             self.reader_obj = jts.SerialDataReader()
-            self.config_obj = jtc.JT_Config("testing_config.json")
-
+            self.config_obj = jtc.JT_Config('taylor performance', 'TPC', "testing_config.json")
+            val = self.config_obj.validate_install()
+            print('convig_obj.validate return value: {val}')
 
             self.setWindowTitle("Main Window")
 
@@ -324,6 +325,6 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
-    app.exec()
-    sys.exit()
+    result = app.exec()
+    sys.exit(result)
 

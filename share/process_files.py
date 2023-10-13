@@ -64,7 +64,7 @@ log.msg(f"my_system: {my_platform}")
 
 ###############################################
 # configuration object for keys and values setup
-config_obj = jtc.JT_Config(path_app)
+config_obj = jtc.JT_Config('taylor performance', 'TPC')
 
 #protocol configs holds all the infor about single, double, name and actual protocol used
 protocol_obj = None

@@ -45,8 +45,9 @@ class JT_JsonTrialManager:
                     for line in file:
                         data.append(self._extract_keys(line.strip()))
             except:
-                log.debug(f'Error Line: {line}')
-                log.error(f"Failed to load_all_trials from: {self.trial_mgr_index_file_path}")
+                self.error_msg = f'Failed in load_all_trials from: {self.trial_mgr_index_file_path}, file not there or no rows/values in it'
+                log.error(self.error_msg)
+
 
             self.df = pd.DataFrame(data)
 
@@ -257,11 +258,7 @@ class JT_JsonTrialManager:
 # Example usage:
 if __name__ == "__main__":
 
-
-    # set base and application path
-    path_base = util.jt_path_base()  # this figures out right base path for Colab, MacOS, and Windows
-    path_app = path_base + 'Force Plate Testing/'
-    config_obj = jtc.JT_Config(path_app)
+    config_obj = jtc.JT_Config('taylor performance', 'TPC')
 
     trial_mgr_obj = JT_JsonTrialManager(config_obj)
 

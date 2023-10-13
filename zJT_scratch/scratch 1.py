@@ -1,35 +1,54 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLabel
-from PyQt6.QtGui import QIcon, QPixmap
+from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QComboBox, QMessageBox
+from PyQt6.QtCore import Qt, QTimer
 
-app = QApplication(sys.argv)
-window = QMainWindow()
-central_widget = QWidget()
-window.setCentralWidget(central_widget)
+class CMJ_UI(QMainWindow):
+    def __init__(self):
+        super().__init__()
 
-layout = QVBoxLayout()
+        self.application_name = "my combo test app"
+        self.setWindowTitle(self.application_name)
+        self.athletes = ['huey', 'duey', 'louie']
 
-# Create a QPushButton
-button = QPushButton("Click me")
-label = QLabel("label here")
+        #### Main Screen ######################################################
+        central_widget = QWidget(self)
+        self.setCentralWidget(central_widget)
+        self.grid_layout = QGridLayout(central_widget)
 
-# Load an image as a QPixmap
-pixmap = QPixmap("jt.png")
+        self.athlete_combobox = QComboBox()
+        print(f'list of athletes: {self.athletes}')
+        self.athlete_combobox.addItems(self.athletes)
+        self.grid_layout.addWidget(self.athlete_combobox, 0, 1)
 
-# Create an QIcon from the QPixmap
-icon = QIcon(pixmap)
+        test_dialog = True
 
-# Set the icon on the QPushButton
-button.setIcon(icon)
-button.setFlat(True)
-# Add the button to the layout
-layout.addWidget(button)
+        if test_dialog == True:
+            self.timer = None
+            self.showMessageBox()
+        # Use a QTimer to delay the execution of the message box
+        else:
+            self.timer = QTimer(self)
+            self.timer.timeout.connect(self.showMessageBox)
+            self.timer.start(10)  # The timer triggers immediately with a timeout value of 0 milliseconds
 
-label.setPixmap(pixmap)
-layout.addWidget(label)
+    def showMessageBox(self):
 
-central_widget.setLayout(layout)
+        if self.timer:
+            self.sender().stop()
 
-window.show()
-sys.exit(app.exec())
+        # dialog that doesn't break the whole thing
+        dialog = QMessageBox(self)
+        dialog.setWindowTitle("my title")
+        dialog.setText("my message")
+        dialog.setStandardButtons(QMessageBox.StandardButton.Ok)
+        ret = dialog.exec()
+        print(f"message return is: {ret}")
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = CMJ_UI()
+    window.show()
+    result = app.exec()
+    sys.exit(result)
+
 

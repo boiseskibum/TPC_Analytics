@@ -8,6 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 import seaborn as sns   # pip install seaborn
+import getpass as gt
+
 
 #sys.path.append('./share')
 
@@ -23,33 +25,9 @@ colors_seismic = sns.color_palette('seismic', 10)
 jt_color_list = [colors_seismic[2], colors_icefire[4] ]
 
 ######################################################################
-# set up path and debuggging
-
-# retrieve username and platform information
-import getpass as gt
-
-my_username = gt.getuser()
-my_platform = platform.system()
-
-# appends the path to look for files to the existing path
-
-# mount drive if in google collab()
-if my_platform == "Linux":
-
-    from google.colab import drive
-
-    try:
-        drive.mount('/gdrive')
-    except:
-        print("INFO: Drive already mounted")
-
-    # required to import jt_util
-    sys.path.append('/gdrive/MyDrive/Colab Notebooks')
+# set up logging
 
 from share import jt_util as util
-
-# set base and application path
-path_base = util.jt_path_base()  # this figures out right base path for Colab, MacOS, and Windows
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
@@ -57,8 +35,10 @@ log = util.jt_logging()
 log.msg(f'INFO - Valid logging levels are: {util.logging_levels}')
 log.set_logging_level("WARNING")  # this will show errors but not files actually processed
 
-# setup path variables for base and misc
-path_app = path_base + 'Force Plate Testing/'
+my_username = gt.getuser()
+my_platform = platform.system()
+log.msg(f"my_username: {my_username}")
+log.msg(f"my_system: {my_platform}")
 
 from share import jt_dialog as jtd
 from share import jt_trial as jtt
@@ -80,7 +60,16 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.setupUi(self)
 
         # configuration object for keys and values setup
-        self.config_obj = jtc.JT_Config(path_app)
+        self.config_obj = jtc.JT_Config('Taylor Peformance Consulting Analytics', 'TPC')
+
+        if self.config_obj.validate_install() == False:
+            # get desired directory from user
+
+            instructions = 'To set the app up correctly you must run the main application first, sorry young Jedi'
+            value = jtd.JT_Dialog(parent=self, title="Installation Directory",
+                                  msg=instructions,
+                                  type="ok")  # this is custom dialog class created above
+            sys.exit()
 
         ##### Athletes #####
         try:
@@ -694,8 +683,10 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     window = JT_Analytics_UI()
+    window.set_trial(trial)
+    log.msg(f"path_app: {window.config_obj.path_app}")
 
-    path_zTest = path_app + 'zTest/'
+    path_zTest = window.config_obj.path_app + 'zTest/'
     fp = path_zTest + 'JTDcmj_huey_2023-08-17_00-38-07.csv'
 #    fp = path_zTest + 'JTSextL_Mickey_2023-08-08_17-36-53.csv'
     fp_video1 = path_zTest + 'test_video1.mp4'
@@ -707,7 +698,6 @@ if __name__ == "__main__":
     trial.trial_name = "srt test trial"
     trial.video_files["video1"]: fp_video1
 
-    window.set_trial(trial)
 #    window.load_tree()
 
     window.set_video1('resources/testing/test_video.mp4')

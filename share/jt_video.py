@@ -1,16 +1,15 @@
-import sys, time
+import sys, time, os
 import cv2
 from PyQt6.QtCore import Qt, QThread
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 
-if __name__ == "__main__":
+try:
+    from . import jt_util as util
+    from . import jt_config as jtc
+except ImportError:
     import jt_util as util
-else:
-    try:
-        from . import jt_util as util
-    except ImportError:
-        import jt_util as util
+    import jt_config as jtc
 
 log = util.jt_logging()
 
@@ -23,9 +22,10 @@ def resize_with_aspect_ratio(img, target_width):
     return cv2.resize(img, (target_width, target_height))
 
 class JT_Video(QThread):
-    def __init__(self, video_widget = None):
+    def __init__(self, config_obj, video_widget = None):
         super().__init__()
         self._video_widget = video_widget
+        self.config_obj = config_obj
         self._is_running = False         # used internally
         self._frames = []        # holds a group of frames that were saved, typically to play back or save later
 
@@ -35,18 +35,24 @@ class JT_Video(QThread):
         self.display_width = 200        #number of pixels wide for display
         self.rotate  = True             #assumes that it is portrait mode
         self.max_record_time = 15       #this is seconds
+        self.error_msg = ""
+        self.error = False
 
     def run(self):
         self._is_running = True
         cap = cv2.VideoCapture(self.camera_index)
+        if not cap.isOpened():
+            self.error_msg = (f"cv2.VideoCapture failed to open camera index: {self.camera_index}")
+            self.error = True
+            log.error(self.error_msg)
+            return
 
         self.w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.actual_fps = cap.get(cv2.CAP_PROP_FPS)
         self.fourcc = 'avc1'
 
-
-        print(f"PRE cap properties - w: {self.w}, h: {self.h}, fps: {self.actual_fps} cam_index: {self.camera_index}")
+        log.debug(f"PRE cap properties - w: {self.w}, h: {self.h}, fps: {self.actual_fps} cam_index: {self.camera_index}")
 
         # Set the desired frame rate (FPS)
         desired_fps = 30  # Set your desired FPS here
@@ -106,13 +112,19 @@ class JT_Video(QThread):
         self._is_running = False
 
     def camera_offline(self):
-        # Load the image from disk
-        image_path = 'camera_offline.png'
-        image = QImage(image_path)
-        image = image.scaledToWidth(self.display_width)
-        pixmap = QPixmap.fromImage(image)
-        if self._video_widget:
-            self._video_widget.setPixmap(pixmap)
+
+        # Load the image from diskj - trys local directory and then trys the resources directory
+        image_name = 'camera_offline.png'
+        image = jtc.validate_path_and_return_QImage(image_name)
+
+        if image is not None:
+            image = image.scaledToWidth(self.display_width)
+            pixmap = QPixmap.fromImage(image)
+            if self._video_widget:
+                self._video_widget.setPixmap(pixmap)
+        else:
+            pixmap = None
+            log.error(f'Could not find image_path for: {image_path}')
 
     # save video to file.  Filename must end in .mp4
     def save_video(self, filename):
@@ -139,7 +151,7 @@ class JT_Video(QThread):
 if __name__ == "__main__":
 
     class MainWindow(QWidget):
-        def __init__(self):
+        def __init__(self, config_obj):
             super().__init__()
 
             self.num_cameras = 2   # 1 or 2
@@ -148,6 +160,7 @@ if __name__ == "__main__":
             self.stop_button = QPushButton("Stop")
             self.save_button = QPushButton("Save")
             self.swap_button = QPushButton("Swap Cameras")
+            self.config_obj = config_obj
 
 
             layout = QVBoxLayout()
@@ -169,7 +182,7 @@ if __name__ == "__main__":
             self.setLayout(layout)
 
             #start videos
-            self.video1 = JT_Video(self.video_label1)
+            self.video1 = JT_Video(config_obj, self.video_label1)
             if self.num_cameras == 2:
                 self.video2 = JT_Video(self.video_label2)
                 self.video2.camera_index = 1
@@ -207,8 +220,9 @@ if __name__ == "__main__":
                 self.video1.camera_index = 1
                 self.video2.camera_index = 0
 
-
+    config_obj = jtc.JT_Config('taylor performance', 'TPC')
     app = QApplication(sys.argv)
-    window = MainWindow()
+
+    window = MainWindow(config_obj)
     window.show()
     sys.exit(app.exec())

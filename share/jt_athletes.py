@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 
 try:
@@ -14,9 +15,9 @@ class JT_athletes:
         if config_obj is not None:
             self.config_obj = config_obj
 
-            self.file_path = self.config_obj.athletes_file_path
+            self.athletes_file_path = self.config_obj.athletes_file_path
         elif len(testing_file_path) > 0:
-            self.file_path = testing_file_path
+            self.athletes_file_path = testing_file_path
         else:
             log.critical(f'JT_Athletes creation')
 
@@ -25,14 +26,28 @@ class JT_athletes:
     #always reopen list and get it whenever called
     def get_athletes(self, new_file_name = None ):
         if new_file_name != None:
-            self.file_path = new_file_name
+            self.athletes_file_path = new_file_name
+
+        if not os.path.exists(self.athletes_file_path):
+            #create a small sample file if the athletes file doesn't exist
+            # Column names
+            columns = ["athletes_name", "injured", "shank_length"]
+            # Data in row format
+            data = [
+                ["huey", "right", .25],
+                ["duey", "left", .3]
+            ]
+            self.df = pd.DataFrame(data, columns=columns)
+
+            # Write the prototype DataFrame to a CSV file
+            self.df.to_csv(self.athletes_file_path, index=False)
 
         try:
-            self.df = pd.read_csv(self.file_path)
+            self.df = pd.read_csv(self.athletes_file_path)
             unique_athletes = self.df["athletes_name"].unique()
             return unique_athletes.tolist()
         except:
-            raise ValueError(f"Could not open athletes file: {self.file_path}")
+            raise ValueError(f"Could not open athletes file: {self.athletes_file_path}")
 
 
     # this is typically "left" or right

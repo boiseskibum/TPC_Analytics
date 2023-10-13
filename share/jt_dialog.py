@@ -11,12 +11,18 @@ import tkinter as tk
 
 def JT_Dialog(parent, title="Default Title", msg="Default message", type="okcancel"):
 
-    dialog = QMessageBox(parent)
+    if parent == None:
+        dialog = QMessageBox()
+    else:
+        dialog = QMessageBox(parent)
+
     dialog.setWindowTitle(title)
     dialog.setText(msg)
 
     if type == "yesno":
         dialog.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+    elif type == "yesnocancel":
+        dialog.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel)
     elif type == "retrycancel":
         dialog.setStandardButtons(QMessageBox.StandardButton.Retry | QMessageBox.StandardButton.Cancel)
     elif type == "okcancel":
@@ -27,12 +33,14 @@ def JT_Dialog(parent, title="Default Title", msg="Default message", type="okcanc
     ret = dialog.exec()
 
     # return either True for yes/ok/retry or False for no/cancel
-    value =0
-    if type == "yesno":
+    value = 0
+    if type == "yesno" or type == "yesnocancel":
         if ret == QMessageBox.StandardButton.Yes:
             value = 1
         elif ret == QMessageBox.StandardButton.No:
             value = 0
+        elif ret == QMessageBox.StandardButton.Cancel:
+            value = None
     elif type == "retrycancel":
         if ret == QMessageBox.StandardButton.Retry:
             value = 1
@@ -46,7 +54,7 @@ def JT_Dialog(parent, title="Default Title", msg="Default message", type="okcanc
     else:
         value = 1
 
-    return(value)
+    return value
 
 def JT_Dialog_Integer(parent, title="Default Title", msg="Default message", value = 0):
     number, ok = QInputDialog.getInt(parent, title, msg, value=value)

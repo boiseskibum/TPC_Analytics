@@ -2,25 +2,21 @@
 
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox
-from PyQt6.QtWidgets import QLineEdit, QPushButton, QMenu, QMessageBox, QDialog, QComboBox, QToolBar, QRadioButton
+from PyQt6.QtWidgets import QLineEdit, QPushButton, QMenu, QComboBox, QToolBar, QRadioButton
+from PyQt6.QtWidgets import QMessageBox, QDialog, QFileDialog
 from PyQt6.QtGui import QPixmap, QIcon
 from PyQt6.QtGui import QAction
 
 from PIL import Image, ImageTk   # used for icon
 
 # Import necessary modules
-import os, platform, glob, sys, time, json
-import datetime
+import os, platform, glob, sys, time, json, datetime
+import getpass as gt   #username info
 from datetime import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 import seaborn as sns   # pip install seaborn
-
-# this appends to the path so that files can be found in the different sub directories
-# sys.path.append('./share')
-# sys.path.append('./JT_analytics')
-# sys.path.append('./JT_capture')
 
 # Importing Colors
 colors_blue = sns.color_palette('Blues', 10)
@@ -30,54 +26,15 @@ colors_icefire = sns.color_palette('icefire', 10)
 colors3 = sns.color_palette('rainbow', 5)
 colors_seismic = sns.color_palette('seismic', 10)
 
-
 ######################################################################
-# set up path and debuggging
-
-# retrieve username and platform information
-import getpass as gt
-
-my_username = gt.getuser()
-my_platform = platform.system()
-
-# appends the path to look for files to the existing path
-
-# mount drive if in google collab()
-if my_platform == "Linux":
-
-    from google.colab import drive
-
-    try:
-        drive.mount('/gdrive')
-    except:
-        print("INFO: Drive already mounted")
-
-    # required to import jt_util
-    sys.path.append('/gdrive/MyDrive/Colab Notebooks')
-
+# debuggging and logging
 from share import jt_util as util
-
-# set base and application path
-path_base = util.jt_path_base()  # this figures out right base path for Colab, MacOS, and Windows
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
 
 log.msg(f'INFO - Valid logging levels are: {util.logging_levels}')
 log.set_logging_level("WARNING")  # this will show errors but not files actually processed
-
-# setup path variables for base and misc
-path_app = path_base + 'Force Plate Testing/'
-path_log = path_app + 'log/'
-# path_data = path_app + 'data/'
-# path_results = path_app + 'results/'
-# #path_graphs = path_app + 'graphs/'
-# path_config = path_app + 'config/'
-# path_db = path_app + 'db/'
-
-# validate that data paths exist
-if not os.path.isdir(path_app):
-    print(f'ERROR path: {path_app} does not exist')
 
 # import Jakes files
 from share import jt_dialog as jtd
@@ -89,7 +46,7 @@ from share import jt_trial as jtt
 from share import jt_trial_manager as jttm
 from share import jt_video as jtv
 from share import jt_preferences as jtpref
-from share import process_files as  jtpf
+#from share import process_files as  jtpf
 import jt_main_analytics1 as jtanalytics
 
 # Testing data
@@ -97,11 +54,8 @@ import jt_main_analytics1 as jtanalytics
 test_data_file = None
 #test_data_file = 'test_output_ex1.txt'
 
-
-
-jt_icon_path = "jt.png"    #icon for message boxes
-log.msg(f"path_base: {path_base}")
-log.msg(f"path_app: {path_app}")
+my_username = gt.getuser()
+my_platform = platform.system()
 log.msg(f"my_username: {my_username}")
 log.msg(f"my_system: {my_platform}")
 
@@ -109,7 +63,7 @@ log.msg(f"my_system: {my_platform}")
 
 #### logging of calibration data for long term study
 # my dict should include Serial Port, sensor (s1 or s2), zero, multiplier
-def log_calibration_data(my_dict):
+def log_calibration_data(my_dict, path_log):
 
     my_dict['timestamp'] = time.time()
     my_dict['datetime'] = time.strftime("%Y%m%d_%H%M%S")
@@ -173,124 +127,7 @@ class CMJ_UI(QMainWindow):
     def __init__(self):
         super().__init__()
 
-
-        self.application_name = "Jake Taylor Analytics for Athletes"
-        self.setWindowTitle(self.application_name)
-#        self.setGeometry(500, 100, 500, 700)
-
-        # configuration object for keys and values setup
-        self.config_obj = jtc.JT_Config(path_app)
-        if self.config_obj.error:
-            value = jtd.JT_Dialog(parent=self, title="Config Error",
-                                  msg=f"{self.config_obj.error_msg}",
-                                  type="ok")  # this is custom dialog class created above
-
-        self.video1 = None
-        self.video2 = None
-        self.trial = None
-        self.analytics_ui = None
-        self.video_on = False
-        self.is_recording = False
-        # initial state is saved as there is no data at this time to be saved
-        self.saved = True  #flag so that the user can be asked if they want to save the previous set of data before recording new data
-
-        ##### serial port setup #####
-
-        # get my customized serial object
-        self.jt_reader = jts.SerialDataReader()
-
-        ##### Serial Ports ####
-        self.serial_ports_list = self.jt_reader.get_available_ports()
-        self.baud_rate = 115200
-        self.calibration_measurement_count = 20 # for calibration readings
-        self.updated_weight_count = 5      # for updating the weight on the screen
-        self.serial_port = None
-
-        # if only one port available then attempt to connect to it
-        if len(self.serial_ports_list) == 1:
-            self.serial_port_name = self.serial_ports_list[0]
-            log.debug(f"Only one port available, setting port to: {self.serial_port_name}, baud {self.baud_rate}")
-
-            # attempt to connect to port
-            if self.check_serial_port() != True:
-                self.serial_port_name = None
-
-        #if multiple serial ports attempt to connect to last port selected
-        else:
-            self.serial_port_name = self.config_obj.get_config("last_port")
-            if self.check_serial_port() != True:
-                self.serial_port_name = None
-
-        ##### Protocol #####
-        self.protocol_obj = self.config_obj.protocol_obj
-
-        # protocol type
-        self.protocol_type_selected = self.config_obj.get_config("protocol_type")
-
-        if self.protocol_type_selected == None or len(self.protocol_type_selected) < 1:
-            self.protocol_type_selected = "single"
-        self.protocol_name_list = self.protocol_obj.get_names_by_type(self.protocol_type_selected)
-        log.debug(f"protocol type_selected: {self.protocol_type_selected} name_list: {self.protocol_name_list}")
-
-        # protocol name and validate it
-        self.protocol_name_selected = self.config_obj.get_config("protocol_name")
-
-        if ( self.protocol_name_selected == None or len(self.protocol_name_selected) < 1 or
-                self.protocol_obj.validate_type_name_combination(self.protocol_type_selected, self.protocol_name_selected) == False ):
-            self.protocol_name_selected = self.protocol_name_list[0]
-        log.debug(f"protocol type_selected: {self.protocol_type_selected}, name_selected: {self.protocol_name_selected} name_list: {self.protocol_name_list}")
-
-
-        ##### Athletes #####
-        try:
-            # create the athletes Object
-            self.athletes_obj = self.config_obj.athletes_obj
-            self.athletes = self.athletes_obj.get_athletes()
-        except:
-            value = jtd.JT_Dialog(parent=self, title="Athletes List Error", msg="Go to Settings tab and set the location for the athletes list", type="ok") # this is custom dialog class created above
-            self.athletes = []
-
-        #Trial Manager
-        self.trial_mgr_obj = jttm.JT_JsonTrialManager(self.config_obj)
-
-        self.last_run_athlete = self.config_obj.get_config("last_athlete")
-
-        self.last_original_filename = self.config_obj.get_config("last_original_filename")
-
-        self.output_file_dir = self.config_obj.get_config(my_platform + "-output_file_dir")
-
-        ###### general setup ######
-        self.results_df = pd.DataFrame()  # Empty DataFrame
-        self.collecting_data = False
-
-        if self.serial_port_name is None:
-            temp_serial_port_name = "not_defined"
-        else:
-            temp_serial_port_name = self.serial_port_name
-
-        # Calibration - attempt to read prior calibration information
-        self.l_zero = self.config_obj.get_config("l_zero__" + temp_serial_port_name)
-        if self.l_zero == None:
-            self.l_zero = -1
-
-        self.r_zero = self.config_obj.get_config("r_zero__" + temp_serial_port_name)
-        if self.r_zero == None:
-            self.r_zero = -1
-
-        self.l_mult = self.config_obj.get_config("l_mult__" + temp_serial_port_name)
-        if self.l_mult == None:
-            self.l_mult = -1
-
-        self.r_mult = self.config_obj.get_config("r_mult__" + temp_serial_port_name)
-        if self.r_mult == None:
-            self.r_mult = -1
-
-        # regardless if prior calibration info found mark them as not calibrated so that dialog box pops up
-        self.l_calibration = False
-        self.r_calibration = False
-
-        #variables for utilizing test data
-        self.file_list = glob.glob("output*.txt")
+        self.application_name = "Taylor Performance Consulting Analytics"
 
         str = ""
         str = f"The following things will need to be set up in order to run this applicaton:\n"
@@ -303,19 +140,38 @@ class CMJ_UI(QMainWindow):
         str = str + f"  \n"
         self.help_str = str
 
+        self.video1 = None
+        self.video2 = None
+        self.trial = None
+        self.analytics_ui = None
+        self.video_on = False
+        self.is_recording = False
+        # initial state is saved as there is no data at this time to be saved
+        self.saved = True  #flag so that the user can be asked if they want to save the previous set of data before recording new data
+
+        self.last_original_filename = ""
+
+
+#######################################################################
 #### Main Screen ######################################################
+
+        self.setWindowTitle(self.application_name)
+        #        self.setGeometry(500, 100, 500, 700)
 
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
         self.grid_layout = QGridLayout(central_widget)
 
+        trow = 0
+
         # Add Icon - Load the PNG image using PIL
         w = 75
         h = 75
-        ico_image = QPixmap("jt.ico").scaled(w, h)
-        ico_icon = QIcon(ico_image)
 
-        trow = 0
+        image = jtc.validate_path_and_return_QImage("jt.ico")
+        scaled_image = image.scaled(w,h)
+        ico_image = QPixmap.fromImage(scaled_image)
+
         # Create the ico label
         ico_label = QLabel(self)
         ico_label.setPixmap(ico_image)
@@ -323,7 +179,7 @@ class CMJ_UI(QMainWindow):
         self.grid_layout.addWidget(ico_label, trow,0, 3, 1)
 
         # Preferences/Configurate/Settings button
-        settings_image = QPixmap("icon_settings.png").scaled(30, 30)
+        settings_image = QPixmap( jtc.validate_path_and_return_Pixmap("icon_settings.png") ).scaled(30, 30)
         settings_icon = QIcon(settings_image)
 
         # Create the ico image button
@@ -381,13 +237,8 @@ class CMJ_UI(QMainWindow):
         trow += 1
 
         self.athlete_combobox = QComboBox()
-        self.athlete_combobox.addItems(self.athletes)
-        try:
-            index = self.athletes.index(self.last_run_athlete)
-        except ValueError:
-            index = 0
+#        self.athlete_combobox.view().setMinimumHeight(40)
         self.athlete_combobox.currentTextChanged.connect(self.athlete_combobox_change)
-        self.athlete_combobox.setCurrentIndex(index)
         self.grid_layout.addWidget(self.athlete_combobox, trow, 1)
 
         trow +=1
@@ -414,12 +265,6 @@ class CMJ_UI(QMainWindow):
         self.save_button.setEnabled(False)
         self.grid_layout.addWidget(self.save_button, trow, 3)
 
-        if self.protocol_type_selected == "single":
-            self.protocol_type_single()
-            self.single_radiobutton.setChecked(True)
-        else:
-            self.protocol_type_double()
-            self.double_radiobutton.setChecked(True)
         #create area for graph
         trow += 1
 
@@ -430,7 +275,7 @@ class CMJ_UI(QMainWindow):
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setColumnStretch(2, 1)
         self.grid_layout.setColumnStretch(3, 1)
-        self.setLayout(self.grid_layout)
+ #       self.setLayout(self.grid_layout)
 
         # quit button
         trow += 1
@@ -451,6 +296,151 @@ class CMJ_UI(QMainWindow):
         self.timer.timeout.connect(self.update_fields)
         self.timer.start()
 
+    #################################
+    ##### Initial data setup - config_obj, Serial port, protocol, etc
+    #################################
+    def initial_setup_and_config(self):
+
+        # config_obj for keys and values setup, first validate it and if it returns False then
+        #
+        self.config_obj = jtc.JT_Config(self.application_name, 'TPC')
+        if self.config_obj.validate_install() == False:
+            # get desired directory from user
+
+            instructions = 'The next step will be to select the directory that the data will stored. '
+            instructions = instructions + 'While technically changable, it is NOT easy to do so.  Select wisely grasshopper!'
+            value = jtd.JT_Dialog(parent=self, title="Installation Directory",
+                                  msg=instructions,
+                                  type="ok")  # this is custom dialog class created above
+
+            # get the new directory to store stuff in
+            value = False
+            while value == False:
+                default_directory = self.config_obj.documents_folder
+                directory = QFileDialog.getExistingDirectory(self, 'Select Directory', default_directory)
+                value = jtd.JT_Dialog(parent=self, title="Install Directory", msg=f"Are you sure you want to save to: {directory}",
+                                  type="yesnocancel")
+                if value == True:
+                    self.config_obj.setup_app_location(directory)
+                if value == None:
+                    sys.exit()
+
+        ##### serial port setup #####
+        self.jt_reader = jts.SerialDataReader()
+
+        self.baud_rate = 115200
+        self.calibration_measurement_count = 20 # for calibration readings
+        self.updated_weight_count = 5      # for updating the weight on the screen
+        self.serial_port = None
+
+        self.serial_ports_list = self.jt_reader.get_available_ports()
+
+        # if only one port available then attempt to connect to it
+        if len(self.serial_ports_list) == 1:
+            self.serial_port_name = self.serial_ports_list[0]
+            log.debug(f"Only one port available, setting port to: {self.serial_port_name}, baud {self.baud_rate}")
+
+            # attempt to connect to port
+            if self.check_serial_port() != True:
+                self.serial_port_name = None
+
+        #if multiple serial ports attempt to connect to last port selected
+        else:
+            self.serial_port_name = self.config_obj.get_config("last_port")
+            if self.check_serial_port() != True:
+                self.serial_port_name = None
+
+        ##### Protocol #####
+        self.protocol_obj = self.config_obj.protocol_obj
+
+        # protocol type
+        self.protocol_type_selected = self.config_obj.get_config("protocol_type")
+
+        if self.protocol_type_selected == None or len(self.protocol_type_selected) < 1:
+            self.protocol_type_selected = "single"
+        self.protocol_name_list = self.protocol_obj.get_names_by_type(self.protocol_type_selected)
+        log.debug(f"protocol type_selected: {self.protocol_type_selected} name_list: {self.protocol_name_list}")
+
+        # protocol name and validate it
+        self.protocol_name_selected = self.config_obj.get_config("protocol_name")
+
+        if ( self.protocol_name_selected == None or len(self.protocol_name_selected) < 1 or
+                self.protocol_obj.validate_type_name_combination(self.protocol_type_selected, self.protocol_name_selected) == False ):
+            self.protocol_name_selected = self.protocol_name_list[0]
+        log.debug(f"protocol type_selected: {self.protocol_type_selected}, name_selected: {self.protocol_name_selected} name_list: {self.protocol_name_list}")
+
+        if self.protocol_type_selected == "single":
+            self.protocol_type_single()
+            self.single_radiobutton.setChecked(True)
+        else:
+            self.protocol_type_double()
+            self.double_radiobutton.setChecked(True)
+
+        ##### Athletes #####
+        try:
+            # create the athletes Object
+            self.athletes_obj = self.config_obj.athletes_obj
+            self.athletes = self.athletes_obj.get_athletes()
+        except:
+            error = f'Could not find file: {self.config_obj.athletes_file_path}'
+            value = jtd.JT_Dialog(parent=self, title="Athletes List Error", msg=error, type="ok")
+            self.athletes = []
+
+        self.last_run_athlete = self.config_obj.get_config("last_athlete")
+        if self.last_run_athlete == None:
+            self.last_run_athlete = ""
+
+        try:
+            index = self.athletes.index(self.last_run_athlete)
+        except ValueError:
+            index = 0
+        print(f"athlete index selected: {index}")
+        self.athlete_combobox.setCurrentIndex(index)
+
+        # add athletes to the list
+        self.athlete_combobox.addItems(self.athletes)
+
+        #Trial Manager
+        self.trial_mgr_obj = jttm.JT_JsonTrialManager(self.config_obj)
+
+        self.last_original_filename = self.config_obj.get_config("last_original_filename")
+
+        self.output_file_dir = self.config_obj.get_config(my_platform + "-output_file_dir")
+
+        ###### general setup ######
+        self.results_df = pd.DataFrame()  # Empty DataFrame
+        self.collecting_data = False
+
+        if self.serial_port_name is None:
+            temp_serial_port_name = "not_defined"
+        else:
+            temp_serial_port_name = self.serial_port_name
+
+        # Calibration - attempt to read prior calibration information
+        self.l_zero = self.config_obj.get_config("l_zero__" + temp_serial_port_name)
+        if self.l_zero == None:
+            self.l_zero = -1
+
+        self.r_zero = self.config_obj.get_config("r_zero__" + temp_serial_port_name)
+        if self.r_zero == None:
+            self.r_zero = -1
+
+        self.l_mult = self.config_obj.get_config("l_mult__" + temp_serial_port_name)
+        if self.l_mult == None:
+            self.l_mult = -1
+
+        self.r_mult = self.config_obj.get_config("r_mult__" + temp_serial_port_name)
+        if self.r_mult == None:
+            self.r_mult = -1
+
+        # regardless if prior calibration info found mark them as not calibrated so that dialog box pops up
+        self.l_calibration = False
+        self.r_calibration = False
+
+        #variables for utilizing test data
+        self.file_list = glob.glob("output*.txt")
+
+
 
     def check_serial_port(self):
 
@@ -468,13 +458,19 @@ class CMJ_UI(QMainWindow):
                                        type="ok")  # this is custom dialog class created above
                 return False
         else:
-            value = jtd.JT_Dialog(parent=self, title="Serial Port Error", msg="Go to Settings tab and set the serial port", type="ok") # this is custom dialog class created above
+            print(f"about to run ok dialog for serial port: {self.serial_port_name}")
+            value = jtd.JT_Dialog(parent=None, title="Serial Port Error",
+                                  msg="Go to Settings tab and set the serial port",
+                                  type="ok") # this is custom dialog class created above
             return False
 
     def preferences_screen(self):
         print("made it to preferences window")
         self.preferences_window = jtpref.JT_PreferencesWindow(self.config_obj, self.jt_reader)
-        self.preferences_window.show()
+        try:
+            self.preferences_window.show()
+        except Exception as e:
+            log.error(f"self.preferences_window.show() an error occurred: {e}")
 
     def protocol_type_single(self):
         log.f()
@@ -549,7 +545,7 @@ class CMJ_UI(QMainWindow):
                 my_dict['sensor'] = 's1'
                 my_dict['zero'] = self.l_zero
                 my_dict['multiplier'] = self.l_mult
-                log_calibration_data(my_dict)
+                log_calibration_data(my_dict, self.config_obj.path_log)
 
 
     def r_calibrate(self):
@@ -580,10 +576,11 @@ class CMJ_UI(QMainWindow):
                 my_dict['sensor'] = 's2'
                 my_dict['zero'] = self.r_zero
                 my_dict['multiplier'] = self.r_mult
-                log_calibration_data(my_dict)
+                log_calibration_data(my_dict, self.config_obj.path_log)
 
     def athlete_combobox_change(self, value):
         self.last_run_athlete = value
+        print('athlete_combobox_change: {value}')
 
     def on_video_checkbox_checkbox_changed(self, value):
 
@@ -591,7 +588,7 @@ class CMJ_UI(QMainWindow):
             self.video_on = True
             camera_index = self.config_obj.get_config('camera1')
             if camera_index != None and camera_index > -1:
-                self.video1 = jtv.JT_Video()
+                self.video1 = jtv.JT_Video(self.config_obj)
                 self.video1.display_video = False       # turns off writing the video to the screen
                 self.video1.save_frames = True          # turns on recording of a video
                 self.video1.camera_index = camera_index
@@ -818,19 +815,19 @@ class CMJ_UI(QMainWindow):
                 if self.video2 != None:
                     self.trial.attach_video('VIDEO_2', self.video2)
 
-                # save to disk (run/videos/images)
-                trial_dict = self.trial.save_raw_trial(path_app)
+                # save Trial to disk (run/videos/images)
+                trial_dict = self.trial.save_raw_trial()
                 self.last_original_filename = trial_dict['original_filename']
                 filepath = self.config_obj.path_data + '/' + self.last_run_athlete + '/' + self.last_original_filename
 
-                # process the file
+                # process the Trial (this creates summary data from it
                 # this creates the summary data and there is also some graphs that are produced
                 # the graph location(s) are returned in the return_dict
                 if self.trial.process_summary() == False:
-                    # do something - throw message up on screen maybe
+                    # do something - throw message up on screen about couldn't write summarize trial
                     pass
 
-                # save the summary
+                # save the summary data
                 return_dict = self.trial.save_summary()
 
                 log.debug(f'type of return dict is: {type(return_dict)}')
@@ -885,7 +882,7 @@ class CMJ_UI(QMainWindow):
 
         return avg_reading
 
-
+####################################################
 if __name__ == "__main__":
     # Replace these values with the correct serial port and baud rate for your sensor
 
@@ -893,11 +890,15 @@ if __name__ == "__main__":
 
     app = QApplication(sys.argv)
     window = CMJ_UI()
+
     window.adjustSize()
     window.show()
 
+    window.initial_setup_and_config()
+    log.msg(f"path_app: {window.config_obj.path_app}")
+
     # update clock initially which also starts timer for it
-    window.update_fields()
+#    window.update_fields()
     result = app.exec()
     sys.exit(result)
 
