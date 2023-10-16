@@ -20,16 +20,16 @@ class CMJ_UI(QMainWindow):
         self.athlete_combobox.addItems(self.athletes)
         self.grid_layout.addWidget(self.athlete_combobox, 0, 1)
 
-        test_dialog = True
+        test_dialog = False
 
-        if test_dialog == True:
-            self.timer = None
-            self.showMessageBox()
-        # Use a QTimer to delay the execution of the message box
-        else:
-            self.timer = QTimer(self)
-            self.timer.timeout.connect(self.showMessageBox)
-            self.timer.start(10)  # The timer triggers immediately with a timeout value of 0 milliseconds
+        # if test_dialog == True:
+        #     self.timer = None
+        #     self.showMessageBox()
+        # # Use a QTimer to delay the execution of the message box
+        # else:
+        #     self.timer = QTimer(self)
+        #     self.timer.timeout.connect(self.showMessageBox)
+        #     self.timer.start(10)  # The timer triggers immediately with a timeout value of 0 milliseconds
 
     def showMessageBox(self):
 
@@ -48,6 +48,8 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = CMJ_UI()
     window.show()
+    val = window.showMessageBox()
+    print(f"message box value: {val}")
     result = app.exec()
     sys.exit(result)
 

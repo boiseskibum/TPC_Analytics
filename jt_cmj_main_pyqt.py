@@ -207,6 +207,7 @@ class CMJ_UI(QMainWindow):
         # protocol_name selection - COMBO BOX
         trow += 2
         self.protocol_name_combobox = QComboBox()
+        self.protocol_name_combobox.setMinimumWidth(250)
         self.protocol_name_combobox.currentTextChanged.connect(self.protocol_name_combobox_changed)
         self.grid_layout.addWidget(self.protocol_name_combobox, trow, 1)
 
@@ -237,7 +238,6 @@ class CMJ_UI(QMainWindow):
         trow += 1
 
         self.athlete_combobox = QComboBox()
-#        self.athlete_combobox.view().setMinimumHeight(40)
         self.athlete_combobox.currentTextChanged.connect(self.athlete_combobox_change)
         self.grid_layout.addWidget(self.athlete_combobox, trow, 1)
 
@@ -296,6 +296,8 @@ class CMJ_UI(QMainWindow):
         self.timer.timeout.connect(self.update_fields)
         self.timer.start()
 
+        QTimer.singleShot(250, self.initial_setup_and_config)  # this does the initial setup of config/serial/athlete/etc
+
     #################################
     ##### Initial data setup - config_obj, Serial port, protocol, etc
     #################################
@@ -324,6 +326,8 @@ class CMJ_UI(QMainWindow):
                     self.config_obj.setup_app_location(directory)
                 if value == None:
                     sys.exit()
+
+        log.msg(f"path_app: {window.config_obj.path_app}")
 
         ##### serial port setup #####
         self.jt_reader = jts.SerialDataReader()
@@ -387,18 +391,20 @@ class CMJ_UI(QMainWindow):
             self.athletes = []
 
         self.last_run_athlete = self.config_obj.get_config("last_athlete")
+        log.debug(f'last_athlete from config is {self.last_run_athlete}')
         if self.last_run_athlete == None:
             self.last_run_athlete = ""
+
+        # add athletes to the list
+        self.enable_config_save = False   #this is a hack just for startup mode so it doesn't save to the config file one time only
+        self.athlete_combobox.addItems(self.athletes)
+        self.enable_config_save = True
 
         try:
             index = self.athletes.index(self.last_run_athlete)
         except ValueError:
             index = 0
-        print(f"athlete index selected: {index}")
         self.athlete_combobox.setCurrentIndex(index)
-
-        # add athletes to the list
-        self.athlete_combobox.addItems(self.athletes)
 
         #Trial Manager
         self.trial_mgr_obj = jttm.JT_JsonTrialManager(self.config_obj)
@@ -458,14 +464,12 @@ class CMJ_UI(QMainWindow):
                                        type="ok")  # this is custom dialog class created above
                 return False
         else:
-            print(f"about to run ok dialog for serial port: {self.serial_port_name}")
             value = jtd.JT_Dialog(parent=None, title="Serial Port Error",
                                   msg="Go to Settings tab and set the serial port",
                                   type="ok") # this is custom dialog class created above
             return False
 
     def preferences_screen(self):
-        print("made it to preferences window")
         self.preferences_window = jtpref.JT_PreferencesWindow(self.config_obj, self.jt_reader)
         try:
             self.preferences_window.show()
@@ -579,8 +583,11 @@ class CMJ_UI(QMainWindow):
                 log_calibration_data(my_dict, self.config_obj.path_log)
 
     def athlete_combobox_change(self, value):
-        self.last_run_athlete = value
-        print('athlete_combobox_change: {value}')
+        if self.enable_config_save:
+            self.last_run_athlete = value
+            self.config_obj.set_config("last_athlete", self.last_run_athlete)
+
+        log.debug(f'athlete_combobox_change: {value}')
 
     def on_video_checkbox_checkbox_changed(self, value):
 
@@ -607,8 +614,6 @@ class CMJ_UI(QMainWindow):
                                    msg="You Must specify an athlete to run",
                                    type="ok")
             return
-
-        self.config_obj.set_config("last_athlete", self.last_run_athlete)
 
         #prior run saved?  if it has not been saved then request for them to save it
         if self.saved == False:
@@ -801,7 +806,6 @@ class CMJ_UI(QMainWindow):
             else:
 
                 protocol_filename = self.protocol_obj.get_protocol_by_name(self.protocol_name_selected)
-                self.config_obj.set_config("last_athlete", self.last_run_athlete)
 
                 # Create Trial which will allow dataframe, videos and images to be saved
                 self.trial = jtt.JT_Trial(self.config_obj)
@@ -894,8 +898,7 @@ if __name__ == "__main__":
     window.adjustSize()
     window.show()
 
-    window.initial_setup_and_config()
-    log.msg(f"path_app: {window.config_obj.path_app}")
+#    window.initial_setup_and_config()
 
     # update clock initially which also starts timer for it
 #    window.update_fields()
