@@ -35,7 +35,7 @@ class JT_athletes:
             # Data in row format
             data = [
                 ["huey", "right", .25],
-                ["duey", "left", .3]
+                ["dewey", "left", .3]
             ]
             self.df = pd.DataFrame(data, columns=columns)
 

@@ -61,6 +61,11 @@ class JT_Trial:
         self.protocol_obj = config_obj.protocol_obj
 
     def parse_filename(self, file_path):
+
+        if not os.path.exists(file_path):
+            msg = f"parse_filename, file does not exist: {file_path}"
+            log.info(self.msg)
+
         self.short_filename = os.path.splitext(os.path.basename(file_path))[0]
         self.extension = os.path.splitext(os.path.basename(file_path))[1]
         filename = self.short_filename + self.extension
@@ -99,7 +104,7 @@ class JT_Trial:
     # Retrieve Trial
     ##########################################
 
-    # basedup upon a filepath get components used for a given trial
+    # based upon a filepath get components used for a given trial
     # the file_path should be completely provided.  HOWEVER if not then path_data
     # can be added for it to attempt to find the file.   this is done for debugging purposes
     # so as the path changes from one OS to another OS.  It isn't used elsewhere
@@ -146,7 +151,7 @@ class JT_Trial:
             except:
                 self.error_msg = f'failed to proceess protocol: {self.protocol_summary_name} file: {self.original_filename}'
                 self.error = True
-                log.error(self.error_msg)
+#                log.error(self.error_msg)
                 return False
 
         elif self.protocol == "JTDcmj":
@@ -160,7 +165,7 @@ class JT_Trial:
             except:
                 self.error_msg = f'failed to proceess protocol: {self.protocol_summary_name} file: {self.original_filename}'
                 self.error = True
-                log.error(self.error_msg)
+ #               log.error(self.error_msg)
                 return False
 
         # if any of the above function sin 'case statement' have an error then return it as our error
@@ -178,50 +183,49 @@ class JT_Trial:
         if not self.protocol_summary_name :
             log.error(f"Trial has not successfully had process_summary called:  {self.original_filename}")
 
-        log_dict = {}
-        log_dict['status'] = 'success'
-        log_dict['athlete'] = self.athlete
-        log_dict['protocol'] = self.protocol
-        log_dict['protocol_summary_name'] = self.protocol_summary_name
-        log_dict['short_filename'] = self.short_filename
-        log_dict["timestamp_str"] = self.timestamp_str
-        log_dict["date_str"] = self.date_str
-        log_dict['filename'] = self.file_path
+        debug_log_dict = {}
+        debug_log_dict['status'] = 'success'
+        debug_log_dict['athlete'] = self.athlete
+        debug_log_dict['protocol'] = self.protocol
+        debug_log_dict['protocol_summary_name'] = self.protocol_summary_name
+        debug_log_dict['short_filename'] = self.short_filename
+        debug_log_dict["timestamp_str"] = self.timestamp_str
+        debug_log_dict["date_str"] = self.date_str
+        debug_log_dict['filename'] = self.file_path
 
         standard_dict = {}
         standard_dict['original_filename'] = self.short_filename + '.csv'
         standard_dict['athlete_name'] = self.athlete
         standard_dict["col_timestamp_str"] = self.timestamp_str
         standard_dict["date_str"] = self.date_str
-        my_dict = {}
         return_dict = {}
 
-        # append the standard stuff to the results and
+        # create a copoy of results dict so it remains the same.  Append the standard stuff to the temp copy. then
+        # save it to summary file.   Return the graphs that are saved for possible usage of the calling routine
         try:
-            self.summary_results_dict.update(standard_dict)
-            self._save_results(self.summary_results_dict, self.protocol)
+            temp_dict = self.summary_results_dict.copy()
+            temp_dict.update(standard_dict)
+            self._save_results(temp_dict, self.protocol)
 
-            #grab the graphs to be returned if there are any
+            #grab the graphs to be returned if there are any and return those from this function
             return_dict = {key: value for key, value in self.summary_results_dict.items() if "GRAPH_" in key}
 
         except:
-
             log.error(f'save_summary failed: {self.file_path} no such protocol: {self.protocol_summary_name}')
 
             #debug_log - write what information we can to even though there was an error processing the file
-            log_dict['current_timestamp'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            log_dict['status'] = 'error'       #change status to error
-            log_dict['error_msg'] = self.error_msg
+            debug_log_dict['current_timestamp'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            debug_log_dict['status'] = 'error'       #change status to error
+            debug_log_dict['error_msg'] = self.error_msg
 
             if self.debug == False:
-                self._save_results(log_dict, 'debug_log')
+                self._save_results(debug_log_dict, 'debug_log')
             else:
                 #debug code to create debug_log_data.csv
-                self._save_debug_results(log_dict)
+                self._save_debug_results(debug_log_dict)
 
             self.error_msg = f"Failed to save summary data for {self.original_filename}"
             log.error(self.error_msg)
-
             return False
 
         return return_dict
@@ -303,6 +307,8 @@ class JT_Trial:
 
         self.graph_images[key] = image
 
+    ##################################
+    # save_raw_Trial
     # this is called when all results are to be saved
     # path app is the base of where the app lives.  It will create any necessary directories required to save
     # .csv's, graphs, videos. Directories such as data/athlete, results/athlete/date, etc.
@@ -376,33 +382,37 @@ class JT_Trial:
         return(self.trial_dict)
 
     # this is a utility function just used for recreating the JSON list of all information for all trials.
-    def recreate_trial_dict(self, filepath):
+    def recreate_trial_dict(self, filepath=None):
         # get as much of the trial set up as possible
-        self.parse_filename(filepath)
+        if filepath == None:
+            self.parse_filename(self.file_path)
+        else:
+            self.parse_filename(filepath)
 
         # get the trial dict setup
         self._setup_trial_dict()
 
-        #check if there are videos to attach and add them to the dictionary
+        #check if there are videos or images to attach and add them to the dictionary
         path_results = self.config_obj.path_results + self.athlete + "/"
-        mp4_files = [file for file in os.listdir(path_results) if
-                     file.startswith(self.short_filename) and file.endswith(".mp4")]
+        if os.path.exists(path_results) and os.listdir(path_results):
+            mp4_files = [file for file in os.listdir(path_results) if
+                         file.startswith(self.short_filename) and file.endswith(".mp4")]
 
-        for mp4_file in mp4_files:
-            tokens = self.short_filename.split('_')
-            try:
-                if tokens[4]  == "VIDEO":
-                    json_attribute_name = tokens[4] + "_" + tokens[5]
-                    self.trial_dict[json_attribute_name] = mp4_file
-            except:
-                log.error(f"something went wrong with finding videos for : {filepath} : file: {mp4_file}")
+            for mp4_file in mp4_files:
+                tokens = mp4_file.split('_')
+                try:
+                    if tokens[4]  == "VIDEO":
+                        json_attribute_name = tokens[4] + "_" + tokens[5]
+                        self.trial_dict[json_attribute_name] = mp4_file
+                except:
+                    log.error(f"something went wrong with finding videos for : {filepath} : file: {mp4_file}")
 
-        #check if there are videos to attach and add them to the dictionary
-        png_files = [file for file in os.listdir(path_results) if
-                     file.startswith(self.short_filename) and file.endswith(".png")]
+            #check if there are images to attach and add them to the dictionary
+            png_files = [file for file in os.listdir(path_results) if
+                         file.startswith(self.short_filename) and file.endswith(".png")]
 
-        for png_file in png_files:
-            self.trial_dict['GRAPH_1'] = png_file
+            for png_file in png_files:
+                self.trial_dict['GRAPH_1'] = png_file
 
         return(self.trial_dict)
     def _setup_trial_dict(self):

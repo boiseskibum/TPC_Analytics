@@ -158,6 +158,27 @@ class CMJ_UI(QMainWindow):
         self.setWindowTitle(self.application_name)
         #        self.setGeometry(500, 100, 500, 700)
 
+        menubar = self.menuBar()
+
+        # Creating a File menu
+        fileMenu = menubar.addMenu('File')
+
+        # Creating actions for the File menu
+        dirMaintAction = QAction('Directories and Maintenance', self)
+        preferenceAction = QAction('Settings', self)   # this shows up as preferences in the MACOS
+        aboutAction = QAction('About', self)
+
+        # Adding actions to the File menu
+        fileMenu.addAction(dirMaintAction)
+        fileMenu.addAction(preferenceAction)
+        fileMenu.addAction(aboutAction)
+
+        # Connect the actions to their respective functions
+        dirMaintAction.triggered.connect(self.showDirMaint)
+        preferenceAction.triggered.connect(self.preferences_screen)
+        aboutAction.triggered.connect(self.showAbout)
+
+
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
         self.grid_layout = QGridLayout(central_widget)
@@ -468,6 +489,12 @@ class CMJ_UI(QMainWindow):
                                   msg="Go to Settings tab and set the serial port",
                                   type="ok") # this is custom dialog class created above
             return False
+
+    def showDirMaint(self):
+        print("DirMaint clicked")
+
+    def showAbout(self):
+        print("About clicked")
 
     def preferences_screen(self):
         self.preferences_window = jtpref.JT_PreferencesWindow(self.config_obj, self.jt_reader)
@@ -832,16 +859,16 @@ class CMJ_UI(QMainWindow):
                     pass
 
                 # save the summary data
-                return_dict = self.trial.save_summary()
+                images_dict = self.trial.save_summary()
+
+                #save the last_original filename - not sure why but what the heck
+                self.config_obj.set_config("last_original_filename", self.last_original_filename)
 
                 log.debug(f'type of return dict is: {type(return_dict)}')
                 if(return_dict != False):
-                    trial_dict.update(return_dict)
+                    trial_dict.update(images_dict)
                 else:
                     log.error(f'No Dictionary returned trial.save_summary while processing: {filepath}')
-
-                self.config_obj.set_config("last_original_filename", self.last_original_filename)
-
 
                 #save trial structural information to disk
                 self.trial_mgr_obj.save_trial_indexing(trial_dict)

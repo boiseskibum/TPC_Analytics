@@ -20,7 +20,7 @@ class JT_JsonTrialManager:
     def __init__(self, config_obj):
 
         self.config_obj = config_obj
-        self.path_db = config_obj.path_db
+        self.path_db = self.config_obj.path_db
         self.error = False
         self.error_msg = ""
         #if path doesn't exist create it
@@ -30,9 +30,9 @@ class JT_JsonTrialManager:
         self.protocol_list = self.config_obj.protocol_obj.summary_file_protocol_list
 
 
-        self.trial_mgr_index_file_path = config_obj.trial_mgr_filename
+        self.trial_mgr_index_file_path = self.config_obj.trial_mgr_filename
         self.df = None      # if populated contains all trials that have been run
-        print(f"JsonTrialManager results stored in: {self.trial_mgr_index_file_path}")
+        log.debug(f"JsonTrialManager results stored in: {self.trial_mgr_index_file_path}")
 
     ###############################################
     # Returns a list of all Trials tha have been stored
@@ -122,7 +122,7 @@ class JT_JsonTrialManager:
         json_filename = os.path.splitext( trial_dict['original_filename'] )[0]
         backup_file_path = backup_directory + json_filename + '.json'
 
-        print(f'backup_file_path: {backup_file_path}')
+        log.debug(f'backup_file_path: {backup_file_path}')
         if os.path.exists(backup_file_path):
             log.debug(f'{backup_file_path} already exists. Overwriting...')
 
@@ -153,7 +153,6 @@ class JT_JsonTrialManager:
 
     #### save trial indexes
     # Appends the information from one Trial to the master file containing all trials
-    # for convenience this returns a jt_trial_display for future usage
     def save_trial_indexing(self, trial_dict):
 
         with open(self.trial_mgr_index_file_path, 'a') as file:
@@ -161,7 +160,9 @@ class JT_JsonTrialManager:
             file.write('\n')
 
         log.debug(f"Trial Manager - writing trial to {self.trial_mgr_index_file_path}")
-        self.backup_trial_index(trial_dict)
+
+# commenting out backup trial index because it can be reproduced.  Maybe the future but not right now
+#        self.backup_trial_index(trial_dict)
 
         # if self.df is initialized then add the new row to it
         if self.df != None:
@@ -233,11 +234,13 @@ class JT_JsonTrialManager:
 
         return True
 
-    # delete summary data files so they can be rebuilt
-    def delete_all_summary_files(self):
+    # delete summary data files so they can be rebuilt - these files hold all of the data for a given protocol
+    def delete_summary_files(self):
+
+        self.error = False
         for protocol in self.protocol_list:
             csv_filename_to_delete = self.path_db + protocol + '_data.csv'
-
+            log.debug(f'Deleting summary data file: {csv_filename_to_delete}')
             # Check if the file exists before attempting to delete it
             if os.path.exists(csv_filename_to_delete):
                 # Attempt to remove the file
@@ -251,6 +254,96 @@ class JT_JsonTrialManager:
             else:
                 log.debug(f"Summary File {csv_filename_to_delete} does not exist.")
 
+    # code to delete the index_file
+    def delete_index_file(self):
+
+        self.error = False
+        if os.path.exists(self.trial_mgr_index_file_path):
+            # Attempt to remove the file
+            try:
+                os.remove(self.trial_mgr_index_file_path)
+            except OSError as e:
+                self.error = True
+                self.error_msg = f"Error deleting Summary File {self.trial_mgr_index_file_path}: {e}"
+                log.debug(self.error_msg)
+        else:
+            log.debug(f"Summary File {self.trial_mgr_index_file_path} does not exist, could not delete.")
+
+    #reprocess all files, this will rebuild the summary files, rebuild the index file, and recreate any image files
+    def reprocess_all_files(self):
+        log.info("***** Reprocessing all files *****")
+        # first delete the summary files
+        self.delete_summary_files()
+        if self.error == False:
+            log.info(f'Deleted all summary files')
+        else:
+            log.info(f'Failed to delete all Summary files.  Error msg: {self.error_msg}')
+
+        # delete the index files
+        self.delete_index_file()
+        if self.error == False:
+            log.info(f'Deleted Index file')
+        else:
+            log.info(f'Failed to delete Index_File.  Error msg: {self.error_msg}')
+
+        #walk through athletes re-processing each one
+        total = 0
+        completed = 0
+        athletes = self.get_list_of_all_athletes()
+        for athlete in athletes:
+
+            files = self.get_all_files_for_athlete(athlete)
+            log.info(f"    Processing {athlete} num files: {len(files)}")
+            # reprocessing files
+            for file in files:
+                total += 1
+                trial = jtt.JT_Trial(self.config_obj)
+                trial.parse_filename(file)
+                if trial.error == True:
+                    log.error(f'trial error: {trial.error_msg}')
+                else:
+#                        print(f"## about to process_summary file: {file}")
+                    trial.process_summary()
+                    if trial.error == True:
+                        log.error(f'Trial Error:  {trial.error_msg}')
+                    else:
+#                            print(f"## about to save_summary file: {file}")
+                        trial.save_summary()
+                        if trial.error == True:
+                            log.error(f'Reprocessing Error:  {trial.error_msg}')
+                        else:
+                            completed += 1
+                            log.debug(f'## Successfully Reprocessed: {file}')
+                            trial_dict = trial.recreate_trial_dict()
+                            self.save_trial_indexing(trial_dict)
+
+        msg_str = f'#### total processed: {total} success: {completed}: failed: {total - completed}'
+        log.info(msg_str)
+
+        return msg_str
+
+    # reprocess all data for athlete.  Downside to this is it leaves records in the index file, IE duplicates/triplicates/etc
+    # probably won't ever utilize or implement this but leaving the code around just in case
+    def reprocess_athlete(self, athlete):
+        athletes = self.get_list_of_all_athletes()
+        if athlete in athletes:
+            log.ingo(f"Deleting summary data for: {athlete}")
+            self.delete_athlete_summary_records(athlete)
+            files = self.get_all_files_for_athlete(athlete)
+            log.info(f"    reprocessing: {len(files)} files for athlete: {athlete}")
+
+            # reprocessing files
+            for file in files:
+                trial = trial_mgr_obj.get_trial_file_path(file, 'srt')
+                if trial_mgr_obj.error:
+                    log.error(f'trial manager error: {trial_mgr_obj.error_msg}')
+                else:
+                    trial.process_summary()
+                    trial.save_summary()
+
+        else:
+            log.error("ERROR:  Athlete does not have directory")
+
 
 ###############################################
 ###############################################
@@ -258,11 +351,16 @@ class JT_JsonTrialManager:
 # Example usage:
 if __name__ == "__main__":
 
+    #WARNING THIS WILL REPROCESS ALL FILES
     config_obj = jtc.JT_Config('taylor performance', 'TPC')
+    config_obj.validate_install()
 
     trial_mgr_obj = JT_JsonTrialManager(config_obj)
 
     log.set_logging_level("INFO")
+
+    trial_mgr_obj.reprocess_all_files()
+
     # file_path = 'trials.json'
     #
     #
@@ -291,71 +389,3 @@ if __name__ == "__main__":
 #    oj = last_original_json_value = df["original_json"].iloc[-1]
 #    print(f'last value of original json is: {oj}')
 
-    def testing_delete_athlete(tm, athlete):
-
-        athletes = tm.get_list_of_all_athletes()
-        if athlete in athletes:
-            print(f"Deleting summary data for: {athlete}")
-            tm.delete_athlete_summary_records(athlete)
-            files = tm.get_all_files_for_athlete(athlete)
-            print(f"    reprocessing: {len(files)} files for athlete: {athlete}")
-
-            #reprocessing files
-            for file in files:
-                trial = trial_mgr_obj.get_trial_file_path(file, 'srt')
-                if trial_mgr_obj.error:
-                    print(f'trial manager error: {trial_mgr_obj.error_msg}')
-                else:
-                    trial.process_summary()
-                    trial.save_summary()
-
-        else:
-            print("ERROR:  Athlete does not have directory")
-
-        # add athlete data back in debug_log
-
-
-    def testing_rebuild_all(tm):
-        tm.delete_all_summary_files()
-        if tm.error:
-            print(f'Deleted all summary files')
-        else:
-            print(f'Failed to delete all files.  Error msg: {tm.error_msg}')
-
-        max_files = 100000
-        total = 0
-        completed = 0
-        athletes = tm.get_list_of_all_athletes()
-        for athlete in athletes:
-
-            files = tm.get_all_files_for_athlete(athlete)
-            print(f"    Processing {athlete} num files: {len(files)}")
-            # reprocessing files
-            for file in files:
-                # allow myself to do only so many
-                if total < max_files:
-                    total += 1
-                    trial = jtt.JT_Trial(config_obj)
-                    trial.parse_filename(file)
-                    if trial.error == True:
-                        print(f'trial error: {trial.error_msg}')
-                    else:
-#                        print(f"## about to process_summary file: {file}")
-                        trial.process_summary()
-                        if trial.error == True:
-                            print(f'Trial Error:  {trial.error_msg}')
-                        else:
- #                           print(f"## about to save_summary file: {file}")
-                            trial.save_summary()
-                            if trial.error == True:
-                                print(f'Trial Error:  {trial.error_msg}')
-                            else:
-                                completed += 1
-                                print(f'## Successfully completed: {file}')
-        print(f'#### total processed: {total} success: {completed}: failed: {total - completed}')
-        pass
-
-
-
-#    testing_delete_athlete(trial_mgr_obj, 'Mickey')
-    testing_rebuild_all(trial_mgr_obj)

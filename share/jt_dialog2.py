@@ -127,7 +127,7 @@ if __name__ == "__main__":
             self.button4.clicked.connect(self.show_dialog5)
             layout.addWidget(self.button4)
 
-            self.athletes = ['huey', 'duey', 'louie']
+            self.athletes = ['huey', 'dewey', 'louie']
             self.athlete_combobox = QComboBox()
             print(f'list of athletes: {self.athletes}')
             self.athlete_combobox.addItems(self.athletes)

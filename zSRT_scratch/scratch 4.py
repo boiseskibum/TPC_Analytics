@@ -1,37 +1,33 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QFileDialog, QMainWindow, QPushButton, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QApplication, QDialog, QProgressBar, QVBoxLayout, QPushButton
+from PyQt6.QtCore import Qt, QTimer
 
-class DirectorySelectionApp(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.initUI()
+class ProgressDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Progress Dialog")
+        self.setGeometry(100, 100, 300, 100)
 
-    def initUI(self):
-        layout = QVBoxLayout()
+        layout = QVBoxLayout(self)
+        self.progressBar = QProgressBar(self)
+        layout.addWidget(self.progressBar)
 
-        selectDirButton = QPushButton('Select Directory', self)
-        selectDirButton.clicked.connect(self.showDialog)
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.updateProgress)
+        self.timer.start(50)  # Update every 0.05 seconds (50 milliseconds)
 
-        layout.addWidget(selectDirButton)
+    def updateProgress(self):
+        current_value = self.progressBar.value()
+        if current_value < 100:
+            self.progressBar.setValue(current_value + 1)
+        else:
+            self.timer.stop()
 
-        container = QWidget()
-        container.setLayout(layout)
-        self.setCentralWidget(container)
-
-        self.setWindowTitle('Directory Selection App')
-        self.setGeometry(100, 100, 400, 200)
-
-    def showDialog(self):
-        # Set the default directory
-        default_directory = "/path/to/your/default/directory"
-
-        directory = QFileDialog.getExistingDirectory(self, 'Select Directory', default_directory)
-
-        if directory:
-            print('Selected Directory:', directory)
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = DirectorySelectionApp()
-    window.show()
+
+    # Show the progress dialog
+    progress_dialog = ProgressDialog()
+    progress_dialog.exec()
+
     sys.exit(app.exec())

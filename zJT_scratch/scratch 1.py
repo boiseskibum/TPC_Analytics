@@ -8,7 +8,7 @@ class CMJ_UI(QMainWindow):
 
         self.application_name = "my combo test app"
         self.setWindowTitle(self.application_name)
-        self.athletes = ['huey', 'duey', 'louie']
+        self.athletes = ['huey', 'dewey', 'louie']
 
         #### Main Screen ######################################################
         central_widget = QWidget(self)
