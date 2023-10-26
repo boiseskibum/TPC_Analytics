@@ -1,42 +1,43 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QApplication, QMainWindow, QTabWidget, QVBoxLayout, QWidget
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
-class MyWindow(QMainWindow):
+class PlotWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.figure, self.ax = plt.subplots()
+        self.canvas = FigureCanvas(self.figure)
+        layout = QVBoxLayout()
+        layout.addWidget(self.canvas)
+        self.setLayout(layout)
+
+    def plot(self, x, y):
+        self.ax.clear()
+        self.ax.plot(x, y)
+        self.canvas.draw()
+
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
         self.initUI()
 
     def initUI(self):
+        tab_widget = QTabWidget()
+
+        for i in range(4):
+            x = [j for j in range(10)]  # Sample x data
+            y = [j * (i + 1) for j in range(10)]  # Sample y data
+            plot_widget = PlotWidget()
+            plot_widget.plot(x, y)
+            tab_widget.addTab(plot_widget, f'Plot {i + 1}')
+
+        self.setCentralWidget(tab_widget)
         self.setGeometry(100, 100, 800, 600)
-        self.setWindowTitle("Tree Widget Example")
+        self.setWindowTitle('Multiple Plots Example')
+        self.show()
 
-        # Create a tree widget
-        tree_widget = QTreeWidget(self)
-        tree_widget.setColumnCount(1)
-
-        tree_widget.itemClicked.connect(self.on_item_clicked)
-
-        # Add items to the tree widget
-        root_item = QTreeWidgetItem(tree_widget, ["Root Item"])
-        child_item1 = QTreeWidgetItem(root_item, ["Child Item 1"])
-        child_item2 = QTreeWidgetItem(root_item, ["Child Item 2"])
-
-        # Create a layout for the main window
-        layout = QVBoxLayout()
-        layout.addWidget(tree_widget)
-
-        # Create a central widget and set the layout
-        central_widget = QWidget()
-        central_widget.setLayout(layout)
-        self.setCentralWidget(central_widget)
-
-    def on_item_clicked(self, item, column):
-        # This slot is called when an item in the tree widget is clicked
-        print(f"Item clicked: {item.text(column)}")
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     app = QApplication(sys.argv)
-    window = MyWindow()
-    window.show()
+    window = MainWindow()
     sys.exit(app.exec())

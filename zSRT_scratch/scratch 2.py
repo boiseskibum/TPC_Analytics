@@ -1,62 +1,64 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QTreeWidget, QTreeWidgetItem, QMenu
+from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
-class CustomTreeWidget(QTreeWidget):
+class PlotWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.figure, self.ax = plt.subplots()
+        self.canvas = FigureCanvas(self.figure)
+        layout = QVBoxLayout()
+        layout.addWidget(self.canvas)
+        self.setLayout(layout)
+
+    def plot(self, x, y):
+        self.ax.clear()
+        self.ax.plot(x, y)
+        self.canvas.draw()
+
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.current_plot_index = 0
+        self.initUI()
 
-    def contextMenuEvent(self, event):
-        menu = QMenu(self)
-        expand_all_action = menu.addAction("Expand All")
-        expand_all_action.triggered.connect(self.expand_all_items)
+    def initUI(self):
+        self.plot_data = [
+            ([j for j in range(10)], [j * (i + 1) for j in range(10)]) for i in range(4)
+        ]
 
-        collapse_all_action = menu.addAction("Collapse All")
-        collapse_all_action.triggered.connect(self.collapse_all_items)
+        self.plot_widget = PlotWidget()
+        self.plot_widget.plot(*self.plot_data[self.current_plot_index])
 
-        menu.exec(event.globalPos())
+        next_button = QPushButton('Next', self)
+        next_button.clicked.connect(self.showNextPlot)
 
-    def expand_all_items(self):
-        for i in range(self.topLevelItemCount()):
-            self.topLevelItem(i).setExpanded(True)
+        prev_button = QPushButton('Previous', self)
+        prev_button.clicked.connect(self.showPreviousPlot)
 
-    def collapse_all_items(self):
-        for i in range(self.topLevelItemCount()):
-            self.topLevelItem(i).setExpanded(False)
+        layout = QVBoxLayout()
+        layout.addWidget(self.plot_widget)
+        layout.addWidget(next_button)
+        layout.addWidget(prev_button)
 
-class TreeWidgetExample(QMainWindow):
-    def __init__(self):
-        super().__init__()
+        central_widget = QWidget()
+        central_widget.setLayout(layout)
+        self.setCentralWidget(central_widget)
 
-        self.setWindowTitle("Tree Widget Example")
-        self.setGeometry(100, 100, 400, 300)
+        self.setGeometry(100, 100, 800, 600)
+        self.setWindowTitle('Multiple Plots Example')
+        self.show()
 
-        self.tree_widget = CustomTreeWidget()
-        self.tree_widget.setHeaderLabels(["Athlete", "Date", "Trial"])
-        self.setCentralWidget(self.tree_widget)
+    def showNextPlot(self):
+        self.current_plot_index = (self.current_plot_index + 1) % len(self.plot_data)
+        self.plot_widget.plot(*self.plot_data[self.current_plot_index])
 
-        self.populate_tree()
-
-    def populate_tree(self):
-        athletes = ["Athlete 1", "Athlete 2", "Athlete 3"]
-
-        for athlete in athletes:
-            athlete_item = QTreeWidgetItem([athlete])
-            self.tree_widget.addTopLevelItem(athlete_item)
-
-            dates = ["2023-08-01", "2023-08-02", "2023-08-03"]
-
-            for date in dates:
-                date_item = QTreeWidgetItem([date])
-                athlete_item.addChild(date_item)
-
-                trials = ["Trial 1", "Trial 2", "Trial 3"]
-
-                for trial in trials:
-                    trial_item = QTreeWidgetItem([trial])
-                    date_item.addChild(trial_item)
+    def showPreviousPlot(self):
+        self.current_plot_index = (self.current_plot_index - 1) % len(self.plot_data)
+        self.plot_widget.plot(*self.plot_data[self.current_plot_index])
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    window = TreeWidgetExample()
-    window.show()
+    window = MainWindow()
     sys.exit(app.exec())

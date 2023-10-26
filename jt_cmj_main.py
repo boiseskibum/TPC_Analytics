@@ -845,13 +845,13 @@ class CMJ_UI(ttk.Frame):
             else:
                 path_athlete = self.output_file_dir + "/" + self.last_run_athlete + "/"
 
-                log.debug(f'path_athlete: {path_athlete}')
-
                 # Check if the directory already exists
                 if not os.path.exists(path_athlete):
                     # Create the directory if it doesn't exist
                     os.makedirs(path_athlete)
                     log.debug(f'Directory created: {path_athlete}')
+
+                log.debug(f'path_athlete: {path_athlete}')
 
                 path_filename = path_athlete + filename
                 self.results_df.to_csv(path_filename, index=True)

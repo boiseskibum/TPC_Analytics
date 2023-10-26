@@ -864,8 +864,7 @@ class CMJ_UI(QMainWindow):
                 #save the last_original filename - not sure why but what the heck
                 self.config_obj.set_config("last_original_filename", self.last_original_filename)
 
-                log.debug(f'type of return dict is: {type(return_dict)}')
-                if(return_dict != False):
+                if(images_dict != False):
                     trial_dict.update(images_dict)
                 else:
                     log.error(f'No Dictionary returned trial.save_summary while processing: {filepath}')

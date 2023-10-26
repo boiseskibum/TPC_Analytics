@@ -57,7 +57,7 @@ class JT_Config:
         self._get_os_document_path()
 
         starting_path_app = self.documents_folder + self.short_app_name + '/'   # this will be overwritten later
-        path_app_config = starting_path_app +  'config/'
+        path_app_config = starting_path_app + 'config/'
         self.path_app_config_json = path_app_config + self.short_app_name + '_path_app_config.json' #this will not change
 
         # validate if config.json file exists and read json file to get path_app
@@ -186,6 +186,32 @@ class JT_Config:
         elif my_platform == "Windows":
             pass
 
+    def path_athlete(self, athlete):
+        path = self.path_results + athlete + "/"
+        # Check if the directory already exists
+        if not os.path.exists(path):
+            # Create the directory if it doesn't exist
+            os.makedirs(path)
+            log.debug(f'Directory created: {path}')
+        return (path)
+
+    def path_athlete_images(self, athlete):
+        path = self.path_results + athlete + "/images/"
+        # Check if the directory already exists
+        if not os.path.exists(path):
+            # Create the directory if it doesn't exist
+            os.makedirs(path)
+            log.debug(f'Directory created: {path}')
+        return (path)
+
+    def path_athlete_videos(self, athlete):
+        path = self.path_results + athlete + "/videos/"
+        # Check if the directory already exists
+        if not os.path.exists(path):
+            # Create the directory if it doesn't exist
+            os.makedirs(path)
+            log.debug(f'Directory created: {path}')
+        return (path)
 
     #####################################
     # get key value

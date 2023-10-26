@@ -183,22 +183,36 @@ class JT_Trial:
         if not self.protocol_summary_name :
             log.error(f"Trial has not successfully had process_summary called:  {self.original_filename}")
 
+        # Given string
+        input_string = self.timestamp_str
+
+        # Split the string into date and time components
+        date_part, time_part = input_string.split('_')
+
+        # Replace hyphens with colons in the time component
+        time_part_modified = time_part.replace('-', ':')
+
+        # Join the date and modified time components back together
+        output_string = f"{date_part} {time_part_modified}"
+
+        print(output_string)
+
         debug_log_dict = {}
         debug_log_dict['status'] = 'success'
         debug_log_dict['athlete'] = self.athlete
         debug_log_dict['protocol'] = self.protocol
         debug_log_dict['protocol_summary_name'] = self.protocol_summary_name
         debug_log_dict['short_filename'] = self.short_filename
-        debug_log_dict["timestamp_str"] = self.timestamp_str
+        debug_log_dict["timestamp_str"] = self.convert_timestamp_str(self.timestamp_str)
         debug_log_dict["date_str"] = self.date_str
         debug_log_dict['filename'] = self.file_path
 
         standard_dict = {}
         standard_dict['original_filename'] = self.short_filename + '.csv'
         standard_dict['athlete_name'] = self.athlete
-        standard_dict["col_timestamp_str"] = self.timestamp_str
+        standard_dict["col_timestamp_str"] = self.convert_timestamp_str(self.timestamp_str)
         standard_dict["date_str"] = self.date_str
-        return_dict = {}
+        images_dict = {}
 
         # create a copoy of results dict so it remains the same.  Append the standard stuff to the temp copy. then
         # save it to summary file.   Return the graphs that are saved for possible usage of the calling routine
@@ -208,7 +222,7 @@ class JT_Trial:
             self._save_results(temp_dict, self.protocol)
 
             #grab the graphs to be returned if there are any and return those from this function
-            return_dict = {key: value for key, value in self.summary_results_dict.items() if "GRAPH_" in key}
+            images_dict = {key: value for key, value in self.summary_results_dict.items() if "GRAPH_" in key}
 
         except:
             log.error(f'save_summary failed: {self.file_path} no such protocol: {self.protocol_summary_name}')
@@ -228,7 +242,7 @@ class JT_Trial:
             log.error(self.error_msg)
             return False
 
-        return return_dict
+        return images_dict
 
     ###############################################
     #### log results to csv file ####
@@ -424,16 +438,45 @@ class JT_Trial:
         self.trial_dict['timestamp'] = self.timestamp_str
         self.trial_dict['results_csv'] = self.file_path
 
+    def convert_timestamp_str(self, bad_timestamp):
+
+        # Split the string into date and time components
+        if '_' in bad_timestamp:
+            date_part, time_part = bad_timestamp.split('_')
+        elif ' ' in bad_timestamp:
+            date_part, time_part = bad_timestamp.split(' ')
+        else:
+            return bad_timestamp
+
+        # Replace hyphens with colons in the time component
+        if '-' in time_part:
+            time_part_modified = time_part.replace('-', ':')
+        else:
+            time_part_modified = time_part
+
+        # Join the date and modified time components back together
+        good_timestamp = f"{date_part} {time_part_modified}"
+
+        return good_timestamp
+
 #####################################################################################
 if __name__ == "__main__":
 
     # set base and application path
     config_obj = jtc.JT_Config('taylor performance', 'TPC')
+    config_obj.validate_install()
 
     trial_mgr_obj = jttm.JT_JsonTrialManager(config_obj)
 
     trial = JT_Trial(config_obj)
 
+    str = '2023-08-17_00-40-26'
+    print(f'Convert: {str} to: {trial.convert_timestamp_str(str)}')
+    str = '2023-08-17 00-40-26'
+    print(f'Convert: {str} to: {trial.convert_timestamp_str(str)}')
+    str = '2023-08-17 00:40:26'
+    print(f'Convert: {str} to: {trial.convert_timestamp_str(str)}')
+    exit()
 
     file1 = 'JTDcmj_huey_2023-08-17_00-27-47.csv'   # file that fails
     file3 = 'JTDcmj_huey_2023-08-17_00-38-07.csv'

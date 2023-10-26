@@ -2,7 +2,12 @@
 # this objects manages all trials and appends them to the master list of trials.
 
 import pandas as pd
-import os, glob, json
+import os, glob, json, time, sys
+
+#used for progress bar
+from PyQt6.QtWidgets import QProgressDialog, QApplication, QLabel, QVBoxLayout, QPushButton, QWidget
+from PyQt6 import QtCore, QtWidgets
+
 
 try:
     import jt_util as util
@@ -192,6 +197,20 @@ class JT_JsonTrialManager:
 
         return folders
 
+    #returns the total number of files.  Used for reprocessoing progress dialog
+    def get_total_files(self):
+
+        total = 0
+        athletes = self.get_list_of_all_athletes()
+        for athlete in athletes:
+
+            files = self.get_all_files_for_athlete(athlete)
+            # reprocessing files
+            for file in files:
+                total += 1
+
+        return total
+
     # return all files for a given athlete from their directory, the file names must start with JT (this excludes
     def get_all_files_for_athlete(self, athlete):
 
@@ -206,33 +225,6 @@ class JT_JsonTrialManager:
 
         return file_list
 
-    # old stuff from jakes master's program
-
-    # delete all summary data for a given athlete from the respective summary
-    def delete_athlete_summary_records(self, athlete):
-
-        #iterate over protocols to open summary files and delete the athlete
-        for protocol in self.protocol_list:
-            my_csv_filename = self.path_db + protocol + '_data.csv'
-            if os.path.exists(my_csv_filename):
-
-                # Read the DataFrame from CSV
-                df = pd.read_csv(my_csv_filename)
-                before = len(df)
-
-                # Filter out rows with athlete_name="Steve Taylor"
-                df_filtered = df[df['athlete_name'] != athlete]
-                after = len(df_filtered)
-                # Reset the index
-                df_filtered = df_filtered.reset_index(drop=True)
-
-                # Save the filtered DataFrame to a new CSV file
-                df_filtered.to_csv(my_csv_filename, index=False)
-                print(f"Removed athlete {athlete} from protocol summary: {protocol}, before: {before}, after: {after}")
-            else:
-                pass
-
-        return True
 
     # delete summary data files so they can be rebuilt - these files hold all of the data for a given protocol
     def delete_summary_files(self):
@@ -270,8 +262,17 @@ class JT_JsonTrialManager:
             log.debug(f"Summary File {self.trial_mgr_index_file_path} does not exist, could not delete.")
 
     #reprocess all files, this will rebuild the summary files, rebuild the index file, and recreate any image files
-    def reprocess_all_files(self):
-        log.info("***** Reprocessing all files *****")
+    def reprocess_all_files(self, my_pyqt_app = None):
+        total_files = self.get_total_files()
+
+        if my_pyqt_app is not None:
+            my_progressDialog = QProgressDialog("Processing Files...", "cancel", 0, total_files, my_pyqt_app)
+            my_progressDialog.setWindowModality(QtCore.Qt.WindowModality.WindowModal)
+            QtWidgets.QApplication.processEvents()  # Process events to update the UI
+            time.sleep(2)  # delay a moment
+
+        log.info(f"***** Reprocessing {total_files} files *****")
+
         # first delete the summary files
         self.delete_summary_files()
         if self.error == False:
@@ -317,49 +318,62 @@ class JT_JsonTrialManager:
                             trial_dict = trial.recreate_trial_dict()
                             self.save_trial_indexing(trial_dict)
 
+                if my_pyqt_app is not None:
+                    my_progressDialog.setValue(total)
+                    my_progressDialog.setLabelText(f"Processing File {total}/{total_files}")
+                    QtWidgets.QApplication.processEvents()  # Process events to update the UI
+                    if total_files < 15:
+                        time.sleep(.3)  # Simulate file processing time
+
+        if my_pyqt_app is not None:
+            my_progressDialog.setValue(total_files)  # Ensure the progress bar reaches 100%
+            my_progressDialog.setLabelText(f"Processing File {total}/{total_files}")
+            QtWidgets.QApplication.processEvents()  # Process events to update the UI
+            time.sleep(3)  # Simulate file processing time
+
         msg_str = f'#### total processed: {total} success: {completed}: failed: {total - completed}'
         log.info(msg_str)
 
         return msg_str
 
-    # reprocess all data for athlete.  Downside to this is it leaves records in the index file, IE duplicates/triplicates/etc
-    # probably won't ever utilize or implement this but leaving the code around just in case
-    def reprocess_athlete(self, athlete):
-        athletes = self.get_list_of_all_athletes()
-        if athlete in athletes:
-            log.ingo(f"Deleting summary data for: {athlete}")
-            self.delete_athlete_summary_records(athlete)
-            files = self.get_all_files_for_athlete(athlete)
-            log.info(f"    reprocessing: {len(files)} files for athlete: {athlete}")
-
-            # reprocessing files
-            for file in files:
-                trial = trial_mgr_obj.get_trial_file_path(file, 'srt')
-                if trial_mgr_obj.error:
-                    log.error(f'trial manager error: {trial_mgr_obj.error_msg}')
-                else:
-                    trial.process_summary()
-                    trial.save_summary()
-
-        else:
-            log.error("ERROR:  Athlete does not have directory")
-
-
 ###############################################
 ###############################################
 ###############################################
 # Example usage:
+class FileProcessor(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Testing of Re-Processor")
+        self.setGeometry(100, 100, 400, 200)
+
+        layout = QVBoxLayout(self)
+
+        # Button to start processing files
+        start_button = QPushButton("Re-Process Files", self)
+        start_button.clicked.connect(self.process_files)
+        layout.addWidget(start_button)
+
+    def process_files(self):
+
+        #WARNING THIS WILL REPROCESS ALL FILES
+        config_obj = jtc.JT_Config('taylor performance', 'TPC')
+        config_obj.validate_install()
+
+        trial_mgr_obj = JT_JsonTrialManager(config_obj)
+
+        log.set_logging_level("INFO")
+
+        trial_mgr_obj.reprocess_all_files(self)
+
+
 if __name__ == "__main__":
 
-    #WARNING THIS WILL REPROCESS ALL FILES
-    config_obj = jtc.JT_Config('taylor performance', 'TPC')
-    config_obj.validate_install()
 
-    trial_mgr_obj = JT_JsonTrialManager(config_obj)
+    app = QApplication(sys.argv)
+    window = FileProcessor()
+    window.show()
+    sys.exit(app.exec())
 
-    log.set_logging_level("INFO")
-
-    trial_mgr_obj.reprocess_all_files()
 
     # file_path = 'trials.json'
     #
