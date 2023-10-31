@@ -44,6 +44,7 @@ from share import jt_trial as jtt
 from share import jt_trial_manager as jttm
 from share import jt_video as jtv
 from share import jt_plot as jtpl
+from share import jt_maintenance_UI as jtmaint
 from share import jt_preferences_UI as jtpref
 import jt_main_analytics1 as jtanalytics
 
@@ -168,13 +169,13 @@ class CMJ_UI(QMainWindow):
         aboutAction = QAction('About', self)
 
         # Adding actions to the File menu
-        fileMenu.addAction(dirMaintAction)
         fileMenu.addAction(preferenceAction)
+        fileMenu.addAction(dirMaintAction)
         fileMenu.addAction(aboutAction)
 
         # Connect the actions to their respective functions
-        dirMaintAction.triggered.connect(self.showDirMaint)
         preferenceAction.triggered.connect(self.preferences_screen)
+        dirMaintAction.triggered.connect(self.showDirMaint)
         aboutAction.triggered.connect(self.showAbout)
 
 
@@ -350,14 +351,14 @@ class CMJ_UI(QMainWindow):
         log.msg(f"path_app: {window.config_obj.path_app}")
 
         ##### serial port setup #####
-        self.jt_reader = jts.SerialDataReader()
+        self.reader_obj = jts.SerialDataReader()
 
         self.baud_rate = 115200
         self.calibration_measurement_count = 20 # for calibration readings
         self.updated_weight_count = 5      # for updating the weight on the screen
         self.serial_port = None
 
-        self.serial_ports_list = self.jt_reader.get_available_ports()
+        self.serial_ports_list = self.reader_obj.get_available_ports()
 
         # if only one port available then attempt to connect to it
         if len(self.serial_ports_list) == 1:
@@ -468,11 +469,11 @@ class CMJ_UI(QMainWindow):
 
     def check_serial_port(self):
 
-        my_return = self.jt_reader.configure_serial_port(self.serial_port_name, self.baud_rate)
+        my_return = self.reader_obj.configure_serial_port(self.serial_port_name, self.baud_rate)
         if my_return:
 
             #validate some data is coming down the pipe
-            if self.jt_reader.serial_port_validate_data('s2'):
+            if self.reader_obj.serial_port_validate_data('s2'):
                 #store the current serial port into the configuration file
                 self.config_obj.set_config("last_port", self.serial_port_name)
                 return True
@@ -488,7 +489,7 @@ class CMJ_UI(QMainWindow):
             return False
 
     def showDirMaint(self):
-        self.maintenance_window = JT_MaintenanceWindow(self.config_obj, self.reader_obj)
+        self.maintenance_window = jtmaint.JT_MaintenanceWindow(self.config_obj, self.reader_obj)
         self.maintenance_window.setModal(True)
         self.maintenance_window.show()
 
@@ -496,7 +497,7 @@ class CMJ_UI(QMainWindow):
         print("About clicked")
 
     def preferences_screen(self):
-        self.preferences_window = jtpref.JT_PreferencesWindow(self.config_obj, self.jt_reader)
+        self.preferences_window = jtpref.JT_PreferencesWindow(self.config_obj, self.reader_obj)
         try:
             self.preferences_window.show()
         except Exception as e:
@@ -681,7 +682,7 @@ class CMJ_UI(QMainWindow):
 
         # if in testing mode them skip actually getting data and allow the stop button to read it from a file
         if test_data_file == None:
-            self.jt_reader.start_reading()
+            self.reader_obj.start_reading()
             #start video
             if self.video_on == True:
                 self.video1.start()
@@ -699,21 +700,21 @@ class CMJ_UI(QMainWindow):
         self.buttons_stopped()
 
         if test_data_file == None:
-            self.num_measurements = self.jt_reader.stop_reading()
+            self.num_measurements = self.reader_obj.stop_reading()
             if self.num_measurements == 0:
                 jtd.JT_Dialog(parent=self, title="Run Error", msg="No data collected, press ok to continue", type="ok")
                 return
         else:
             log.debug(f"UTILIZING TEST FILE: {test_data_file}")
             my_df = read_test_file(test_data_file)
-            self.jt_reader.set_test_data_list(my_df)
+            self.reader_obj.set_test_data_list(my_df)
             self.num_measurements = len(my_df)
 
         log.debug(f"stop_recording, num meas: {self.num_measurements}, protocol: {self.protocol_name_selected}")
         # get the df
         # def get_data_df(self, l_zero=0, l_mult=1, r_zero=0, r_mult=1, athlete='na', protocol='na'):
         leg = self.protocol_obj.get_leg_by_name(self.protocol_name_selected)
-        self.results_df = self.jt_reader.get_data_df(self.l_zero, self.l_mult, self.r_zero, self.r_mult,
+        self.results_df = self.reader_obj.get_data_df(self.l_zero, self.l_mult, self.r_zero, self.r_mult,
                     self.last_run_athlete, self.protocol_name_selected, self.protocol_type_selected, leg)
 
         log.debug(f"results_df columns: {self.results_df.columns}")
@@ -786,10 +787,10 @@ class CMJ_UI(QMainWindow):
         #log.debug(f"update time: {current_time}")
         self.clock_label.setText(current_time)
 
-        #only update weights if nobody else is reading in data, and the serial port is configured in jt_reader
+        #only update weights if nobody else is reading in data, and the serial port is configured in reader_obj
         doit = True
-        if self.jt_reader is not None:
-            if self.is_recording == False and self.jt_reader.serial_port != None and doit == True:
+        if self.reader_obj is not None:
+            if self.is_recording == False and self.reader_obj.serial_port != None and doit == True:
 
       #          log.debug(f"updating clock and weights")
                 left_weight = self.get_average_reading('s1_clean', 0, self.updated_weight_count)
@@ -895,7 +896,7 @@ class CMJ_UI(QMainWindow):
         if(test_data_file == None):
 
             self.is_recording = True
-            my_df = self.jt_reader.read_lines(num_measurements)
+            my_df = self.reader_obj.read_lines(num_measurements)
             self.is_recording = False
 
         else:
@@ -904,9 +905,9 @@ class CMJ_UI(QMainWindow):
             else:
                 my_df = read_test_file('test_output_30_lbs.txt')
 
-            self.jt_reader.set_test_data_list( my_df)
+            self.reader_obj.set_test_data_list( my_df)
 
-        my_df = self.jt_reader.get_data_df()
+        my_df = self.reader_obj.get_data_df()
         if len(my_df) > 0:
             avg_reading = my_df[json_field_name].mean()
         #log.f(f"average: {avg_reading}")
