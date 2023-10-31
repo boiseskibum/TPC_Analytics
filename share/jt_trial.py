@@ -34,7 +34,6 @@ class JT_Trial:
         self.original_filename = None   #this is the filename with no path included
         self.file_path = None           #full path and filename
         self.timestamp_str = None
-        self.date_now = None            #used for saving files
         self.trial_name = None
         self.results_df = pd.DataFrame()
         self.protocol_obj = None
@@ -177,6 +176,7 @@ class JT_Trial:
 
     def _create_orginal_filename(self):
         self.original_filename = f"{self.protocol}_{self.athlete}_{self.timestamp_str}.csv"
+        self.short_filename = f"{self.protocol}_{self.athlete}_{self.timestamp_str}"
 
     def save_summary(self):
 
@@ -330,32 +330,27 @@ class JT_Trial:
 
         #save timestamp_str to right now
         self.timestamp_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        self.date_now = datetime.now().strftime("%Y-%m-%d")
+        self.date_str = datetime.now().strftime("%Y-%m-%d")
 
         ###### data CSV saving
         #create path
-        path_athlete = self.config_obj.path_data + self.athlete + "/"
+        path_athlete = self.config_obj.path_data_athlete(self.athlete)
 
         #create filename
         self._create_orginal_filename()
 
-        log.debug(f'path_athlete: {path_athlete}')
-
-        # Check if the data/athlete directory already exists
-        if not os.path.exists(path_athlete):
-            os.makedirs(path_athlete)
-            log.debug(f'Directory created: {path_athlete}')
+        log.debug(f'JT_Trial - path data athlete: {path_athlete}')
 
         # sets up self.trial_dict which is used to hold the basics of what all was saved (not the raw data)
-        self._setup_trial_dict(self)
+        self._setup_trial_dict()
 
-        path_filename = path_athlete + self.original_filename
+        self.file_path = path_athlete + self.original_filename
 
         try:
-            self.results_df.to_csv(path_filename, index=True)
-            log.debug(f"Trial: appending to file: {path_filename}")
+            self.results_df.to_csv(self.file_path, index=True)
+            log.debug(f"Trial: appending to file: {self.file_path}")
         except:
-            self.error_msg = f"failed to save results_df: {path_filename}"
+            self.error_msg = f"failed to save results_df: {self.file_path}"
             log.error(self.error_msg)
 
         ##### Graphs/Images and Videos Saving
@@ -434,7 +429,7 @@ class JT_Trial:
         self.trial_dict['original_filename'] = self.original_filename
         self.trial_dict['athlete'] = self.athlete
         self.trial_dict['protocol'] = self.protocol
-        self.trial_dict['date'] = self.date_now
+        self.trial_dict['date'] = self.date_str
         self.trial_dict['timestamp'] = self.timestamp_str
         self.trial_dict['results_csv'] = self.file_path
 

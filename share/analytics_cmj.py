@@ -44,7 +44,8 @@ class JT_analytics_cmj:
 
         self.athlete = athlete
         self.config_obj = config_obj
-        self.path_athlete = self.config_obj.path_athlete(self.athlete)
+        self.path_data_athlete = self.config_obj.path_data_athlete(self.athlete)
+        self.path_results_athlete = self.config_obj.path_results_athlete(self.athlete)
         self.path_athlete_images = self.config_obj.path_athlete_images(self.athlete)
         self.today_date = date.today()
 
@@ -310,7 +311,7 @@ class JT_analytics_cmj:
         pdf.image(self.path_athlete_images + 'force_asymmetry_graph.png',
                   x=half_pw / 2, y=y_start, w=image_w, h=0)
 
-        output_file = self.path_athlete + ' Report.pdf'
+        output_file = self.path_results_athlete + ' Report.pdf'
         print(f'PDF created: {output_file}')
         # save PDF File
         pdf.output(output_file)
@@ -402,7 +403,7 @@ class JT_analytics_cmj:
                   x=half_pw, y=y_start, w=image_w, h=0)
 
         # save PDF File
-        output_file = self.path_athlete + ' Advanced Report.pdf'
+        output_file = self.path_results_athlete + ' Advanced Report.pdf'
         print(f'PDF created: {output_file}')
         # save PDF File
         pdf.output(output_file)

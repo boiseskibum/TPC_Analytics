@@ -184,9 +184,19 @@ class JT_Config:
 
         # Windows
         elif my_platform == "Windows":
-            pass
+            # Get the path to the Documents folder on macOS
+            self.documents_folder = os.path.expanduser("~/Documents") + '/'
 
-    def path_athlete(self, athlete):
+    def path_data_athlete(self, athlete):
+        path = self.path_data + athlete + "/"
+        # Check if the directory already exists
+        if not os.path.exists(path):
+            # Create the directory if it doesn't exist
+            os.makedirs(path)
+            log.debug(f'Directory created: {path}')
+        return (path)
+
+    def path_results_athlete(self, athlete):
         path = self.path_results + athlete + "/"
         # Check if the directory already exists
         if not os.path.exists(path):

@@ -39,14 +39,12 @@ log.set_logging_level("WARNING")  # this will show errors but not files actually
 # import Jakes files
 from share import jt_dialog as jtd
 from share import jt_serial as jts
-from share import jt_protocol as jtp
-from share import jt_athletes as jta
 from share import jt_config as jtc
 from share import jt_trial as jtt
 from share import jt_trial_manager as jttm
 from share import jt_video as jtv
-from share import jt_preferences as jtpref
-#from share import process_files as  jtpf
+from share import jt_plot as jtpl
+from share import jt_preferences_UI as jtpref
 import jt_main_analytics1 as jtanalytics
 
 # Testing data
@@ -140,6 +138,7 @@ class CMJ_UI(QMainWindow):
         str = str + f"  \n"
         self.help_str = str
 
+        self.jt_reader = None
         self.video1 = None
         self.video2 = None
         self.trial = None
@@ -432,8 +431,6 @@ class CMJ_UI(QMainWindow):
 
         self.last_original_filename = self.config_obj.get_config("last_original_filename")
 
-        self.output_file_dir = self.config_obj.get_config(my_platform + "-output_file_dir")
-
         ###### general setup ######
         self.results_df = pd.DataFrame()  # Empty DataFrame
         self.collecting_data = False
@@ -491,7 +488,9 @@ class CMJ_UI(QMainWindow):
             return False
 
     def showDirMaint(self):
-        print("DirMaint clicked")
+        self.maintenance_window = JT_MaintenanceWindow(self.config_obj, self.reader_obj)
+        self.maintenance_window.setModal(True)
+        self.maintenance_window.show()
 
     def showAbout(self):
         print("About clicked")
@@ -738,6 +737,18 @@ class CMJ_UI(QMainWindow):
         axes.set_ylabel("force (N)")
         axes.set_xlabel("measurement number")
 
+        # if self.protocol_type_selected == 'single':
+        #     line_data = [
+        #         {'x': self.results_df['force_N'], 'y': self.line1, 'label': 'Force', 'color': 0}]
+        #
+        # else:
+        #     line_data = [
+        #         {'y': self.results_df['l_force_N'], 'label': 'Left', 'color': 0},
+        #         {'y': self.results_df['r_force_N'], 'label': 'Right', 'color': 1}]
+        # 
+        # my_plot = jtpl.JT_plot('Current run', 'measurement number', 'force (N)', line_data)
+        # my_plot.draw_on_pyqt(axes)
+
         self.canvas.draw()
 
         end_time = time.time()
@@ -777,18 +788,19 @@ class CMJ_UI(QMainWindow):
 
         #only update weights if nobody else is reading in data, and the serial port is configured in jt_reader
         doit = True
-        if self.is_recording == False and self.jt_reader.serial_port != None and doit == True:
+        if self.jt_reader is not None:
+            if self.is_recording == False and self.jt_reader.serial_port != None and doit == True:
 
-  #          log.debug(f"updating clock and weights")
-            left_weight = self.get_average_reading('s1_clean', 0, self.updated_weight_count)
-            l_force = self.get_force_lbs(left_weight, self.l_zero, self.l_mult)
-            self.l_calibration_display.setText("{:.0f}".format(l_force))  #format force to just an integer
+      #          log.debug(f"updating clock and weights")
+                left_weight = self.get_average_reading('s1_clean', 0, self.updated_weight_count)
+                l_force = self.get_force_lbs(left_weight, self.l_zero, self.l_mult)
+                self.l_calibration_display.setText("{:.0f}".format(l_force))  #format force to just an integer
 
-            #only do the measurements if both legs are being measured
-            if self.protocol_type_selected != 'single':
-                right_weight = self.get_average_reading('s2_clean', 0, self.updated_weight_count)
-                r_force = self.get_force_lbs(right_weight, self.r_zero, self.r_mult)
-                self.r_calibration_display.setText("{:.0f}".format(r_force))
+                #only do the measurements if both legs are being measured
+                if self.protocol_type_selected != 'single':
+                    right_weight = self.get_average_reading('s2_clean', 0, self.updated_weight_count)
+                    r_force = self.get_force_lbs(right_weight, self.r_zero, self.r_mult)
+                    self.r_calibration_display.setText("{:.0f}".format(r_force))
 
     def jt_analytics(self):
 
@@ -823,58 +835,49 @@ class CMJ_UI(QMainWindow):
 
         if value:
 
-            if self.output_file_dir == None:
+            protocol_filename = self.protocol_obj.get_protocol_by_name(self.protocol_name_selected)
 
-                # if not output directory defined make them go define one
-                value = jtd.JT_Dialog(parent=self, title="Error", msg="No output directory defined, go to Settings tab and define one",
-                                       type="ok")  # this is custom dialog class created above
-                return(False)
+            # Create Trial which will allow dataframe, videos and images to be saved
+            self.trial = jtt.JT_Trial(self.config_obj)
+            self.trial.setup_for_save(self.last_run_athlete, protocol_filename )
+            self.trial.attach_results_df(self.results_df)
 
+            # add videos
+            if self.video1 != None:
+                self.trial.attach_video('VIDEO_1', self.video1)
+
+            if self.video2 != None:
+                self.trial.attach_video('VIDEO_2', self.video2)
+
+            # save Trial to disk (run/videos/images)
+            trial_dict = self.trial.save_raw_trial()
+            self.last_original_filename = trial_dict['original_filename']
+            filepath = self.config_obj.path_data + '/' + self.last_run_athlete + '/' + self.last_original_filename
+
+            # process the Trial (this creates summary data from it
+            # this creates the summary data and there is also some graphs that are produced
+            # the graph location(s) are returned in the return_dict
+            if self.trial.process_summary() == False:
+                # do something - throw message up on screen about couldn't write summarize trial
+                pass
+
+            # save the summary data
+            images_dict = self.trial.save_summary()
+
+            #save the last_original filename - not sure why but what the heck
+            self.config_obj.set_config("last_original_filename", self.last_original_filename)
+
+            if(images_dict != False):
+                trial_dict.update(images_dict)
             else:
+                log.error(f'No Dictionary returned trial.save_summary while processing: {filepath}')
 
-                protocol_filename = self.protocol_obj.get_protocol_by_name(self.protocol_name_selected)
+            #save trial structural information to disk
+            self.trial_mgr_obj.save_trial_indexing(trial_dict)
 
-                # Create Trial which will allow dataframe, videos and images to be saved
-                self.trial = jtt.JT_Trial(self.config_obj)
-                self.trial.setup_for_save(self.last_run_athlete, protocol_filename )
-                self.trial.attach_results_df(self.results_df)
-
-                # add videos
-                if self.video1 != None:
-                    self.trial.attach_video('VIDEO_1', self.video1)
-
-                if self.video2 != None:
-                    self.trial.attach_video('VIDEO_2', self.video2)
-
-                # save Trial to disk (run/videos/images)
-                trial_dict = self.trial.save_raw_trial()
-                self.last_original_filename = trial_dict['original_filename']
-                filepath = self.config_obj.path_data + '/' + self.last_run_athlete + '/' + self.last_original_filename
-
-                # process the Trial (this creates summary data from it
-                # this creates the summary data and there is also some graphs that are produced
-                # the graph location(s) are returned in the return_dict
-                if self.trial.process_summary() == False:
-                    # do something - throw message up on screen about couldn't write summarize trial
-                    pass
-
-                # save the summary data
-                images_dict = self.trial.save_summary()
-
-                #save the last_original filename - not sure why but what the heck
-                self.config_obj.set_config("last_original_filename", self.last_original_filename)
-
-                if(images_dict != False):
-                    trial_dict.update(images_dict)
-                else:
-                    log.error(f'No Dictionary returned trial.save_summary while processing: {filepath}')
-
-                #save trial structural information to disk
-                self.trial_mgr_obj.save_trial_indexing(trial_dict)
-
-                self.saved = True
-                self.save_button.setEnabled(False)
-                self.message_line(f"saved file: {self.last_original_filename}")
+            self.saved = True
+            self.save_button.setEnabled(False)
+            self.message_line(f"saved file: {self.last_original_filename}")
 
 
     #get weight (lbs or kg) using zero, multiplier, and wether or not kb or lbs

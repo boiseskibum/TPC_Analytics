@@ -56,11 +56,11 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
     closed = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent)
-        # calls the setup methon instead of the python class created from the UI
+        # calls the setup method instead of the python class created from the UI
         self.setupUi(self)
 
         # configuration object for keys and values setup
-        self.config_obj = jtc.JT_Config('Taylor Peformance Consulting Analytics', 'TPC')
+        self.config_obj = jtc.JT_Config('Taylor Performance Consulting Analytics', 'TPC')
 
         if self.config_obj.validate_install() == False:
             # get desired directory from user
@@ -70,6 +70,8 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
                                   msg=instructions,
                                   type="ok")  # this is custom dialog class created above
             sys.exit()
+
+        log.info(f'JT_Analytics_UI path_app: {self.config_obj.path_app}')
 
         ##### Athletes #####
         try:
@@ -683,26 +685,28 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     window = JT_Analytics_UI()
-    window.set_trial(trial)
-    log.msg(f"path_app: {window.config_obj.path_app}")
 
-    path_zTest = window.config_obj.path_app + 'zTest/'
-    fp = path_zTest + 'JTDcmj_huey_2023-08-17_00-38-07.csv'
-#    fp = path_zTest + 'JTSextL_Mickey_2023-08-08_17-36-53.csv'
-    fp_video1 = path_zTest + 'test_video1.mp4'
-    fp_graph = path_zTest + 'graph1.png'
 
-    trial = jtt.JT_Trial(window.config_obj)
-    trial.validate_trial_path(fp)
-    trial.process_summary()
-    trial.trial_name = "srt test trial"
-    trial.video_files["video1"]: fp_video1
+    def test_specific_trial():
+        log.msg(f"path_app: {window.config_obj.path_app}")
+
+        path_zTest = window.config_obj.path_app + 'zTest/'
+        fp = path_zTest + 'JTDcmj_huey_2023-08-17_00-38-07.csv'
+    #    fp = path_zTest + 'JTSextL_Mickey_2023-08-08_17-36-53.csv'
+        fp_video1 = path_zTest + 'test_video1.mp4'
+        fp_graph = path_zTest + 'graph1.png'
+
+        trial = jtt.JT_Trial(window.config_obj)
+        trial.validate_trial_path(fp)
+        trial.process_summary()
+        trial.trial_name = "srt test trial"
+        trial.video_files["video1"]: fp_video1
+        window.set_trial(trial)
+
 
 #    window.load_tree()
 
-    window.set_video1('resources/testing/test_video.mp4')
-
+    log.set_logging_level("INFO")
     window.show()
-
     result = app.exec()
     sys.exit(result)
