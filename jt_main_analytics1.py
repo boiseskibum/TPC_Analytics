@@ -286,7 +286,12 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.ax.set_ylabel(self.graph.get('ylabel', 'no ylabel'))
         self.elapsed_time = self.graph.get('elapsed_time', 0)
 
-        # draw the lines on the graph
+        # draw the lines on the graph.  There is a lot of code here and the primary purpose is
+        # there are two ways to draw the lines.  First is all the points from beginning to end.  The
+        # second way is to draw the lines starting a specific point on the time line to a 2nd point on
+        # the timeline.  This is used for when the "short_video" flag is set.   Because ultimately time is
+        # on the X axis there is a bunch of calculations to be done.   This should probably be put into
+        # jt_plot but I am leaving that for another day (and maybe person)
         lines_dict = self.graph["lines"]
         color_i=0
         j = 0   # counter
@@ -312,8 +317,6 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             #calculate the min and max times to show on the graph
             start_time = self.min_data_point / self.total_data_points * self.elapsed_time
             end_time = self.max_data_point / self.total_data_points * self.elapsed_time
-
-
 
             # create the x values so they are in seconds
             self.graph_x_seconds = np.linspace(start_time, end_time, (self.max_data_point - self.min_data_point ) )

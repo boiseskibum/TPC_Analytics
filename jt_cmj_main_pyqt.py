@@ -724,31 +724,32 @@ class CMJ_UI(QMainWindow):
         self.canvas.figure.clear()
         axes = self.canvas.figure.add_subplot(111)
 
-        jt_color1 = colors_seismic[2]
-        jt_color2 = colors_icefire[4]
+        # jt_color1 = colors_seismic[2]
+        # jt_color2 = colors_icefire[4]
+        #
+        # if self.protocol_type_selected == 'single':
+        #     axes.plot(self.results_df['force_N'], linewidth=1, color=jt_color1, label='Force')
+        # else:
+        #     axes.plot(self.results_df['l_force_N'], linewidth=1, color=jt_color1, label="Left")
+        #     axes.plot(self.results_df['r_force_N'], linewidth=1, color=jt_color2, label="Right")
+        #
+        # axes.legend()
+        # axes.set_title("Current run", fontdict={'fontweight': 'bold', 'fontsize': 12})
+        # axes.set_ylabel("force (N)")
+        # axes.set_xlabel("measurement number")
 
         if self.protocol_type_selected == 'single':
-            axes.plot(self.results_df['force_N'], linewidth=1, color=jt_color1, label='Force')
+            line_data = [
+                {'y': self.results_df['force_N'], 'label': 'Force (N)', 'color': 0}]
+
         else:
-            axes.plot(self.results_df['l_force_N'], linewidth=1, color=jt_color1, label="Left")
-            axes.plot(self.results_df['r_force_N'], linewidth=1, color=jt_color2, label="Right")
+            line_data = [
+                {'y': self.results_df['l_force_N'], 'label': 'Left', 'color': 0},
+                {'y': self.results_df['r_force_N'], 'label': 'Right', 'color': 1}]
 
-        axes.legend()
-        axes.set_title("Current run", fontdict={'fontweight': 'bold', 'fontsize': 12})
-        axes.set_ylabel("force (N)")
-        axes.set_xlabel("measurement number")
-
-        # if self.protocol_type_selected == 'single':
-        #     line_data = [
-        #         {'x': self.results_df['force_N'], 'y': self.line1, 'label': 'Force', 'color': 0}]
-        #
-        # else:
-        #     line_data = [
-        #         {'y': self.results_df['l_force_N'], 'label': 'Left', 'color': 0},
-        #         {'y': self.results_df['r_force_N'], 'label': 'Right', 'color': 1}]
-        # 
-        # my_plot = jtpl.JT_plot('Current run', 'measurement number', 'force (N)', line_data)
-        # my_plot.draw_on_pyqt(axes)
+        my_plot = jtpl.JT_plot('Current run', 'measurement number', 'force (N)', line_data)
+        my_plot.set_marker_none()
+        my_plot.draw_on_pyqt(axes)
 
         self.canvas.draw()
 

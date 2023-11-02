@@ -8,8 +8,11 @@ import seaborn as sns
 
 try:
     from . import jt_util as util
+    from . import jt_plot as jtpl
+
 except ImportError:
     import jt_util as util
+    import jt_plot as jtpl
 
 log = util.jt_logging()
 log.set_logging_level("WARNING")   # this will show errors but not files actually processed
@@ -121,6 +124,14 @@ class JTDcmj:
             plt.show()
 
         # store the lines away for later use in the Trial Object
+
+        line_data = [
+            {'y': self.force_norm_l, 'label': 'Left', 'color': 0},
+            {'y': self.force_norm_r, 'label': 'Right', 'color': 1}]
+
+        my_plot = jtpl.JT_plot(title, xlabel, ylabel, line_data)
+        my_plot.set_marker_none()
+
         graph = {}
         graph['title'] = title
         graph['xlabel'] = xlabel

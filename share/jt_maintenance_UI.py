@@ -35,8 +35,8 @@ class JT_MaintenanceWindow(QDialog):
         self.text_widget = None # this is done here so that with serial combo box the thing doesn't error out when updating status bar
 
         self.setWindowTitle("Preferences")
-        self.setGeometry(600, 200, 500, 700)
-        self.setFixedSize(500, 700)
+        self.setGeometry(600, 200, 400, 400)
+        self.setFixedSize(400, 400)
 
         # button to rebuild indexes
         self.rebuild_indexes_button = QPushButton("rebuild Indexes", clicked=self.rebuild_indexes)

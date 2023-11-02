@@ -47,6 +47,7 @@ class JT_plot:
         self.yMax = None
         self.yBounds = None
         self.debug = False
+        self.marker = 'o'
 
     # sets the min and max values of the graph
     # yMin - this is for setting the axis
@@ -61,6 +62,9 @@ class JT_plot:
     #         Example yBounds = [15, -15]
     def set_yBounds(self, yBounds):
         self.yBounds = yBounds
+
+    def set_marker_none(self):
+        self.marker = None
 
     def set_output_filepath(self, filepath):
         self.output_filepath = filepath
@@ -114,9 +118,9 @@ class JT_plot:
                 lineColor = jt_colors[0]
 
             if x == None:
-                plt.plot(y, linestyle='-', marker='o', label=label, mfc='w', color=lineColor, markersize=5)
+                plt.plot(y, linestyle='-', marker=self.marker, label=label, mfc='w', color=lineColor, markersize=5)
             else:
-                plt.plot(x, y, linestyle='-', marker='o', label=label, mfc='w', color=lineColor, markersize=5)
+                plt.plot(x, y, linestyle='-', marker=self.marker, label=label, mfc='w', color=lineColor, markersize=5)
 
         # create bounding lines (this can be 1 or more)
         if self.yBounds is not None:
@@ -164,9 +168,9 @@ class JT_plot:
                 lineColor = jt_colors[0]
 
             if x == None:
-                ax.plot(y, linestyle='-', marker='o', label=label, mfc='w', color=lineColor, markersize=5)
+                ax.plot(y, linestyle='-', marker=self.marker, label=label, mfc='w', color=lineColor, markersize=5)
             else:
-                ax.plot(x, y, linestyle='-', marker='o', label=label, mfc='w', color=lineColor, markersize=5)
+                ax.plot(x, y, linestyle='-', marker=self.marker, label=label, mfc='w', color=lineColor, markersize=5)
 
         # create bounding lines (this can be 1 or more)
         if self.yBounds is not None:
