@@ -70,10 +70,7 @@ class JT_plot:
         self.output_filepath = filepath
 
     #used to show the graph - generally only for debug
-    def show_graph(self):
-        self._setup_plt()
-        plt.show()
-        plt.close()
+
 
     def draw_on_pyqt(self, ax_target):
         self._setup_plt(ax_target)
@@ -81,12 +78,11 @@ class JT_plot:
         plt.close()
 
     # save filename to disk
-    # filename - filename to write out
-    def save_to_file(self, filepath=None):
+    # save_to_disk
+    def save_to_file(self, save_to_disk=True):
 
         # if filename isn't specified then get it from the local variable
-        if filepath == None:
-            filepath = self.output_filepath
+        filepath = self.output_filepath
 
         # if filepath still isn't specifid then error out.
         if filepath == None:
@@ -117,10 +113,10 @@ class JT_plot:
             except:
                 lineColor = jt_colors[0]
 
-            if x == None:
-                plt.plot(y, linestyle='-', marker=self.marker, label=label, mfc='w', color=lineColor, markersize=5)
-            else:
+            if x is not None:
                 plt.plot(x, y, linestyle='-', marker=self.marker, label=label, mfc='w', color=lineColor, markersize=5)
+            else:
+                plt.plot(y, linestyle='-', marker=self.marker, label=label, mfc='w', color=lineColor, markersize=5)
 
         # create bounding lines (this can be 1 or more)
         if self.yBounds is not None:
@@ -134,12 +130,18 @@ class JT_plot:
         ax.set_xticks(x_ticks_temp)
         ax.set_ylim(self.yMin, self.yMax)
 
-        if (len(filepath) > 0):
-            plt.savefig(filepath,
-                        transparent=False,
-                        facecolor='white', dpi=300,
-                        bbox_inches="tight")
-            log.debug(f'Saved Graph: {filepath}')
+        if(save_to_disk == True):
+            if (len(filepath) > 0):
+                plt.savefig(filepath,
+                            transparent=False,
+                            facecolor='white', dpi=300,
+                            bbox_inches="tight")
+                log.debug(f'Saved Graph: {filepath}')
+            else:
+                log.error(f'jt_plot - no file path specified')
+        else:
+            plt.show()
+
         plt.close()
 
     # core work of setting up plt

@@ -1,24 +1,36 @@
-import seaborn as sns
+import pandas as pd
 import matplotlib.pyplot as plt
 
-palettes = ['Blues', 'Greys', 'rocket', 'icefire', 'rainbow', 'seismic']
+# Sample DataFrame creation (replace this with your actual DataFrame)
+data = {
+    'datetime': ['2023-01-01', '2023-01-02', '2023-01-03', '2023-01-04', '2023-01-05'],
+    'peakForce': [100, 110, 95, 105, 115],
+    'leg': ['left', 'right', 'left', 'right', 'left']
+}
+df = pd.DataFrame(data)
 
-for palette in palettes:
+# Convert 'datetime' column to datetime objects
+df['datetime'] = pd.to_datetime(df['datetime'])
 
-    # Get the color palette
-    colors = sns.color_palette(palette, 10)
+# Sort DataFrame by 'datetime' and 'leg'
+sorted_df = df.sort_values(by=['leg', 'datetime'])
 
-    # Create a bar plot to display the colors
-    fig, ax = plt.subplots(figsize=(6, 1))
-    for i, color in enumerate(colors):
-        ax.fill_betweenx(y=[0, 1], x1=i, x2=i + 1, color=color)
+# Create two subplots for the two graphs
+fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
 
-    # Set the x and y limits, remove yticks and labels, and set xticks to the middle of each bar
-    ax.set_xlim(0, len(colors))
-    ax.set_ylim(0, 1)
-    ax.set_yticks([])
-    ax.set_yticklabels([])
-    ax.set_xticks([i + 0.5 for i in range(len(colors))])
-    ax.set_xticklabels([str(i) for i in range(1, len(colors) + 1)], rotation=45, ha='right')
-    print(f'number colors: {len(colors)}')
-    plt.show()
+# Graph 1: Boxplot sorted by date (left leg first, then right leg)
+sorted_df.boxplot(column='peakForce', by='leg', ax=axes[0])
+axes[0].set_title('Boxplot sorted by date (Left leg first, then Right leg)')
+
+# Graph 2: Boxplot sorted by leg (left leg first, then right leg)
+sorted_df.boxplot(column='peakForce', by='datetime', ax=axes[1])
+axes[1].set_title('Boxplot sorted by leg (Left leg first, then Right leg)')
+
+# Rotate x-axis labels for better visibility
+plt.setp(axes[1].xaxis.get_majorticklabels(), rotation=45)
+
+# Adjust layout
+plt.tight_layout()
+
+# Show the plots
+plt.show()

@@ -1,94 +1,41 @@
-import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QComboBox, QMessageBox
-from PyQt6.QtCore import Qt, QTimer
+import pandas as pd
+import matplotlib.pyplot as plt
 
-class CustomDialog(QMessageBox):
-    def __init__(self, parent, title, text, dialog_type):
-        super().__init__(parent)
-        self.setWindowTitle(title)
-        self.setText(text)
-        self.dialog_type = dialog_type
+# Sample DataFrame creation (replace this with your actual DataFrame)
+data = {
+    'datetime': ['2023-01-01', '2023-01-02', '2023-01-03', '2023-01-04', '2023-01-05'],
+    'peakForce': [100, 110, 95, 105, 115],
+    'leg': ['left', 'right', 'left', 'right', 'left']
+}
+df = pd.DataFrame(data)
 
-        if dialog_type == "ok":
-            self.setStandardButtons(QMessageBox.StandardButton.Ok)
-        elif dialog_type == "okcancel":
-            self.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
-        elif dialog_type == "yesno":
-            self.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        elif dialog_type == "yesnocancel":
-            self.dialog.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel)
-        elif dialog_type == "retrycancel":
-            self.dialog.setStandardButtons(QMessageBox.StandardButton.Retry | QMessageBox.StandardButton.Cancel)
+# Convert 'datetime' column to datetime objects
+df['datetime'] = pd.to_datetime(df['datetime'])
 
-        # Use a QTimer to delay the execution of the dialog
-        timer = QTimer(self)
-        timer.timeout.connect(self.showDialog)
-        timer.start(100)  # The timer triggers after 100 milliseconds
+summarized_df = df.groupby(['datetime', 'leg'])['peakForce'].max().reset_index()
 
-    def showDialog(self):
-        # Stop the timer to prevent repeated execution
-        self.sender().stop()
+pivoted_df = summarized_df.pivot(index='datetime', columns='leg', values='peakForce').reset_index()
 
-        # Show the dialog modally
-        ret = self.exec()
+# Sort DataFrame by 'datetime', 'left', and 'right'
+sorted_df1 = pivoted_df.sort_values(by=['datetime', 'left', 'right'])
 
-        # return either True for yes/ok/retry or False for no/cancel
-        value = 0
-        if self.dialog_type == "yesno" or self.dialog_type == "yesnocancel":
-            if ret == QMessageBox.StandardButton.Yes:
-                value = 1
-            elif ret == QMessageBox.StandardButton.No:
-                value = 0
-            elif ret == QMessageBox.StandardButton.Cancel:
-                value = None
-        elif self.dialog_type == "retrycancel":
-            if ret == QMessageBox.StandardButton.Retry:
-                value = 1
-            elif ret == QMessageBox.StandardButton.Cancel:
-                value = 0
-        elif self.dialog_type == "okcancel":
-            if ret == QMessageBox.StandardButton.Ok:
-                value = 1
-            elif ret == QMessageBox.StandardButton.Cancel:
-                value = 0
-        else:
-            value = 1   # this is for ok dialog where regardless of value it returns 1
+# Create boxplots for left and right legs, sorted by date
+plt.figure(figsize=(10, 6))
+sorted_df1.boxplot(column=['left', 'right'], by='datetime', widths=0.6)
+plt.title('Boxplots of PeakForce Values (Left Leg First, Then Right Leg)')
+plt.xlabel('Date')
+plt.ylabel('PeakForce')
+plt.xticks(range(1, len(sorted_df1['datetime']) + 1), sorted_df1['datetime'].dt.date, rotation=45)
+plt.tight_layout()
+plt.show()
 
-        print(f"Dialog return value is: {value}")
 
-        return value
-
-class CMJ_UI(QMainWindow):
-    def __init__(self):
-        super().__init__()
-
-        self.application_name = "my combo test app"
-        self.setWindowTitle(self.application_name)
-        self.athletes = ['huey', 'duey', 'louie']
-
-        #### Main Screen ######################################################
-        central_widget = QWidget(self)
-        self.setCentralWidget(central_widget)
-        self.grid_layout = QGridLayout(central_widget)
-
-        self.athlete_combobox = QComboBox()
-        print(f'list of athletes: {self.athletes}')
-        self.athlete_combobox.addItems(self.athletes)
-        self.grid_layout.addWidget(self.athlete_combobox, 0, 1)
-
-    def test_dialog(self):
-        dialog_title = "Custom Dialog"
-        dialog_text = "This is a custom dialog."
-        dialog_type = "okcancel"  # Change this to "ok" or "yesno" as needed
-        custom_dialog = CustomDialog(self, dialog_title, dialog_text, dialog_type)
-        return custom_dialog.showDialog()
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = CMJ_UI()
-    window.show()
-    val = window.test_dialog()
-    print()
-
-    result = app.exec()
-    sys.exit(result)
+# Create boxplots for left and right legs, grouped by date
+plt.figure(figsize=(10, 6))
+pivoted_df.boxplot(column=['left', 'right'], widths=0.6)
+plt.title('Boxplots of PeakForce Values (Grouped by Date)')
+plt.xlabel('Leg')
+plt.ylabel('PeakForce')
+plt.xticks([1, 2], ['Left', 'Right'])
+plt.tight_layout()
+plt.show()
