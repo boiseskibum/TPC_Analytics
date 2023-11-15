@@ -10,9 +10,6 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 import seaborn as sns   # pip install seaborn
 import getpass as gt
 
-
-#sys.path.append('./share')
-
 # Importing Colors
 colors_blue = sns.color_palette('Blues', 10)
 colors_grey = sns.color_palette('Greys', 10)
@@ -46,6 +43,7 @@ from share import jt_trial_manager as jttm
 from share import jt_config as jtc
 from share import jt_protocol as jtp
 from share import jt_athletes as jta
+from share import analytics_knee_extension as ake
 
 trial_mgr_filename = 'all_athletes.json'
 
@@ -87,12 +85,14 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         except:
             log.critical(f'Could not load athletes')
 
-        # set up callbacks
+        # tab browser
+        self.treeWidget.itemClicked.connect(self.item_clicked_browser)
+
         self.pushButton_play.clicked.connect(self.play)
-        self.pushButton_forward_1.clicked.connect(self.forward_1)
+        self.pushButton_forward.clicked.connect(self.forward)
         self.pushButton_forward_chunk.clicked.connect(self.forward_chunk)
         self.pushButton_stop.clicked.connect(self.stop)
-        self.pushButton_rewind_1.clicked.connect(self.rewind_1)
+        self.pushButton_rewind.clicked.connect(self.rewind)
         self.pushButton_rewind_chunk.clicked.connect(self.rewind_chunk)
         self.pushButton_rewind_to_start.clicked.connect(self.rewind_to_start)
         self.videoSlider.valueChanged.connect(self.slider_value_changed)
@@ -110,7 +110,11 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
         self.videoSlider.setMinimum(0)
 
-        self.treeWidget.itemClicked.connect(self.item_clicked)
+        # reports tab
+        self.treeWidget_reports.itemClicked.connect(self.item_clicked_reports)
+        self.pushButton_page_forward.clicked.connect(self.reports_page_forward)
+        self.pushButton_page_back.clicked.connect(self.reports_page_back)
+        self.pushButton_create_pdf.clicked.connect(self.reports_create_pdf)
 
         #player buttons
         # utility function to set icons on pushbuttons
@@ -126,10 +130,10 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
         add_pb_icon ( "resources/img/rewind-to-start.png", self.pushButton_rewind_to_start)
         add_pb_icon ( "resources/img/next-button-ff.png", self.pushButton_rewind_chunk, True)
-        add_pb_icon ( "resources/img/next-button.png", self.pushButton_rewind_1, True)
+        add_pb_icon ( "resources/img/next-button.png", self.pushButton_rewind, True)
         add_pb_icon ( "resources/img/stop-button.png", self.pushButton_stop)
         add_pb_icon ( "resources/img/play-button.png", self.pushButton_play)
-        add_pb_icon ( "resources/img/next-button.png", self.pushButton_forward_1)
+        add_pb_icon ( "resources/img/next-button.png", self.pushButton_forward)
         add_pb_icon ( "resources/img/next-button-ff.png", self.pushButton_forward_chunk)
 
         self.chunk = 10
@@ -163,14 +167,15 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         else:
             self.trial_mgr_obj = jttm.JT_JsonTrialManager(self.config_obj)
 
-        self.load_tree()
+        self.load_browser_tree()
+        self.load_reports_tree()
 
         #set up for graph
         # change out the existing QLabel button to canvas
         self.figure = plt.figure()
-        self.canvas = FigureCanvas(self.figure)
-        self.verticalLayout_graph.addWidget(self.canvas)
-        self.verticalLayout_graph.replaceWidget(self.label_graphic, self.canvas)
+        self.canvas_browsing = FigureCanvas(self.figure)
+        self.verticalLayout_graph.addWidget(self.canvas_browsing)
+        self.verticalLayout_graph.replaceWidget(self.label_graphic, self.canvas_browsing)
 
         #add graph
         self.ax = self.figure.add_subplot(111)
@@ -180,12 +185,20 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.video2_enabled = True
         self.short_video = False
 
+        ### reports tab
+        figure = plt.figure()
+        self.canvas_browsing_plot1 = FigureCanvas(figure)
+        self.gridLayout.addWidget(self.canvas_browsing_plot1)
+        self.verticalLayout_graph.replaceWidget(self.label_plot1,  self.canvas_browsing_plot1)
+        self.ax = figure.add_subplot(111)
+
+
     def closeEvent(self, event):
         self.closed.emit()
 
 
     #load tree widget
-    def load_tree(self):
+    def load_browser_tree(self):
         df = self.trial_mgr_obj.load_all_trials()
 
         if len(df) < 1:
@@ -236,7 +249,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         for i in range(tree_widget.topLevelItemCount()):
             expand_items(tree_widget.topLevelItem(i))
 
-    def item_clicked(self, item, column):
+    def item_clicked_browser(self, item, column):
 
         if item.childCount() == 0:
             parent_path = ""
@@ -332,7 +345,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.current_data_point = self.min_data_point
         self.vertical_line = self.ax.axvline(x=self.current_data_point, color='g', linestyle='--')
         self.ax.legend()
-        self.canvas.draw()
+        self.canvas_browsing.draw()
 
         # set the video files for video 1
 
@@ -414,7 +427,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             return
         self.video_play_timer.stop()
 
-    def rewind_1(self):
+    def rewind(self):
 #        print(f"pressed rewind: {self.current_frame}")
         if self.video1_cv2 == None:
             return
@@ -444,7 +457,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.current_data_point = self.min_data_point     #update frame will move it to frame zero
         self.update_frame()
 
-    def forward_1(self):
+    def forward(self):
  #       print(f"pressed forward: {self.current_frame}")
         if self.video1_cv2 == None:
             return
@@ -549,7 +562,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
             line_pos = self.graph_x_seconds[x_point]
             self.vertical_line.set_xdata([line_pos])
-            self.canvas.draw()
+            self.canvas_browsing.draw()
 
     def update_frame(self):
         if self.video1_cv2 == None:
@@ -683,6 +696,72 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         # End painting
         painter.end()
 
+    ###############################################################
+    #### Tab Reports
+    ###############################################################
+
+    def load_reports_tree(self):
+        df = self.trial_mgr_obj.load_all_trials()
+
+        if len(df) < 1:
+            return
+
+        list_of_combos = self.trial_mgr_obj.get_athletes_and_protocols_combinations()
+
+        if len(list_of_combos) < 1:
+            log.info(f'No data has been retrieved for any athletes')
+            return
+
+        # Using a set to get unique values from the first element of each tuple
+        unique_athletes = list_of_combos['athlete'].unique()
+
+        for athlete in unique_athletes:
+            athlete_item = QTreeWidgetItem([athlete])
+            self.treeWidget_reports.addTopLevelItem(athlete_item)
+
+            protocols_for_athlete = list_of_combos[list_of_combos['athlete'] == athlete]['short_protocol'].unique().tolist()
+
+            for protocol in protocols_for_athlete:
+                protocol_item = QTreeWidgetItem([protocol])
+                athlete_item.addChild(protocol_item)
+                protocol_item.setData(0, Qt.ItemDataRole.UserRole, athlete + '||' + protocol)
+
+#        self.expand_tree_widget(self.treeWidget_reports)
+
+    def item_clicked_reports(self, item, column):
+
+        if item.childCount() == 0:
+            parent_path = ""
+            current_item = item
+            item_text = item.text(0)
+
+            athlete_protocol_combo = item.data(0, Qt.ItemDataRole.UserRole)
+            split_list = athlete_protocol_combo.split('||')
+            athlete = split_list[0]
+            protocol = split_list[1]
+
+            log.debug(f"childcount Clicked: {item_text}, Parent Path: {parent_path}---")
+            log.info(f"report selected - athlete: {athlete}  protocol: {protocol}")
+
+            if protocol == 'JTDcmj':
+                pass
+
+            else:
+                leg_ext_analytics = ake.JT_analytics_knee_ext_iso(self.config_obj, athlete)
+                plot = leg_ext_analytics.plot_list[0]
+
+            self.canvas_browsing_plot1.clear()
+            ax = self.canvas.figure.add_subplot(111)
+            self.plot.draw_on_pyqt(ax)
+            self.canvas_browsing_plot1.draw()
+
+    def reports_page_forward(self):
+        print('page forward')
+
+    def reports_page_back(self):
+        print('page back')
+    def reports_create_pdf(self):
+        print('create pdf')
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

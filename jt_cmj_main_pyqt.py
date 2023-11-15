@@ -809,8 +809,9 @@ class CMJ_UI(QMainWindow):
         if self.analytics_ui == None:
             self.analytics_ui = jtanalytics.JT_Analytics_UI(parent=self)
 
-            if self.last_original_filename:
-                self.trial_mgr_obj.load_all_trials()
+# not sure that this was needed in order to go to jt_analytics
+#            if self.last_original_filename:
+#                self.trial_mgr_obj.load_all_trials()
 
             if self.trial != None:
                 self.analytics_ui.set_trial( self.trial)

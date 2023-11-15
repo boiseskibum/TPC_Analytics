@@ -65,6 +65,23 @@ class JT_JsonTrialManager:
 
         return self.df
 
+    #function to return a dataframe with the unique combinations of athletes and the protocols that they have completed
+    def get_athletes_and_protocols_combinations(self):
+
+        self.load_all_trials(True)
+
+        # Create a copy of the DataFrame
+        df_copy = self.df.copy()
+
+        # Step 1: Create 'short_protocol' column
+        df_copy['short_protocol'] = df_copy['protocol'].apply(lambda x: 'JTSext' if x.startswith('JTSext') else x)
+
+        # Get unique combinations of athlete and short_protocol
+        unique_combinations_df = df_copy[['athlete', 'short_protocol']].drop_duplicates()
+        print(unique_combinations_df)
+
+        return(unique_combinations_df)
+
     ###############################################
     # given just a filename it finds the full file_path which is needed.
     # returns a JT_Trial object containing the full path
