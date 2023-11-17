@@ -169,10 +169,10 @@ class JT_plot:
             except:
                 lineColor = jt_colors[0]
 
-            if x == None:
-                ax.plot(y, linestyle='-', marker=self.marker, label=label, mfc='w', color=lineColor, markersize=5)
-            else:
+            if x is not None:
                 ax.plot(x, y, linestyle='-', marker=self.marker, label=label, mfc='w', color=lineColor, markersize=5)
+            else:
+                ax.plot(y, linestyle='-', marker=self.marker, label=label, mfc='w', color=lineColor, markersize=5)
 
         # create bounding lines (this can be 1 or more)
         if self.yBounds is not None:

@@ -70,6 +70,42 @@ class JT_analytics_knee_ext_iso:
         # filter data down to the specific athlete and make a copy of the data
         athlete_df = self.df[self.df['athlete_name'] == athlete].copy()
 
+        # validate that there is a "left" and "right" for each date int he data set and if there isn't then make a
+        # fake row with 0's in the values.  It will look ugly but be better than crashing
+        print('before fixing')
+        print(athlete_df)
+        unique_dates = athlete_df['date_str'].unique()
+
+        new_rows = []
+        # Iterate over each unique date and check for left/right leg entries
+        for my_date in unique_dates:
+            for leg in ['left', 'right']:
+                if not ((athlete_df['date_str'] == my_date) & (athlete_df['leg'] == leg)).any():
+                    # Find a row for this my_date to duplicate
+                    row_to_duplicate = athlete_df[athlete_df['date_str'] == my_date].iloc[0]
+
+                    # Create a new row with the missing leg and other column values
+                    new_row = row_to_duplicate.copy()
+                    new_row['leg'] = leg
+                    # Set other columns to 0 or appropriate default value
+                    # Assuming other columns here which need to be set to 0
+                    # new_row['other_column'] = 0
+
+                    # Append the new row to the DataFrame
+#                    athlete_df = athlete_df.append(new_row, ignore_index=True)
+                    # Add the new row to the list
+                    new_rows.append(new_row)
+
+        # Append new rows to the DataFrame
+        if new_rows:
+            athlete_df = pd.concat([athlete_df, pd.DataFrame(new_rows)], ignore_index=True)
+
+        # Sort and reset index if needed
+        athlete_df = athlete_df.sort_values(by=['date_str', 'leg']).reset_index(drop=True)
+
+        print('Fixed data')
+        print(athlete_df)
+
         #make sure there is an index
         if athlete_df.index.empty:
             log.debug("DataFrame doesn't have an index.")
@@ -82,10 +118,10 @@ class JT_analytics_knee_ext_iso:
 
 #        print(athlete_df[['athlete_name', 'col_timestamp_str']])
 
-        self.athlete_df = self.df[self.df['athlete_name'] == athlete]
+#        athlete_df = self.df[self.df['athlete_name'] == athlete]
 
         # summarized_df = df.groupby(['date', 'leg'])['peak_force'].max().reset_index()
-        summarized_df = self.athlete_df.groupby(['date_str', 'leg'])['peak_torque'].agg(['max', 'mean', 'median']).reset_index()
+        summarized_df = athlete_df.groupby(['date_str', 'leg'])['peak_torque'].agg(['max', 'mean', 'median']).reset_index()
 
         # pivoted_df - will pivot out each of max mean and median values
         pivoted_df = summarized_df.pivot(index='date_str', columns='leg')

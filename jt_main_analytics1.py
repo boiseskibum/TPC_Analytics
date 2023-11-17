@@ -5,8 +5,9 @@ from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 
 import sys, cv2, platform, time
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
 import seaborn as sns   # pip install seaborn
 import getpass as gt
 
@@ -85,7 +86,9 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         except:
             log.critical(f'Could not load athletes')
 
-        # tab browser
+        ##################################################
+        ### browser tab 
+        ##################################################
         self.treeWidget.itemClicked.connect(self.item_clicked_browser)
 
         self.pushButton_play.clicked.connect(self.play)
@@ -172,25 +175,77 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
         #set up for graph
         # change out the existing QLabel button to canvas
-        self.figure = plt.figure()
-        self.canvas_browsing = FigureCanvas(self.figure)
+        figure_browsing = Figure()
+        self.ax_browsing = figure_browsing.add_subplot(111)
+        self.canvas_browsing = FigureCanvas(figure_browsing)
         self.verticalLayout_graph.addWidget(self.canvas_browsing)
         self.verticalLayout_graph.replaceWidget(self.label_graphic, self.canvas_browsing)
+        self.label_graphic.deleteLater()
 
-        #add graph
-        self.ax = self.figure.add_subplot(111)
+        #video stuff
         self.video1_overlay = True
         self.video2_overlay = True
         self.video1_enabled = True
         self.video2_enabled = True
         self.short_video = False
 
-        ### reports tab
-        figure = plt.figure()
-        self.canvas_browsing_plot1 = FigureCanvas(figure)
-        self.gridLayout.addWidget(self.canvas_browsing_plot1)
-        self.verticalLayout_graph.replaceWidget(self.label_plot1,  self.canvas_browsing_plot1)
-        self.ax = figure.add_subplot(111)
+        ##################################################
+        ### reports tab 
+        ##################################################
+        self.canvas_list = []   # list of places on the screen that can show a specific plot
+        self.plot_list = []     # ultimately will hold the list of plots to show on the screen that can be scrolled 
+        self.plot_current = 0   # this variable shows what the current plot being displayed is (ie, 1 to XX plots can 
+                                # be scrolled through
+        def canvas_define(canvas_list, label_plot ):
+            figure_reports = Figure()
+            ax_reports = figure_reports.add_subplot(111)
+            canvas_reports = FigureCanvas(figure_reports)
+            self.gridLayout_plots.addWidget(canvas_reports)
+            self.gridLayout_plots.replaceWidget(label_plot, canvas_reports)
+            label_plot.deleteLater()
+
+            canvas_dict = {
+                'ax': ax_reports,
+                'canvas': canvas_reports
+            }
+            canvas_list.append(canvas_dict)
+
+
+        ### call plot_define above to create each one
+        canvas_define(self.canvas_list, self.label_plot1)
+        canvas_define(self.canvas_list, self.label_plot2)
+        canvas_define(self.canvas_list, self.label_plot3)
+        canvas_define(self.canvas_list, self.label_plot4)
+
+        print(f'######################################### len of plot_list {len(self.plot_list)} ##################')
+
+        # figure_reports = Figure()
+        # self.ax_reports_1 = figure_reports.add_subplot(111)
+        # self.canvas_reports_plot1 = FigureCanvas(figure_reports)
+        # self.gridLayout_plots.addWidget(self.canvas_reports_plot1)
+        # self.gridLayout_plots.replaceWidget(self.label_plot1,  self.canvas_reports_plot1)
+        # self.label_plot1.deleteLater()
+        #
+        # figure_reports = Figure()
+        # self.ax_reports_2 = figure_reports.add_subplot(111)
+        # self.canvas_reports_plot2 = FigureCanvas(figure_reports)
+        # self.gridLayout_plots.addWidget(self.canvas_reports_plot2)
+        # self.gridLayout_plots.replaceWidget(self.label_plot2,  self.canvas_reports_plot2)
+        # self.label_plot2.deleteLater()
+        #
+        # figure_reports = Figure()
+        # self.ax_reports_3 = figure_reports.add_subplot(111)
+        # self.canvas_reports_plot3 = FigureCanvas(figure_reports)
+        # self.gridLayout_plots.addWidget(self.canvas_reports_plot3)
+        # self.gridLayout_plots.replaceWidget(self.label_plot3,  self.canvas_reports_plot3)
+        # self.label_plot3.deleteLater()
+        #
+        # figure_reports = Figure()
+        # self.ax_reports_4 = figure_reports.add_subplot(111)
+        # self.canvas_reports_plot4 = FigureCanvas(figure_reports)
+        # self.gridLayout_plots.addWidget(self.canvas_reports_plot4)
+        # self.gridLayout_plots.replaceWidget(self.label_plot4,  self.canvas_reports_plot4)
+        # self.label_plot4.deleteLater()
 
 
     def closeEvent(self, event):
@@ -289,14 +344,14 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.label_date_value.setText(trial.date_str)
         self.label_trial_value.setText(trial.trial_name)
 
-        self.ax.clear()
+        self.ax_browsing.clear()
 
         # graph the first key value pair from the dictionary.  Probably one one key value pair but this was
         # set up to handle more in the future
         self.graph = self.current_trial.main_graph
-        self.ax.set_title(self.graph.get('title', "no title set"))
-        self.ax.set_xlabel(self.graph.get('xlabel', 'no xlabel'))
-        self.ax.set_ylabel(self.graph.get('ylabel', 'no ylabel'))
+        self.ax_browsing.set_title(self.graph.get('title', "no title set"))
+        self.ax_browsing.set_xlabel(self.graph.get('xlabel', 'no xlabel'))
+        self.ax_browsing.set_ylabel(self.graph.get('ylabel', 'no ylabel'))
         self.elapsed_time = self.graph.get('elapsed_time', 0)
 
         # draw the lines on the graph.  There is a lot of code here and the primary purpose is
@@ -335,7 +390,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             self.graph_x_seconds = np.linspace(start_time, end_time, (self.max_data_point - self.min_data_point ) )
             lxsecs = len(self.graph_x_seconds)
             log.debug(f"line len: {l}, final_line len: {fl} graphx len {lxsecs}")
-            self.ax.plot(self.graph_x_seconds, final_line, linestyle='-', label=key, color=my_color, linewidth=1)
+            self.ax_browsing.plot(self.graph_x_seconds, final_line, linestyle='-', label=key, color=my_color, linewidth=1)
             color_i += 1
             if color_i > len(jt_color_list):
                 color_i = 0
@@ -343,8 +398,8 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         log.debug(f'set_trial - self.min_data_poing {self.min_data_point}. max_data_point: {self.max_data_point}, total_data_points: {self.total_data_points}')
 
         self.current_data_point = self.min_data_point
-        self.vertical_line = self.ax.axvline(x=self.current_data_point, color='g', linestyle='--')
-        self.ax.legend()
+        self.vertical_line = self.ax_browsing.axvline(x=self.current_data_point, color='g', linestyle='--')
+        self.ax_browsing.legend()
         self.canvas_browsing.draw()
 
         # set the video files for video 1
@@ -720,13 +775,17 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             self.treeWidget_reports.addTopLevelItem(athlete_item)
 
             protocols_for_athlete = list_of_combos[list_of_combos['athlete'] == athlete]['short_protocol'].unique().tolist()
+        figure_browsing = Figure()
+        # self.canvas_browsing = FigureCanvas(figure_browsing)
+        # self.verticalLayout_graph.addWidget(self.canvas_browsing)
+        # self.verticalLayout_graph.replaceWidget(self.label_graphic, self.canvas_browsing)
+        # self.ax_browsing = figure_browsing.add_subplot(111)
+        for protocol in protocols_for_athlete:
+            protocol_item = QTreeWidgetItem([protocol])
+            athlete_item.addChild(protocol_item)
+            protocol_item.setData(0, Qt.ItemDataRole.UserRole, athlete + '||' + protocol)
 
-            for protocol in protocols_for_athlete:
-                protocol_item = QTreeWidgetItem([protocol])
-                athlete_item.addChild(protocol_item)
-                protocol_item.setData(0, Qt.ItemDataRole.UserRole, athlete + '||' + protocol)
-
-#        self.expand_tree_widget(self.treeWidget_reports)
+        self.expand_tree_widget(self.treeWidget_reports)
 
     def item_clicked_reports(self, item, column):
 
@@ -743,23 +802,60 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             log.debug(f"childcount Clicked: {item_text}, Parent Path: {parent_path}---")
             log.info(f"report selected - athlete: {athlete}  protocol: {protocol}")
 
+            self.plot_current = 0
             if protocol == 'JTDcmj':
                 pass
 
             else:
-                leg_ext_analytics = ake.JT_analytics_knee_ext_iso(self.config_obj, athlete)
-                plot = leg_ext_analytics.plot_list[0]
+                self.protocol_analytics = ake.JT_analytics_knee_ext_iso(self.config_obj, athlete)
+                self.plot_list = self.protocol_analytics.plot_list
 
-            self.canvas_browsing_plot1.clear()
-            ax = self.canvas.figure.add_subplot(111)
-            self.plot.draw_on_pyqt(ax)
-            self.canvas_browsing_plot1.draw()
+            self.update_reports_plots()
+
+            # self.ax_reports_1.clear()
+            # plot1.draw_on_pyqt(self.ax_reports_1)
+            # self.canvas_reports_plot1.draw()
+            #
+            # self.ax_reports_2.clear()
+            # plot2.draw_on_pyqt(self.ax_reports_2)
+            # self.canvas_reports_plot2.draw()
+
+    def update_reports_plots(self):
+
+        canvas_num = 0
+        for canvas_dict in self.canvas_list:
+            ax = canvas_dict['ax']
+            canvas = canvas_dict['canvas']
+            ax.clear()
+
+            try:
+                plot = self.plot_list[self.plot_current + canvas_num]
+                plot.draw_on_pyqt(ax)
+                canvas.draw()
+                canvas_num += 1
+            except:
+                print(f'plot_list has {len(self.plot_list)} elements, could  get to the {self.plot_current + canvas_num} element')
+
 
     def reports_page_forward(self):
-        print('page forward')
+        num_plots = len(self.plot_list)
+        num_canvas = len(self.canvas_list)
+        if self.plot_current + num_canvas < num_plots:
+            self.plot_current = self.plot_current + num_canvas
+        print(f'page forward - plot_current: {self.plot_current}')
+
+        self.update_reports_plots()
 
     def reports_page_back(self):
-        print('page back')
+        num_canvas = len(self.canvas_list)
+        if self.plot_current - num_canvas >= 0:
+            self.plot_current = self.plot_current - num_canvas
+        else:
+            self.plot_current = 0
+        print(f'page back - plot_current: {self.plot_current}')
+
+        self.update_reports_plots()
+
     def reports_create_pdf(self):
         print('create pdf')
 

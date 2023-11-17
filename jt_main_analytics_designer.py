@@ -212,6 +212,7 @@ class Ui_MainAnalyticsWindow(object):
         self.treeWidget_reports.setMinimumSize(QtCore.QSize(175, 0))
         self.treeWidget_reports.setObjectName("treeWidget_reports")
         self.treeWidget_reports.headerItem().setText(0, "1")
+        self.treeWidget_reports.header().setVisible(False)
         self.horizontalLayout_7.addWidget(self.treeWidget_reports)
         self.verticalLayout_10 = QtWidgets.QVBoxLayout()
         self.verticalLayout_10.setObjectName("verticalLayout_10")
@@ -285,7 +286,7 @@ class Ui_MainAnalyticsWindow(object):
         MainAnalyticsWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainAnalyticsWindow)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainAnalyticsWindow)
 
     def retranslateUi(self, MainAnalyticsWindow):

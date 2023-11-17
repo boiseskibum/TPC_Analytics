@@ -1,36 +1,72 @@
-import pandas as pd
+import sys
+import numpy as np
 import matplotlib.pyplot as plt
+from PyQt6.QtWidgets import QApplication, QMainWindow, QTabWidget, QWidget, QVBoxLayout
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
 
-# Sample DataFrame creation (replace this with your actual DataFrame)
-data = {
-    'datetime': ['2023-01-01', '2023-01-02', '2023-01-03', '2023-01-04', '2023-01-05'],
-    'peakForce': [100, 110, 95, 105, 115],
-    'leg': ['left', 'right', 'left', 'right', 'left']
-}
-df = pd.DataFrame(data)
 
-# Convert 'datetime' column to datetime objects
-df['datetime'] = pd.to_datetime(df['datetime'])
+class PlotCanvas(FigureCanvas):
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+        FigureCanvas.__init__(self, fig)
+        self.setParent(parent)
 
-# Sort DataFrame by 'datetime' and 'leg'
-sorted_df = df.sort_values(by=['leg', 'datetime'])
+    def plot(self, data, plot_type='line'):
+        ax = self.figure.add_subplot(111)
+        if plot_type == 'line':
+            ax.plot(data)
+        elif plot_type == 'scatter':
+            ax.scatter(np.arange(len(data)), data)
+        ax.set_title('PyQt6 Matplotlib Example')
+        self.draw()
 
-# Create two subplots for the two graphs
-fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
 
-# Graph 1: Boxplot sorted by date (left leg first, then right leg)
-sorted_df.boxplot(column='peakForce', by='leg', ax=axes[0])
-axes[0].set_title('Boxplot sorted by date (Left leg first, then Right leg)')
+class App(QMainWindow):
 
-# Graph 2: Boxplot sorted by leg (left leg first, then right leg)
-sorted_df.boxplot(column='peakForce', by='datetime', ax=axes[1])
-axes[1].set_title('Boxplot sorted by leg (Left leg first, then Right leg)')
+    def __init__(self):
+        super().__init__()
+        self.title = 'PyQt6 Matplotlib Example'
+        self.left = 100
+        self.top = 100
+        self.width = 640
+        self.height = 400
+        self.initUI()
 
-# Rotate x-axis labels for better visibility
-plt.setp(axes[1].xaxis.get_majorticklabels(), rotation=45)
+    def initUI(self):
+        self.setWindowTitle(self.title)
+        self.setGeometry(self.left, self.top, self.width, self.height)
 
-# Adjust layout
-plt.tight_layout()
+        # Create tab widget
+        tab_widget = QTabWidget()
+        tab1 = QWidget()
+        tab2 = QWidget()
 
-# Show the plots
-plt.show()
+        # Add tabs
+        tab_widget.addTab(tab1, "Line Plot")
+        tab_widget.addTab(tab2, "Scatter Plot")
+
+        # Create first plot
+        layout1 = QVBoxLayout()
+        self.plot1 = PlotCanvas(tab1, width=5, height=4)
+        self.plot1.plot([2, 4, 6, 8, 10], plot_type='line')
+        layout1.addWidget(self.plot1)
+        tab1.setLayout(layout1)
+
+        # Create second plot
+        layout2 = QVBoxLayout()
+        self.plot2 = PlotCanvas(tab2, width=5, height=4)
+        self.plot2.plot(np.random.rand(50), plot_type='scatter')
+        layout2.addWidget(self.plot2)
+        tab2.setLayout(layout2)
+
+        # Set main widget
+        self.setCentralWidget(tab_widget)
+        self.show()
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    ex = App()
+    sys.exit(app.exec())
