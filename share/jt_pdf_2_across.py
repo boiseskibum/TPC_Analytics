@@ -7,20 +7,23 @@ from datetime import date
 
 try:
     from . import jt_util as util
+    from . import jt_plot as jtpl
+    from . import jt_config as jtc
 except:
     import jt_util as util
+    import jt_plot as jtpl
+    import jt_config as jtc
 
 my_resources = 'resources/img/'
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
 
-|class JT_PDF_2_across:
-    def __init__(self, config_obj, athlete):
+class JT_PDF_2_across:
+    def __init__(self, config_obj, athlete, output_file):
 
         self.config_obj = config_obj
         self.athlete = athlete
-
 
     def add_plots(self, plots):
         self.plots = plots
@@ -51,7 +54,7 @@ log = util.jt_logging()
                 # Moving cursor to the right:
                 self.cell(pw / 2 - 20)  # the 20 is a fudge factor to account for the logo
                 # Printing title:
-                self.cell(30, 10, "Force Plate Assessment:  " + athlete_name, align="C")
+                self.cell(30, 10, "CMJ Assessment:  " + athlete_name, align="C")
                 # Performing a line break:
 
             def footer(self):
@@ -81,38 +84,68 @@ log = util.jt_logging()
         image_w = 100
         image_h = 65
 
+        plot_num = 1
+        row = 1
+        for plot in plots:
 
+            # odd plot #
+            if plot_num % 2 != 0:
 
-        # row 1
-        pdf.image(self.path_athlete_images + 'cmj_Impulse_graph.png',
-                  x=x_start, y=y_start, w=image_w,
-                  h=0)  # 0 for height allows image to scale, with value it will squish or fatten the image
+                pdf.image(self.path_athlete_images + 'cmj_Impulse_graph.png',
+                          x=x_start, y=y_start, w=image_w,
+                          h=0)  # 0 for height allows image to scale, with value it will squish or fatten the image
 
-        pdf.image(self.path_athlete_images + 'cmj_force_comparison_graph.png',
-                  x=half_pw, y=y_start, w=image_w, h=0)
+            # even plot #
+            else:
 
-        # row 2
-        y_start += image_h
-        pdf.image(self.path_athlete_images + 'cmj_ToV_graph.png',
-                  x=x_start, y=y_start, w=image_w, h=0)
+                pdf.image(self.path_athlete_images + 'cmj_force_comparison_graph.png',
+                          x=half_pw, y=y_start, w=image_w, h=0)
+                y_start += image_h
+                row += 1
+            plot_num += 1
 
-        pdf.image(self.path_athlete_images + 'cmj_RSI_graph.png',
-                  x=half_pw, y=y_start, w=image_w, h=0)
+        # # row 1
+        # pdf.image(self.path_athlete_images + 'cmj_Impulse_graph.png',
+        #           x=x_start, y=y_start, w=image_w,
+        #           h=0)  # 0 for height allows image to scale, with value it will squish or fatten the image
+        #
+        # pdf.image(self.path_athlete_images + 'cmj_force_comparison_graph.png',
+        #           x=half_pw, y=y_start, w=image_w, h=0)
+        #
+        # # row 2
+        # y_start += image_h
+        # pdf.image(self.path_athlete_images + 'cmj_ToV_graph.png',
+        #           x=x_start, y=y_start, w=image_w, h=0)
+        #
+        # pdf.image(self.path_athlete_images + 'cmj_RSI_graph.png',
+        #           x=half_pw, y=y_start, w=image_w, h=0)
+        #
+        # # row 3
+        # y_start += image_h
+        # pdf.image(self.path_athlete_images + 'cmj_jump_time_graph.png',
+        #           x=x_start, y=y_start, w=image_w, h=0)
+        #
+        # pdf.image(self.path_athlete_images + 'cmj_CoM_displacement_graph.png',
+        #           x=half_pw, y=y_start, w=image_w, h=0)
+        #
+        # # row 4 - just one image
+        # y_start += image_h
+        # pdf.image(self.path_athlete_images + 'cmj_force_asymmetry_graph.png',
+        #           x=half_pw / 2, y=y_start, w=image_w, h=0)
+        #
+        # output_file = self.path_results_athlete + 'cmj report.pdf'
+        # print(f'PDF created: {output_file}')
 
-        # row 3
-        y_start += image_h
-        pdf.image(self.path_athlete_images + 'cmj_jump_time_graph.png',
-                  x=x_start, y=y_start, w=image_w, h=0)
-
-        pdf.image(self.path_athlete_images + 'cmj_CoM_displacement_graph.png',
-                  x=half_pw, y=y_start, w=image_w, h=0)
-
-        # row 4 - just one image
-        y_start += image_h
-        pdf.image(self.path_athlete_images + 'cmj_force_asymmetry_graph.png',
-                  x=half_pw / 2, y=y_start, w=image_w, h=0)
-
-        output_file = self.path_results_athlete + 'cmj report.pdf'
-        print(f'PDF created: {output_file}')
         # save PDF File
         pdf.output(output_file)
+
+if __name__ == "__main__":
+
+    # set base and application path
+    config_obj = jtc.JT_Config('taylor performance', 'TPC')
+    config_obj.validate_install()
+
+    output_file = 'test.pdf'
+    plots = jtpl.test_plots()
+    pdf_obj = JT_PDF_2_across(config_obj, "Carl Lewis", output_file)
+    pdf_obj.add_plots(plots)

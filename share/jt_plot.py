@@ -188,6 +188,29 @@ class JT_plot:
             ax.set_xticklabels(x_ticks_temp, rotation=90)
             ax.set_ylim(self.yMin, self.yMax)
 
+# test plots for others to use like the PDF creation
+def test_plots():
+    plots = []
+    lineX = [10, 20, 30, 40, 50, 60, 70, 80]
+    line1 = [1, 2, 3, 4, 5, 6, 7, 8]
+    line2 = [8, 7, 6, 5, 4, 3, 2, 1]
+    line3 = [8, 7, 6, 5, 4, 3, 2, 1]
+
+    line_data1 = [
+        {'x': lineX, 'y': line1, 'label': 'line1', 'color': 0},
+        {'x': lineX, 'y': line2, 'label': 'line2', 'color': 1}]
+    plots.append( JT_plot('graph1', 'my X Label', 'my Y Label', line_data1) )
+
+    line_data2 = [
+        {'x': lineX, 'y': line3, 'label': 'line1', 'color': 2}]
+    plots.append( JT_plot('graph2', 'my X Label G2', 'my Y Label G2', line_data2) )
+
+    # no x value
+    line_data3 = [
+        {'y': line3, 'label': 'line1', 'color': 2}]
+    plots.append( JT_plot('graph3', 'my X Label G3', 'my Y Label G3', line_data3) )
+
+    return (plots)
 
 if __name__ == "__main__":
     # set up colors to make easier
