@@ -146,7 +146,7 @@ class JT_plot:
 
     # core work of setting up plt
     def _setup_plt(self, ax):
-        log.f(f'title: {self.title}')
+        log.debug(f'title: {self.title}')
 
         # start with clear the existing graph
         ax.clear()

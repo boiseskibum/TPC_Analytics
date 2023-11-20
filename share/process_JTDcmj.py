@@ -85,7 +85,8 @@ class JTDcmj:
         self.df['Left'] = self.df['Left'].abs()  # absolute value of 'Left'
         list_left = self.df['Left'].to_list()  # adds data to form a list
 
-        # mass calculations
+        # mass calculations.  the freq * 2 is basically take the first 2 seconds of measurements and average them
+        # for each leg and make it the bodyweight of the individual.
         self.mass_r = (np.mean(list_right[0:int(self.freq * 2)]) / self.gravity)  # calculation of Bodyweight - R
         self.mass_l = (np.mean(list_left[0:int(self.freq * 2)]) / self.gravity)  # calculation of bodyweight - L
         self.mass = abs(float(self.mass_r)) + abs(float(self.mass_l))  # calculation of bodyweight total

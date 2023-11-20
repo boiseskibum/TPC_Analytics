@@ -72,8 +72,8 @@ class JT_analytics_knee_ext_iso:
 
         # validate that there is a "left" and "right" for each date int he data set and if there isn't then make a
         # fake row with 0's in the values.  It will look ugly but be better than crashing
-        print('before fixing')
-        print(athlete_df)
+        # print('before fixing')
+        # print(athlete_df)
         unique_dates = athlete_df['date_str'].unique()
 
         new_rows = []
@@ -103,8 +103,8 @@ class JT_analytics_knee_ext_iso:
         # Sort and reset index if needed
         athlete_df = athlete_df.sort_values(by=['date_str', 'leg']).reset_index(drop=True)
 
-        print('Fixed data')
-        print(athlete_df)
+        # print('Fixed data')
+        # print(athlete_df)
 
         #make sure there is an index
         if athlete_df.index.empty:

@@ -45,6 +45,7 @@ from share import jt_config as jtc
 from share import jt_protocol as jtp
 from share import jt_athletes as jta
 from share import analytics_knee_extension as ake
+from share import analytics_cmj as acmj
 
 trial_mgr_filename = 'all_athletes.json'
 
@@ -804,7 +805,8 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
             self.plot_current = 0
             if protocol == 'JTDcmj':
-                pass
+                self.protocol_analytics = acmj.JT_analytics_cmj(self.config_obj, athlete)
+                self.plot_list = self.protocol_analytics.plot_list
 
             else:
                 self.protocol_analytics = ake.JT_analytics_knee_ext_iso(self.config_obj, athlete)

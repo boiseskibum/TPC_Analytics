@@ -89,14 +89,14 @@ class JT_JsonTrialManager:
         if self.df is None:
             self.load_all_trials()
 
-        self._debug_print("whole deal",  self.df)
+#        self._debug_print("whole deal",  self.df)
 
         columns = self.df.columns
 
         # Filter the DataFrame based on original_filename
         filtered_df = self.df[self.df["original_filename"] == original_filename]
 
-        self._debug_print("Filtered df:", filtered_df)
+#        self._debug_print("Filtered df:", filtered_df)
 
         trial = jtt.JT_Trial(self.config_obj)
 
