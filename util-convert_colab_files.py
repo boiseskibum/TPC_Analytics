@@ -101,9 +101,10 @@ def convert_athlete_files(athlete, athlete_path, new_path):
         if '--' not in filename:
           j+=1
 
+          file_path = athlete_path + filename
           # get creation time from filename
-          creation_time = os.path.getctime(athlete_path)
-          modification_time = os.path.getmtime(athlete_path)
+          creation_time = os.path.getctime(file_path)
+          modification_time = os.path.getmtime(file_path)
           # turn creation time & modification time into datetime obj
           creation_time_obj = datetime.datetime.fromtimestamp(creation_time)
           modification_time_obj = datetime.datetime.fromtimestamp(modification_time)
@@ -122,7 +123,7 @@ def convert_athlete_files(athlete, athlete_path, new_path):
           new_filename = f'JTDcmj_{athlete}_' + datetime_str + extension
 
           # read in the filename
-          df = pd.read_csv(athlete_path + filename, skiprows=[1, 2, 4], header=1)
+          df = pd.read_csv(file_path, skiprows=[1, 2, 4], header=1)
           start_rows = len(df)
 #          print(df.iloc[0])   # prints out first row of data
 #          print(df.head(1))
@@ -168,8 +169,8 @@ def convert_athlete_files(athlete, athlete_path, new_path):
           print(f'new_file: {new_file_path}')
           print(f'     len: {len(df)} Elapsed: {elapsed_time:.2f} l_max: {l_max} r_max: {r_max}')
 
-          if j > 1:
-            return
+          # if j > 1:
+          #   return
 
     print(f'Number of Files converted: {j}')
     return

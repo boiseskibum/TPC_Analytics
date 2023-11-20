@@ -528,15 +528,15 @@ if __name__ == "__main__":
 
     #test the smoothing algorithms
     test_data = [-101, -101, -101, -4444444, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, -101, 4444444]
-    new_data = _clean_column_values2(test_data)
+    new_data = _clean_column_values(test_data)
     print(f"{test_data}\n{new_data}\n")
 
     test_data = [1, -101, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, -101]
-    new_data = _clean_column_values2(test_data)
+    new_data = _clean_column_values(test_data)
     print(f"{test_data}\n{new_data}\n")
 
     test_data = [1, 2, 3, 1, -101, 5, 7, 8, 9, 10, 11, 2, -101, 14, 15, 16, -101, -101, -101, 19, 20, 21, 22, 23]
-    new_data = _clean_column_values2(test_data)
+    new_data = _clean_column_values(test_data)
     print(f"{test_data}\n{new_data}\n")
 
     # Configure and test the serial port

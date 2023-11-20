@@ -17,8 +17,10 @@ colors_seismic = sns.color_palette('seismic', 10)
 
 try:
     from . import jt_util as util
+    from . import jt_serial as jts
 except ImportError:
     import jt_util as util
+    import jt_serial as jts
 
 
 log = util.jt_logging()
@@ -45,6 +47,7 @@ class JTSext:
         # read in the data
         try:
             self.df = pd.read_csv(self.trial.file_path)
+
         except:
             self.error = True
             self.error_msg = f"process, file does not exist: {self.file_path}"
@@ -75,6 +78,18 @@ class JTSext:
         # rename columns so they are easier to deal with AND does abvolute value columns
         force = []
         force = self.df['force_N'].to_list()  # adds data to form a list
+
+        # HACK WARNING!!!
+        # this is a hack to clean up data that was taken for Isaiah Wright before I modified
+        # jt_serial to do this when the data was actually collected.   Therefore, data for Isaiah
+        # will be run through this to make sure it is correct.   These lines should probably not
+        # be run going into the future but oh well.   Delete them...
+        if self.athlete == 'Isaiah Wright':
+            for i in range(1, len(force)):  # Start from the second element
+                if force[i] < 0:
+                    force[i] = force[i - 1]  # Set to the previous element's value
+
+
         # log.debug(f"force: {force}")
 
         # getting time column from df

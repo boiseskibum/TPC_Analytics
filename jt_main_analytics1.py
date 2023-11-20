@@ -91,6 +91,8 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         ### browser tab 
         ##################################################
         self.treeWidget.itemClicked.connect(self.item_clicked_browser)
+        self.treeWidget.currentItemChanged.connect(self.item_changed_browser)
+        self.browser_tree_clicked = True
 
         self.pushButton_play.clicked.connect(self.play)
         self.pushButton_forward.clicked.connect(self.forward)
@@ -287,7 +289,9 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
                         protocol_counts[protocol] += 1
                     else:
                         protocol_counts[protocol] = 1
-                    trial_name = f"{protocol}-{protocol_counts[protocol]}"
+                    protocol_obj = self.config_obj.protocol_obj
+                    protocol_name = protocol_obj.get_name_by_protocol(protocol)
+                    trial_name = f"{protocol_name} - {protocol_counts[protocol]}"
 
                     trial_item = QTreeWidgetItem([trial_name])
                     date_item.addChild(trial_item)
@@ -308,6 +312,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
     def item_clicked_browser(self, item, column):
 
         if item.childCount() == 0:
+            self.browser_tree_clicked = True
             parent_path = ""
             current_item = item
             item_text = item.text(0)
@@ -321,6 +326,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             original_filename = item.data(0, Qt.ItemDataRole.UserRole)
 
             try:
+                log.info(f'Trial Browser item clicked: {original_filename} ')
                 trial = self.trial_mgr_obj.get_trial_file_path(original_filename, item_text)
 
                 trial.process_summary()
@@ -337,6 +343,13 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
 
             log.debug(f"Clicked: {item_text}, Parent Path: {parent_path}, original_filename: {original_filename}, filepath {trial.file_path}---")
+
+    def item_changed_browser(self, current, previous):
+        # commented out for now, current can't just be passed along to the item clicked and not worth
+        # debugging at this time
+        # if not self.browser_tree_clicked:
+        #     self.item_clicked_browser(self, current)
+        self.browser_tree_clicked = False
 
     def set_trial(self, trial):
         self.current_trial = trial
@@ -434,7 +447,9 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             # Do something to disable video
             pass
 
-        self.video1_cv2 = cv2.VideoCapture(filename)
+        path_results = self.config_obj.path_results + self.current_trial.athlete + "/"
+
+        self.video1_cv2 = cv2.VideoCapture(path_results + filename)
         self.video_play_timer = QTimer(self)
         self.video_play_timer.timeout.connect(self.update_frame)
 
@@ -713,7 +728,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         penH.setWidth(2)  # Line width
 
         def y_value_calc(pixmap_h, force_max, force):
-            ratio = abs(pixmap_h / (force_max *2))    # Use absolute value as the +/- is accounted for below
+            ratio = abs(pixmap_h / (force_max * 2))    # Use absolute value as the +/- is accounted for below
             value = int(pixmap_h / 2 + (force * ratio * -1) )   # the times -1 is because the upper left corner of the pixmap is 0, 0
             return value
 
@@ -724,28 +739,35 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 #            print(f"LINES:   h: {h}, self.max_value {self.max_value}, l_force: {l_force}, r_force: {r_force}, l_scaled: {l_scaled}, r_scaled: {r_scaled}")
             pass
 
-#        lxpos = int(linew / 2)
         lxpos = w - int(linew / 2)
-#        rxpos = w - int(linew / 2)
         rxpos = int(linew / 2)
 
 
         # Draw lines on the QPixmap
-        if l_force < 0:
-            pen.setColor(Qt.GlobalColor.blue)
-        else:
-            pen.setColor(Qt.GlobalColor.darkGreen)
+        pen.setColor(Qt.GlobalColor.blue)
         painter.setPen(pen)
-        painter.drawLine(lxpos, int(h / 2), lxpos, l_scaled)
 
-        if r_force < 0:
-            pen.setColor(Qt.GlobalColor.blue)
-        else:
-            pen.setColor(Qt.GlobalColor.darkGreen)
-        painter.setPen(pen)
-        painter.drawLine(rxpos, int(h / 2), rxpos, r_scaled)
+        # commented out code was to make the color change when positive force versus negagive relative to
+        # body weight
+        # left side
+        # if l_force < 0:
+        #     pen.setColor(Qt.GlobalColor.blue)
+        # else:
+        #     pen.setColor(Qt.GlobalColor.darkGreen)
+        # painter.setPen(pen)
+#        painter.drawLine(lxpos, int(h / 2), lxpos, l_scaled)
+        painter.drawLine(lxpos, int(h), lxpos, l_scaled)
 
-        # horizontal lilne
+        # right side
+        # if r_force < 0:
+        #     pen.setColor(Qt.GlobalColor.blue)
+        # else:
+        #     pen.setColor(Qt.GlobalColor.darkGreen)
+        # painter.setPen(pen)
+#        painter.drawLine(rxpos, int(h / 2), rxpos, r_scaled)
+        painter.drawLine(rxpos, int(h), rxpos, r_scaled)
+
+        # horizontal line
         painter.setPen(penH)
         painter.drawLine(lxpos, l_scaled, rxpos, r_scaled)
 
@@ -771,20 +793,18 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         # Using a set to get unique values from the first element of each tuple
         unique_athletes = list_of_combos['athlete'].unique()
 
+        f#load all athletes
         for athlete in unique_athletes:
             athlete_item = QTreeWidgetItem([athlete])
             self.treeWidget_reports.addTopLevelItem(athlete_item)
 
             protocols_for_athlete = list_of_combos[list_of_combos['athlete'] == athlete]['short_protocol'].unique().tolist()
-        figure_browsing = Figure()
-        # self.canvas_browsing = FigureCanvas(figure_browsing)
-        # self.verticalLayout_graph.addWidget(self.canvas_browsing)
-        # self.verticalLayout_graph.replaceWidget(self.label_graphic, self.canvas_browsing)
-        # self.ax_browsing = figure_browsing.add_subplot(111)
-        for protocol in protocols_for_athlete:
-            protocol_item = QTreeWidgetItem([protocol])
-            athlete_item.addChild(protocol_item)
-            protocol_item.setData(0, Qt.ItemDataRole.UserRole, athlete + '||' + protocol)
+
+            # for specific athlete, load protocols that they have done
+            for protocol in protocols_for_athlete:
+                protocol_item = QTreeWidgetItem([protocol])
+                athlete_item.addChild(protocol_item)
+                protocol_item.setData(0, Qt.ItemDataRole.UserRole, athlete + '||' + protocol)
 
         self.expand_tree_widget(self.treeWidget_reports)
 

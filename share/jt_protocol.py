@@ -25,8 +25,8 @@ class JT_protocol:
         # Given data in rows
         data = [
             ["JTDcmj", "double", "CMJ", "both"],
-            ["JTSextL", "single", "ISO Quad Extension L", "left"],
-            ["JTSextR", "single", "ISO Quad Extension R", "right"]
+            ["JTSextL", "single", "Quad Extension L", "left"],
+            ["JTSextR", "single", "Quad Extension R", "right"]
         ]
 
         self.df = pd.DataFrame(data, columns=columns)

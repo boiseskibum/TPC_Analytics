@@ -260,20 +260,19 @@ class JT_Config:
         if os.path.exists(file_path):
             return file_path
 
-        self.app_dir = 'Force Plate Testing/'
-
         # Find the index where "/Force Plate Testing/" ends
-        index = file_path.find(self.app_dir)
+        app_dir = 'TPC/'
+        index = file_path.find(app_dir)
 
         if index != -1:
-            result = file_path[index + len(self.app_dir):]  # Extract everything after that part
+            result = file_path[index + len(app_dir):]  # Extract everything after that part
             result = self.path_app + result
         else:
-            print("ERROR '/Force Plate Testing/' not found in the file path")
+            log.info(f'convert_file_path ERROR:  {app_dir} not found in the file path')
             result = file_path
 
         if file_path != result:
-            print(f"Converted: {file_path}\n    to:  {result}")
+            log.info(f"Converted: {file_path}\n    to:  {result}")
 
         return result
 
