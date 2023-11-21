@@ -26,6 +26,7 @@ class JT_PDF_2_across:
 
         self.config_obj = config_obj
         self.athlete = athlete
+        self.output_file = output_file
 
     def add_plots(self, plots):
         self.plots = plots
@@ -114,8 +115,9 @@ class JT_PDF_2_across:
                 row = 1
 
 
+        log.info(f'saving PDF file: {self.output_file}')
         # save PDF File
-        pdf.output(output_file)
+        pdf.output(self.output_file)
 
 if __name__ == "__main__":
 

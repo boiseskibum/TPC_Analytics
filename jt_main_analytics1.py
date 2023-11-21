@@ -854,7 +854,12 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
     def reports_create_pdf(self):
         #self.reports_protocol_athlete_analytics.create_pdf()
         self.plot_list
-        output_file = 'testing/jt_pdf_2_across.pdf'
+        output_file = 'testing/asf.pdf'
+        protocol_obj = self.config_obj.protocol_obj
+        protocol_name = protocol_obj.get_name_by_protocol(self.reports_protocol)
+        pdf_filename = protocol_name + ' ' + self.reports_athlete + '.pdf'
+        output_file = self.config_obj.path_results + self.reports_athlete + '/' + pdf_filename
+
         pdf_obj = jtpdf2.JT_PDF_2_across(self.config_obj, self.reports_athlete, output_file)
         pdf_obj.add_plots(self.plot_list)
 
