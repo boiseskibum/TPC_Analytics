@@ -80,7 +80,8 @@ class JT_PDF_2_across:
         # constant for half way across the page (2 columns)
         half_pw = 100 + 15
         x_start = 20
-        y_start = 30
+        master_y_start_master = 30
+        y_start = master_y_start_master
 
         # set image width and height between graphs
         image_w = 70
@@ -106,6 +107,12 @@ class JT_PDF_2_across:
                 row += 1
             plot_num += 1
 
+            # add a new graph if the 8th graph has been shown
+            if (plot_num - 1) % 8 == 0:
+                pdf.add_page()
+                y_start = master_y_start_master
+                row = 1
+
 
         # save PDF File
         pdf.output(output_file)
@@ -117,6 +124,6 @@ if __name__ == "__main__":
     config_obj.validate_install()
 
     output_file = 'testing/jt_pdf_2_across.pdf'
-    plots = jtpl.test_plots()
+    plots = jtpl.test_plots(17)
     pdf_obj = JT_PDF_2_across(config_obj, "Carl Lewis", output_file)
     pdf_obj.add_plots(plots)

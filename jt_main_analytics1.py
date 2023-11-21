@@ -46,6 +46,8 @@ from share import jt_protocol as jtp
 from share import jt_athletes as jta
 from share import analytics_knee_extension as ake
 from share import analytics_cmj as acmj
+from share import jt_pdf_2_across as jtpdf2
+
 
 trial_mgr_filename = 'all_athletes.json'
 
@@ -789,20 +791,24 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
             athlete_protocol_combo = item.data(0, Qt.ItemDataRole.UserRole)
             split_list = athlete_protocol_combo.split('||')
-            athlete = split_list[0]
-            protocol = split_list[1]
+            self.reports_athlete = split_list[0]
+            self.reports_protocol = split_list[1]
 
             log.debug(f"childcount Clicked: {item_text}, Parent Path: {parent_path}---")
-            log.info(f"report selected - athlete: {athlete}  protocol: {protocol}")
+            log.info(f"report selected - athlete: {self.reports_athlete}  protocol: {self.reports_protocol}")
 
             self.plot_current = 0
-            if protocol == 'JTDcmj':
-                self.protocol_analytics = acmj.JT_analytics_cmj(self.config_obj, athlete)
-                self.plot_list = self.protocol_analytics.plot_list
+            if self.reports_protocol == 'JTDcmj':
+                self.reports_protocol_athlete_analytics = acmj.JT_analytics_cmj(self.config_obj, self.reports_athlete)
+                self.plot_list = self.reports_protocol_athlete_analytics.plot_list
 
             else:
-                self.protocol_analytics = ake.JT_analytics_knee_ext_iso(self.config_obj, athlete)
-                self.plot_list = self.protocol_analytics.plot_list
+                self.reports_protocol_athlete_analytics = ake.JT_analytics_knee_ext_iso(self.config_obj, self.reports_athlete)
+                self.plot_list = self.reports_protocol_athlete_analytics.plot_list
+
+            # set the defaults for when the app starts up again
+            self.config_obj.set_config('reports_protocol', self.reports_protocol)
+            self.config_obj.set_config('reports_athlete', self.reports_athlete)
 
             self.update_reports_plots()
 
@@ -846,6 +852,12 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.update_reports_plots()
 
     def reports_create_pdf(self):
+        #self.reports_protocol_athlete_analytics.create_pdf()
+        self.plot_list
+        output_file = 'testing/jt_pdf_2_across.pdf'
+        pdf_obj = jtpdf2.JT_PDF_2_across(self.config_obj, self.reports_athlete, output_file)
+        pdf_obj.add_plots(self.plot_list)
+
         print('create pdf')
 
 if __name__ == "__main__":

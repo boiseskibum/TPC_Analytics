@@ -1,4 +1,4 @@
-
+import random
 import sys
 from PyQt6.QtWidgets import QApplication, QWidget, QPushButton, QGridLayout
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
@@ -212,7 +212,7 @@ class JT_plot:
         return filepath
 
 # test plots for others to use like the PDF creation
-def test_plots():
+def test_plots(num_plots = 5):
     plots = []
     lineX = [10, 20, 30, 40, 50, 60, 70, 80]
     line1 = [1, 2, 3, 4, 5, 6, 7, 8]
@@ -222,52 +222,35 @@ def test_plots():
     line5 = [8, 7, 3, 5, 4, 6, 2, 4]
     line6 = [8, 7, 2, 5, 4, 6, 2, 4]
 
+    list_of_lines = [line1, line2, line3, line4, line5, line6]
+
     line_data = [
         {'x': lineX, 'y': line1, 'label': 'line1', 'color': 0},
         {'x': lineX, 'y': line2, 'label': 'line2', 'color': 1}]
     plot = JT_plot('graph1', 'my X Label', 'my Y Label', line_data)
-    plot.set_output_filepath('testing/line_data1.png')
-    plots.append( plot )
-
-    line_data = [
-        {'x': lineX, 'y': line3, 'label': 'line1', 'color': 2}]
-    plot = JT_plot('graph2', 'my X Label G2', 'my Y Label G2', line_data)
-    plot.set_output_filepath('testing/line_data2.png')
+    plot.set_output_filepath('testing/line_data0.png')
     plots.append( plot )
 
     # no x value
     line_data = [
         {'y': line3, 'label': 'line1', 'color': 2}]
-    plot = JT_plot('graph3', 'my X Label G3', 'my Y Label G3', line_data)
-    plot.set_output_filepath('testing/line_data3.png')
+    plot = JT_plot('graph2', 'my X Label G3', 'my Y Label G3', line_data)
+    plot.set_output_filepath('testing/line_data1.png')
     plots.append( plot )
 
-    line_data = [
-        {'x': lineX, 'y': line4, 'label': 'line1', 'color': 0},
-        {'x': lineX, 'y': line5, 'label': 'line2', 'color': 1}]
-    plot = JT_plot('graph1', 'my X Label', 'my Y Label', line_data)
-    plot.set_output_filepath('testing/line_data4.png')
-    plots.append( plot )
+    #always have 2 and then add on even more plots
+    for i in range(2, num_plots):    #the plus 2 is for the fixed ones above
+        line_num = len(list_of_lines) % i
+        rando_num = random.randint(0, len(list_of_lines) -1)
+        print(f'num_plots = {num_plots}, i: {i}, line_num: {line_num}, rando_num: {rando_num}, len_list_of_lines{len(list_of_lines)}')
 
-    line_data = [
-        {'x': lineX, 'y': line3, 'label': 'line1', 'color': 0},
-        {'x': lineX, 'y': line6, 'label': 'line2', 'color': 1}]
-    plot = JT_plot('graph1', 'my X Label', 'my Y Label', line_data)
-    plot.set_output_filepath('testing/line_data5.png')
-    plots.append( plot )
+        line_data = [
+            {'x': list_of_lines[rando_num], 'y': line4, 'label': f'line-{line_num}', 'color': 0},
+            {'x': lineX, 'y': line5, 'label': f'lineX', 'color': 1}]
+        plot = JT_plot(f'graph - {i}', 'my X Label', 'my Y Label', line_data)
+        plot.set_output_filepath(f'testing/line_data_{i}.png')
+        plots.append( plot )
 
-    line_data = [
-        {'x': lineX, 'y': line2, 'label': 'line1', 'color': 0},
-        {'x': lineX, 'y': line4, 'label': 'line2', 'color': 1}]
-    plot = JT_plot('graph1', 'my X Label', 'my Y Label', line_data)
-    plot.set_output_filepath('testing/line_data6.png')
-    plots.append( plot )
-
-    line_data = [
-        {'x': lineX, 'y': line2, 'label': 'line1', 'color': 0}]
-    plot = JT_plot('graph1', 'my X Label', 'my Y Label', line_data)
-    plot.set_output_filepath('testing/line_data7.png')
-    plots.append( plot )
 
     return (plots)
 
