@@ -5,6 +5,8 @@
 import os
 from datetime import date
 
+from fpdf import FPDF
+
 try:
     from . import jt_util as util
     from . import jt_plot as jtpl
@@ -76,65 +78,34 @@ class JT_PDF_2_across:
         pdf.set_font('Helvetica', '', 10)
 
         # constant for half way across the page (2 columns)
-        half_pw = 100
-        x_start = 0
+        half_pw = 100 + 15
+        x_start = 20
         y_start = 30
 
         # set image width and height between graphs
-        image_w = 100
-        image_h = 65
+        image_w = 70
+        image_h = 62
 
         plot_num = 1
         row = 1
-        for plot in plots:
+        max_plots = len(plots)
+#        max_plots = 3   # allows me to shorten the list so I don't have to wait while debugging
+        for plot in plots[:max_plots]:
+
+            filepath = plot.save_to_file()
 
             # odd plot #
             if plot_num % 2 != 0:
-
-                pdf.image(self.path_athlete_images + 'cmj_Impulse_graph.png',
-                          x=x_start, y=y_start, w=image_w,
-                          h=0)  # 0 for height allows image to scale, with value it will squish or fatten the image
+                pdf.image(filepath, x=x_start, y=y_start, w=image_w, h=0)
+                # 0 for height allows image to scale, with value it will squish or fatten the image
 
             # even plot #
             else:
-
-                pdf.image(self.path_athlete_images + 'cmj_force_comparison_graph.png',
-                          x=half_pw, y=y_start, w=image_w, h=0)
+                pdf.image(filepath, x=half_pw, y=y_start, w=image_w, h=0)
                 y_start += image_h
                 row += 1
             plot_num += 1
 
-        # # row 1
-        # pdf.image(self.path_athlete_images + 'cmj_Impulse_graph.png',
-        #           x=x_start, y=y_start, w=image_w,
-        #           h=0)  # 0 for height allows image to scale, with value it will squish or fatten the image
-        #
-        # pdf.image(self.path_athlete_images + 'cmj_force_comparison_graph.png',
-        #           x=half_pw, y=y_start, w=image_w, h=0)
-        #
-        # # row 2
-        # y_start += image_h
-        # pdf.image(self.path_athlete_images + 'cmj_ToV_graph.png',
-        #           x=x_start, y=y_start, w=image_w, h=0)
-        #
-        # pdf.image(self.path_athlete_images + 'cmj_RSI_graph.png',
-        #           x=half_pw, y=y_start, w=image_w, h=0)
-        #
-        # # row 3
-        # y_start += image_h
-        # pdf.image(self.path_athlete_images + 'cmj_jump_time_graph.png',
-        #           x=x_start, y=y_start, w=image_w, h=0)
-        #
-        # pdf.image(self.path_athlete_images + 'cmj_CoM_displacement_graph.png',
-        #           x=half_pw, y=y_start, w=image_w, h=0)
-        #
-        # # row 4 - just one image
-        # y_start += image_h
-        # pdf.image(self.path_athlete_images + 'cmj_force_asymmetry_graph.png',
-        #           x=half_pw / 2, y=y_start, w=image_w, h=0)
-        #
-        # output_file = self.path_results_athlete + 'cmj report.pdf'
-        # print(f'PDF created: {output_file}')
 
         # save PDF File
         pdf.output(output_file)
@@ -145,7 +116,7 @@ if __name__ == "__main__":
     config_obj = jtc.JT_Config('taylor performance', 'TPC')
     config_obj.validate_install()
 
-    output_file = 'test.pdf'
+    output_file = 'testing/jt_pdf_2_across.pdf'
     plots = jtpl.test_plots()
     pdf_obj = JT_PDF_2_across(config_obj, "Carl Lewis", output_file)
     pdf_obj.add_plots(plots)

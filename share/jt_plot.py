@@ -78,6 +78,7 @@ class JT_plot:
 
         #increase the space for the x axis if figure defined
         if figure is not None:
+#            figure.set_size_inches(6, 4)
             figure.subplots_adjust(bottom=0.2)
 #            figure.set_constrained_layout(True)d
 
@@ -144,7 +145,7 @@ class JT_plot:
         plt.tight_layout()
 
         # this sets the size of the graph if it is not an axes (ie, it is plt)
-        plt.figure(1, figsize=(8, 4))
+#        plt.figure(1, figsize=(6, 3))
 
         # creating labels
         plt.title(self.title, fontsize=14)
@@ -183,11 +184,11 @@ class JT_plot:
 #        plt.subplots_adjust(bottom=0.2)  # Adjust the bottom margin
 
         ax = plt.gca()  # returns current active axis
-        ax.set_xticks(x_ticks_temp)
-        ax.tick_params(axis='x', labelsize=8)
-        ax.set_xticks(x_ticks_temp)
-        ax.set_xticklabels(x, rotation=45)
-        ax.xaxis.set_major_formatter(DateFormatter('%m-%d-%y'))
+        if x is not None:
+            ax.tick_params(axis='x', labelsize=8)
+            ax.set_xticks(x_ticks_temp)
+            ax.set_xticklabels(x, rotation=45)
+            ax.xaxis.set_major_formatter(DateFormatter('%m-%d-%y'))
 
         ax.set_ylim(self.yMin, self.yMax)
 
@@ -202,60 +203,13 @@ class JT_plot:
                 log.debug(f'Saved Graph: {filepath}')
             else:
                 log.error(f'jt_plot - no file path specified')
+                return ''
         else:
             plt.show()
 
         plt.close()
 
-    # core work of setting up plt
-    def _setup_plt(self, ax, figure):
-        log.debug(f'title: {self.title}')
-
-        # start with clear the existing graph
-        ax.clear()
-
-        # creating labels
-        ax.set_title(self.title, fontsize=14)
-        ax.set_xlabel(self.xAxisLabel, fontsize=12)
-        ax.set_ylabel(self.yAxisLabel, fontsize=12)
-
-        x_ticks_temp = []  # defined so it can be set down below
-
-        # plotting data for each line passed in
-        for my_dict in self.data:
-            x = my_dict.get("x")
-            x_ticks_temp = x  # this is used further down to
-            y = my_dict.get("y")
-            label = my_dict.get("label")
-            try:
-                lineColor = jt_colors[my_dict.get("color")]
-            except:
-                lineColor = jt_colors[0]
-
-            if x is not None:
-                ax.plot(x, y, linestyle='-', marker=self.marker, label=label, mfc='w', color=lineColor, markersize=5)
-            else:
-                ax.plot(y, linestyle='-', marker=self.marker, label=label, mfc='w', color=lineColor, markersize=5)
-
-        # create bounding lines (this can be 1 or more)
-        if self.yBounds is not None:
-            for bounding_line in self.yBounds:
-                ax.axhline(bounding_line, color='k', linestyle='--')
-
-        ax.legend()
-
-        # if x values were passed in
-        if x is not None:
-            ax.tick_params(axis='x', labelsize=8)
-            ax.set_xticks(x_ticks_temp)
-            ax.set_xticklabels(x, rotation=45)
-            ax.xaxis.set_major_formatter(DateFormatter('%m-%d-%y'))
-
-        ax.set_ylim(self.yMin, self.yMax)
-
-        #increase the space for the x axis if figure defined
-        if figure is not None:
-            figure.subplots_adjust(bottom=0.3)
+        return filepath
 
 # test plots for others to use like the PDF creation
 def test_plots():
@@ -263,21 +217,57 @@ def test_plots():
     lineX = [10, 20, 30, 40, 50, 60, 70, 80]
     line1 = [1, 2, 3, 4, 5, 6, 7, 8]
     line2 = [8, 7, 6, 5, 4, 3, 2, 1]
-    line3 = [8, 7, 6, 5, 4, 3, 2, 1]
+    line3 = [8, 7, 6, 5, 4, 3, 2, 2]
+    line4 = [8, 7, 6, 5, 4, 5, 2, 3]
+    line5 = [8, 7, 3, 5, 4, 6, 2, 4]
+    line6 = [8, 7, 2, 5, 4, 6, 2, 4]
 
-    line_data1 = [
+    line_data = [
         {'x': lineX, 'y': line1, 'label': 'line1', 'color': 0},
         {'x': lineX, 'y': line2, 'label': 'line2', 'color': 1}]
-    plots.append( JT_plot('graph1', 'my X Label', 'my Y Label', line_data1) )
+    plot = JT_plot('graph1', 'my X Label', 'my Y Label', line_data)
+    plot.set_output_filepath('testing/line_data1.png')
+    plots.append( plot )
 
-    line_data2 = [
+    line_data = [
         {'x': lineX, 'y': line3, 'label': 'line1', 'color': 2}]
-    plots.append( JT_plot('graph2', 'my X Label G2', 'my Y Label G2', line_data2) )
+    plot = JT_plot('graph2', 'my X Label G2', 'my Y Label G2', line_data)
+    plot.set_output_filepath('testing/line_data2.png')
+    plots.append( plot )
 
     # no x value
-    line_data3 = [
+    line_data = [
         {'y': line3, 'label': 'line1', 'color': 2}]
-    plots.append( JT_plot('graph3', 'my X Label G3', 'my Y Label G3', line_data3) )
+    plot = JT_plot('graph3', 'my X Label G3', 'my Y Label G3', line_data)
+    plot.set_output_filepath('testing/line_data3.png')
+    plots.append( plot )
+
+    line_data = [
+        {'x': lineX, 'y': line4, 'label': 'line1', 'color': 0},
+        {'x': lineX, 'y': line5, 'label': 'line2', 'color': 1}]
+    plot = JT_plot('graph1', 'my X Label', 'my Y Label', line_data)
+    plot.set_output_filepath('testing/line_data4.png')
+    plots.append( plot )
+
+    line_data = [
+        {'x': lineX, 'y': line3, 'label': 'line1', 'color': 0},
+        {'x': lineX, 'y': line6, 'label': 'line2', 'color': 1}]
+    plot = JT_plot('graph1', 'my X Label', 'my Y Label', line_data)
+    plot.set_output_filepath('testing/line_data5.png')
+    plots.append( plot )
+
+    line_data = [
+        {'x': lineX, 'y': line2, 'label': 'line1', 'color': 0},
+        {'x': lineX, 'y': line4, 'label': 'line2', 'color': 1}]
+    plot = JT_plot('graph1', 'my X Label', 'my Y Label', line_data)
+    plot.set_output_filepath('testing/line_data6.png')
+    plots.append( plot )
+
+    line_data = [
+        {'x': lineX, 'y': line2, 'label': 'line1', 'color': 0}]
+    plot = JT_plot('graph1', 'my X Label', 'my Y Label', line_data)
+    plot.set_output_filepath('testing/line_data7.png')
+    plots.append( plot )
 
     return (plots)
 
@@ -359,7 +349,7 @@ if __name__ == "__main__":
             self.canvas.draw()
 
         def savePlot2(self):
-            self.my_plot2.output_filepath = "plot2_test.png"
+            self.my_plot2.output_filepath = "testing/plot2_test.png"
             self.my_plot2.save_to_file(False)   #shows the plot
             self.my_plot2.save_to_file(True)    # saves plot to disk
 
