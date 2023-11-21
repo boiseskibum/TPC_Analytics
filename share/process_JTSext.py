@@ -117,6 +117,7 @@ class JTSext:
             plt.ylabel(ylabel)
             plt.legend()
             plt.show()
+            plt.close()
 
         #create graph for later storage
         graph = {}
@@ -247,6 +248,7 @@ class JTSext:
             plt.ylabel('Torque')
             plt.legend()
             plt.show(fig)
+            plt.close()
 
         results_dict = {}
         results_dict['leg'] = leg

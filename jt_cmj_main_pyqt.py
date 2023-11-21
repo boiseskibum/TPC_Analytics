@@ -494,7 +494,7 @@ class CMJ_UI(QMainWindow):
         self.maintenance_window.show()
 
     def showAbout(self):
-        print("About clicked")
+        log.debug("About clicked")
 
     def preferences_screen(self):
         self.preferences_window = jtpref.JT_PreferencesWindow(self.config_obj, self.reader_obj)
@@ -749,7 +749,7 @@ class CMJ_UI(QMainWindow):
 
         my_plot = jtpl.JT_plot('Current run', 'measurement number', 'force (N)', line_data)
         my_plot.set_marker_none()
-        my_plot.draw_on_pyqt(axes)
+        my_plot.draw_on_pyqt(axes, self.canvas.figure)
 
         self.canvas.draw()
 

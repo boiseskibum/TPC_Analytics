@@ -64,13 +64,15 @@ class JT_analytics_cmj:
         athlete_filter = df[df['athlete_name'] == athlete]
 
 #        print(athlete_filter.columns)
-        print(athlete_filter[['athlete_name', 'col_timestamp_str']])
+        log.debug(athlete_filter[['athlete_name', 'col_timestamp_str']])
 #        print(athlete_filter[['col_timestamp_str']])
-        print(f'number of rows: {len(athlete_filter)}')
+        log.debug(f'number of rows: {len(athlete_filter)}')
 
         # temp_df = athlete_filter.groupby(['athlete_name', pd.Grouper(key='datetime_object', axis=0, freq='D', sort=True)]).mean()
         temp_df = athlete_filter.groupby(pd.Grouper(key='datetime_object', axis=0, freq='D', sort=True)).mean(numeric_only=True).reset_index()
         mean_df = temp_df.dropna()
+        # print(f'mean_df {mean_df.columns}')
+        # print(mean_df['datetime_object'])
 
         self.plot_list = []
 

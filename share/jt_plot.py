@@ -2,6 +2,7 @@
 import sys
 from PyQt6.QtWidgets import QApplication, QWidget, QPushButton, QGridLayout
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.dates import DateFormatter
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -72,8 +73,57 @@ class JT_plot:
     #used to show the graph - generally only for debug
 
 
-    def draw_on_pyqt(self, ax_target):
-        self._setup_plt(ax_target)
+    def draw_on_pyqt(self, ax, figure= None):
+        log.debug(f'title: {self.title}')
+
+        #increase the space for the x axis if figure defined
+        if figure is not None:
+            figure.subplots_adjust(bottom=0.2)
+#            figure.set_constrained_layout(True)d
+
+        plt.tight_layout()
+
+        # start with clear the existing graph
+        ax.clear()
+
+        # creating labels
+        ax.set_title(self.title, fontsize=14)
+        ax.set_xlabel(self.xAxisLabel, fontsize=12)
+        ax.set_ylabel(self.yAxisLabel, fontsize=12)
+
+        x_ticks_temp = []  # defined so it can be set down below
+
+        # plotting data for each line passed in
+        for my_dict in self.data:
+            x = my_dict.get("x")
+            x_ticks_temp = x  # this is used further down to
+            y = my_dict.get("y")
+            label = my_dict.get("label")
+            try:
+                lineColor = jt_colors[my_dict.get("color")]
+            except:
+                lineColor = jt_colors[0]
+
+            if x is not None:
+                ax.plot(x, y, linestyle='-', marker=self.marker, label=label, mfc='w', color=lineColor, markersize=5)
+            else:
+                ax.plot(y, linestyle='-', marker=self.marker, label=label, mfc='w', color=lineColor, markersize=5)
+
+        # create bounding lines (this can be 1 or more)
+        if self.yBounds is not None:
+            for bounding_line in self.yBounds:
+                ax.axhline(bounding_line, color='k', linestyle='--')
+
+        ax.legend()
+
+        # if x values were passed in
+        if x is not None:
+            ax.tick_params(axis='x', labelsize=8)
+            ax.set_xticks(x_ticks_temp)
+            ax.set_xticklabels(x, rotation=45)
+            ax.xaxis.set_major_formatter(DateFormatter('%m-%d-%y'))
+
+        ax.set_ylim(self.yMin, self.yMax)
 
         plt.close()
 
@@ -91,6 +141,7 @@ class JT_plot:
 
         # start with clear the existing graph
         plt.clf()
+        plt.tight_layout()
 
         # this sets the size of the graph if it is not an axes (ie, it is plt)
         plt.figure(1, figsize=(8, 4))
@@ -99,6 +150,8 @@ class JT_plot:
         plt.title(self.title, fontsize=14)
         plt.xlabel(self.xAxisLabel, fontsize=12)
         plt.ylabel(self.yAxisLabel, fontsize=12)
+
+        plt.xticks(fontsize=8, rotation=45)
 
         x_ticks_temp = []  # defined so it can be set down below
 
@@ -113,6 +166,7 @@ class JT_plot:
             except:
                 lineColor = jt_colors[0]
 
+
             if x is not None:
                 plt.plot(x, y, linestyle='-', marker=self.marker, label=label, mfc='w', color=lineColor, markersize=5)
             else:
@@ -125,10 +179,19 @@ class JT_plot:
 
         plt.legend()
 
-        plt.xticks(fontsize=8, rotation=90)
+        # Adjust the margins
+#        plt.subplots_adjust(bottom=0.2)  # Adjust the bottom margin
+
         ax = plt.gca()  # returns current active axis
         ax.set_xticks(x_ticks_temp)
+        ax.tick_params(axis='x', labelsize=8)
+        ax.set_xticks(x_ticks_temp)
+        ax.set_xticklabels(x, rotation=45)
+        ax.xaxis.set_major_formatter(DateFormatter('%m-%d-%y'))
+
         ax.set_ylim(self.yMin, self.yMax)
+
+#        plt.show
 
         if(save_to_disk == True):
             if (len(filepath) > 0):
@@ -145,7 +208,7 @@ class JT_plot:
         plt.close()
 
     # core work of setting up plt
-    def _setup_plt(self, ax):
+    def _setup_plt(self, ax, figure):
         log.debug(f'title: {self.title}')
 
         # start with clear the existing graph
@@ -185,8 +248,14 @@ class JT_plot:
         if x is not None:
             ax.tick_params(axis='x', labelsize=8)
             ax.set_xticks(x_ticks_temp)
-            ax.set_xticklabels(x_ticks_temp, rotation=90)
-            ax.set_ylim(self.yMin, self.yMax)
+            ax.set_xticklabels(x, rotation=45)
+            ax.xaxis.set_major_formatter(DateFormatter('%m-%d-%y'))
+
+        ax.set_ylim(self.yMin, self.yMax)
+
+        #increase the space for the x axis if figure defined
+        if figure is not None:
+            figure.subplots_adjust(bottom=0.3)
 
 # test plots for others to use like the PDF creation
 def test_plots():
@@ -271,26 +340,28 @@ if __name__ == "__main__":
 
             self.canvas.figure.clear()
             ax = self.canvas.figure.add_subplot(111)
-            self.my_plot1.draw_on_pyqt(ax)
+            self.my_plot1.draw_on_pyqt(ax, self.canvas.figure)
 
             self.canvas.draw()
 
         def plot2(self):
             self.canvas.figure.clear()
             ax = self.canvas.figure.add_subplot(111)
-            self.my_plot2.draw_on_pyqt(ax)
+            self.my_plot2.draw_on_pyqt(ax, self.canvas.figure)
 
             self.canvas.draw()
 
         def plot3(self):
             self.canvas.figure.clear()
             ax = self.canvas.figure.add_subplot(111)
-            self.my_plot3.draw_on_pyqt(ax)
+            self.my_plot3.draw_on_pyqt(ax, self.canvas.figure)
 
             self.canvas.draw()
 
         def savePlot2(self):
-            self.my_plot2.save_to_file("plot2_test.png")
+            self.my_plot2.output_filepath = "plot2_test.png"
+            self.my_plot2.save_to_file(False)   #shows the plot
+            self.my_plot2.save_to_file(True)    # saves plot to disk
 
 
     app = QApplication(sys.argv)

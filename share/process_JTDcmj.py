@@ -77,13 +77,14 @@ class JTDcmj:
 #        log.debug(f"JTDcmj - data point freq: {self.freq}, overall time: {overall_time}, num_value: {num_values}")
 
         # rename columns so they are easier to deal with AND does absolute value columns
-        self.df.rename(columns={'r_force_N': 'Right'}, inplace=True)
-        self.df['Right'] = self.df['Right'].abs()  # absolute value of 'Right'
-        list_right = self.df['Right'].to_list()  # adds data to form a list
-
-        self.df.rename(columns={'l_force_N': 'Left'}, inplace=True)
-        self.df['Left'] = self.df['Left'].abs()  # absolute value of 'Left'
-        list_left = self.df['Left'].to_list()  # adds data to form a list
+        try:
+            self.df['Right'] = self.df['r_force_N'].abs()  # absolute value of 'Right'
+            list_right = self.df['Right'].to_list()  # adds data to form a list
+            self.df['Left'] = self.df['l_force_N'].abs()  # absolute value of 'Left'
+            list_left = self.df['Left'].to_list()  # adds data to form a list
+        except:
+            log.debug(f"failed abs and to_list on left or right: \n {self.df.columns}")
+            return
 
         # mass calculations.  the freq * 2 is basically take the first 2 seconds of measurements and average them
         # for each leg and make it the bodyweight of the individual.
@@ -221,9 +222,11 @@ class JTDcmj:
                         transparent=False,
                         facecolor='white', dpi=300,
                         bbox_inches="tight")
-            plt.close(fig)
 
             results_dict['GRAPH_1'] = graph_filename
+
+        plt.close(fig)
+
 
         # log.debug(f' L: {results_dict_l} R: {results_dict_r}')
         results_dict.update(results_dict_l)

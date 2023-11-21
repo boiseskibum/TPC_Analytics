@@ -148,7 +148,7 @@ class JT_Trial:
                 protocol_specific_obj = p_JTSext.JTSext(self)
                 self.summary_results_dict = protocol_specific_obj.process()
             except:
-                self.error_msg = f'failed to proceess protocol: {self.protocol_summary_name} file: {self.original_filename}'
+                self.error_msg = f'failed to Kneww proceess protocol: {self.protocol_summary_name} file: {self.original_filename}'
                 self.error = True
 #                log.error(self.error_msg)
                 return False
@@ -162,7 +162,7 @@ class JT_Trial:
                 self.short_start_index = self.summary_results_dict['jump_onset_moment_index']
                 self.short_end_index = self.summary_results_dict['takeoff_moment_index']
             except:
-                self.error_msg = f'failed to proceess protocol: {self.protocol_summary_name} file: {self.original_filename}'
+                self.error_msg = f'failed to proceess CMJ protocol: {self.protocol_summary_name} file: {self.original_filename}'
                 self.error = True
  #               log.error(self.error_msg)
                 return False
@@ -195,7 +195,7 @@ class JT_Trial:
         # Join the date and modified time components back together
         output_string = f"{date_part} {time_part_modified}"
 
-        print(output_string)
+#        log.debug(output_string)
 
         debug_log_dict = {}
         debug_log_dict['status'] = 'success'

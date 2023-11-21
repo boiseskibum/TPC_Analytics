@@ -78,7 +78,7 @@ class JT_JsonTrialManager:
 
         # Get unique combinations of athlete and short_protocol
         unique_combinations_df = df_copy[['athlete', 'short_protocol']].drop_duplicates()
-        print(unique_combinations_df)
+        log.debug(unique_combinations_df)
 
         return(unique_combinations_df)
 

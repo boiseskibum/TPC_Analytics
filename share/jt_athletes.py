@@ -89,9 +89,9 @@ if __name__ == "__main__":
 
     # Get all unique types
     athletes = athletes_obj.get_athletes()
-    print("Athletes:", athletes)
+    log.debug("Athletes:", athletes)
 
     for athlete in athletes:
         injured = athletes_obj.get_injured_side(athlete)
-        print(f"athlete: {athlete}, Injured: {injured}")
+        log.debug(f"athlete: {athlete}, Injured: {injured}")
 

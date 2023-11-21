@@ -92,20 +92,20 @@ if __name__ == "__main__":
 
     # Get all unique types
     unique_types = protocol_obj.get_unique_types()
-    print("Unique Types:", unique_types)
+    log.debug("Unique Types:", unique_types)
 
     # Loop through each type and get the associated protocol
     for type in unique_types:
         names = protocol_obj.get_names_by_type(type)
-        print(f"Type: {type}")
+        log.debug(f"Type: {type}")
         for name in names:
             protocol = protocol_obj.get_protocol_by_name(name)
             leg = protocol_obj.get_leg_by_protocol(protocol)
-            print(f"   Type: {type}, Name: {name}, Protocol: {protocol}, leg: {leg}")
+            log.debug(f"   Type: {type}, Name: {name}, Protocol: {protocol}, leg: {leg}")
 
     #lastly check the validate function to make sure all fields are correct and if not return an error messagge
 
     protocol_obj.validate_data()
 
     bs_list = protocol_obj.get_names_by_type("bs type")
-    print(f"bs list of type results: {bs_list}")
+    log.debug(f"bs list of type results: {bs_list}")

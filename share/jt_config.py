@@ -315,12 +315,12 @@ if __name__ == "__main__":
 
     config_obj.validate_install()
 
-    print( f"test1: should be nothing/fail: {config_obj.get_config('abc')}")
-    print( f"test2: stores a value: {config_obj.set_config('abc', 'abc_value1')}")
-    print( f"test3: stores a value: {config_obj.set_config('abc2', 'abc_value2')}")
+    log.debug( f"test1: should be nothing/fail: {config_obj.get_config('abc')}")
+    log.debug( f"test2: stores a value: {config_obj.set_config('abc', 'abc_value1')}")
+    log.debug( f"test3: stores a value: {config_obj.set_config('abc2', 'abc_value2')}")
 
-    print( f"test3: get abc2 value: {config_obj.get_config('abc2')}")
-    print( f"test3: get def2 value, should fail: {config_obj.get_config('def2')}")
+    log.debug( f"test3: get abc2 value: {config_obj.get_config('abc2')}")
+    log.debug( f"test3: get def2 value, should fail: {config_obj.get_config('def2')}")
 
 
 

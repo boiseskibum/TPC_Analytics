@@ -200,16 +200,17 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.plot_current = 0   # this variable shows what the current plot being displayed is (ie, 1 to XX plots can 
                                 # be scrolled through
         def canvas_define(canvas_list, label_plot ):
-            figure_reports = Figure()
-            ax_reports = figure_reports.add_subplot(111)
-            canvas_reports = FigureCanvas(figure_reports)
-            self.gridLayout_plots.addWidget(canvas_reports)
-            self.gridLayout_plots.replaceWidget(label_plot, canvas_reports)
+            figure_report = Figure()
+            ax_reports = figure_report.add_subplot(111)
+            canvas_report = FigureCanvas(figure_report)
+            self.gridLayout_plots.addWidget(canvas_report)
+            self.gridLayout_plots.replaceWidget(label_plot, canvas_report)
             label_plot.deleteLater()
 
             canvas_dict = {
                 'ax': ax_reports,
-                'canvas': canvas_reports
+                'canvas': canvas_report,
+                'figure': figure_report
             }
             canvas_list.append(canvas_dict)
 
@@ -222,38 +223,9 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
         print(f'######################################### len of plot_list {len(self.plot_list)} ##################')
 
-        # figure_reports = Figure()
-        # self.ax_reports_1 = figure_reports.add_subplot(111)
-        # self.canvas_reports_plot1 = FigureCanvas(figure_reports)
-        # self.gridLayout_plots.addWidget(self.canvas_reports_plot1)
-        # self.gridLayout_plots.replaceWidget(self.label_plot1,  self.canvas_reports_plot1)
-        # self.label_plot1.deleteLater()
-        #
-        # figure_reports = Figure()
-        # self.ax_reports_2 = figure_reports.add_subplot(111)
-        # self.canvas_reports_plot2 = FigureCanvas(figure_reports)
-        # self.gridLayout_plots.addWidget(self.canvas_reports_plot2)
-        # self.gridLayout_plots.replaceWidget(self.label_plot2,  self.canvas_reports_plot2)
-        # self.label_plot2.deleteLater()
-        #
-        # figure_reports = Figure()
-        # self.ax_reports_3 = figure_reports.add_subplot(111)
-        # self.canvas_reports_plot3 = FigureCanvas(figure_reports)
-        # self.gridLayout_plots.addWidget(self.canvas_reports_plot3)
-        # self.gridLayout_plots.replaceWidget(self.label_plot3,  self.canvas_reports_plot3)
-        # self.label_plot3.deleteLater()
-        #
-        # figure_reports = Figure()
-        # self.ax_reports_4 = figure_reports.add_subplot(111)
-        # self.canvas_reports_plot4 = FigureCanvas(figure_reports)
-        # self.gridLayout_plots.addWidget(self.canvas_reports_plot4)
-        # self.gridLayout_plots.replaceWidget(self.label_plot4,  self.canvas_reports_plot4)
-        # self.label_plot4.deleteLater()
-
 
     def closeEvent(self, event):
         self.closed.emit()
-
 
     #load tree widget
     def load_browser_tree(self):
@@ -793,7 +765,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         # Using a set to get unique values from the first element of each tuple
         unique_athletes = list_of_combos['athlete'].unique()
 
-        f#load all athletes
+        #load all athletes
         for athlete in unique_athletes:
             athlete_item = QTreeWidgetItem([athlete])
             self.treeWidget_reports.addTopLevelItem(athlete_item)
@@ -834,13 +806,6 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
             self.update_reports_plots()
 
-            # self.ax_reports_1.clear()
-            # plot1.draw_on_pyqt(self.ax_reports_1)
-            # self.canvas_reports_plot1.draw()
-            #
-            # self.ax_reports_2.clear()
-            # plot2.draw_on_pyqt(self.ax_reports_2)
-            # self.canvas_reports_plot2.draw()
 
     def update_reports_plots(self):
 
@@ -848,14 +813,16 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         for canvas_dict in self.canvas_list:
             ax = canvas_dict['ax']
             canvas = canvas_dict['canvas']
+            figure = canvas_dict['figure']
             ax.clear()
 
             try:
                 plot = self.plot_list[self.plot_current + canvas_num]
-                plot.draw_on_pyqt(ax)
+                plot.draw_on_pyqt(ax, figure)
                 canvas.draw()
                 canvas_num += 1
             except:
+                canvas.draw()
                 print(f'plot_list has {len(self.plot_list)} elements, could  get to the {self.plot_current + canvas_num} element')
 
 
