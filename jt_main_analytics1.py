@@ -244,7 +244,11 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             # Filter DataFrame for the target dates
             athlete_df = df[df["athlete"] == athlete]
             unique_dates = athlete_df['date'].unique()
-
+            print(f'Unique dates type: {type(unique_dates)}')
+            print(unique_dates)
+            print(f'SORTED')
+            unique_dates = np.sort(unique_dates)
+            print(unique_dates)
 
             for date in unique_dates:
                 date_item = QTreeWidgetItem([date])
@@ -271,7 +275,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
                     date_item.addChild(trial_item)
                     trial_item.setData(0, Qt.ItemDataRole.UserRole, original_filename)
 
-        self.expand_tree_widget(self.treeWidget)
+        # self.expand_tree_widget(self.treeWidget)
 
 
     def expand_tree_widget(self, tree_widget):
@@ -280,8 +284,8 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             for i in range(item.childCount()):
                 expand_items(item.child(i))
 
-        for i in range(tree_widget.topLevelItemCount()):
-            expand_items(tree_widget.topLevelItem(i))
+#        for i in range(tree_widget.topLevelItemCount()):
+#            expand_items(tree_widget.topLevelItem(i))
 
     def item_clicked_browser(self, item, column):
 
@@ -361,6 +365,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             max_value = max( max(line), abs(min(line)))       # get the largest value between the abs of min and max of data points in the line
             self.max_value = max(self.max_value, max_value)   # get the largest value between of past lines if there was one
 
+            # if in short video mode then grabe the "short" star and end index's
             if self.short_video == True and self.current_trial.short_start_index is not None:
                 self.min_data_point = self.current_trial.short_start_index;  # change this in the future
             if self.short_video == True and self.current_trial.short_end_index is not None:
@@ -385,8 +390,9 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
         log.debug(f'set_trial - self.min_data_poing {self.min_data_point}. max_data_point: {self.max_data_point}, total_data_points: {self.total_data_points}')
 
+        #The intent was to create a vertical line where the person jumped which is not really necessary so commented out
         self.current_data_point = self.min_data_point
-        self.vertical_line = self.ax_browsing.axvline(x=self.current_data_point, color='g', linestyle='--')
+#        self.vertical_line = self.ax_browsing.axvline(x=self.current_data_point, color='g', linestyle='--')
         self.ax_browsing.legend()
         self.canvas_browsing.draw()
 
@@ -846,9 +852,11 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             current_page = (current_element_index // elements_per_page) + 1
 
             # Create the string
-            self.page_info = f"page {current_page} of {total_pages}"
+            self.page_info = f"     page {current_page} of {total_pages}     "
 
-            print(self.page_info)
+            self.page_of_page.setText(self.page_info)
+
+            #log.debug(f'New page of page text: {self.page_info}')
 
     def reports_page_forward(self):
         num_plots = len(self.plot_list)
