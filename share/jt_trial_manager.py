@@ -75,9 +75,11 @@ class JT_JsonTrialManager:
 
         # Step 1: Create 'short_protocol' column
         df_copy['short_protocol'] = df_copy['protocol'].apply(lambda x: 'JTSext' if x.startswith('JTSext') else x)
+        print(df_copy)
 
         # Get unique combinations of athlete and short_protocol
         unique_combinations_df = df_copy[['athlete', 'short_protocol']].drop_duplicates()
+        print(unique_combinations_df)
         log.debug(unique_combinations_df)
 
         return(unique_combinations_df)

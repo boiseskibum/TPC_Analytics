@@ -198,7 +198,7 @@ class JT_plot:
             if (len(filepath) > 0):
                 plt.savefig(filepath,
                             transparent=False,
-                            facecolor='white', dpi=300,
+                            facecolor='white', dpi=200,
                             bbox_inches="tight")
                 log.debug(f'Saved Graph: {filepath}')
             else:

@@ -812,7 +812,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
             self.update_reports_plots()
 
-
+    # method to draw the plots on the 4 quadrants based upon which 4 should be shown.
     def update_reports_plots(self):
 
         canvas_num = 0
@@ -831,6 +831,24 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
                 canvas.draw()
                 print(f'plot_list has {len(self.plot_list)} elements, could  get to the {self.plot_current + canvas_num} element')
 
+            num_plots = len(self.plot_list)  # T - Total number of elements
+            current_element_index = self.plot_current  # CE - Current element index (0-based)
+
+            # Each page holds 4 elements
+            elements_per_page = len(self.canvas_list)
+
+            # Calculate total number of pages
+            # We use ceil to round up because even a single element requires a whole page
+            total_pages = -(-num_plots // elements_per_page)  # Equivalent to math.ceil(num_plots / elements_per_page)
+
+            # Calculate current page
+            # We add 1 because we're counting pages from 1, but elements are 0-indexed
+            current_page = (current_element_index // elements_per_page) + 1
+
+            # Create the string
+            self.page_info = f"page {current_page} of {total_pages}"
+
+            print(self.page_info)
 
     def reports_page_forward(self):
         num_plots = len(self.plot_list)
@@ -856,11 +874,19 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.plot_list
         output_file = 'testing/asf.pdf'
         protocol_obj = self.config_obj.protocol_obj
-        protocol_name = protocol_obj.get_name_by_protocol(self.reports_protocol)
+
+        # the following is a total hack to deal with what happens with when the protocol is shortened to
+        # eliminate L or R at the end.   Oh well, probably not the last HACK.   Something clearly needs
+        # to be done to improve this model on protocols
+        if self.reports_protocol.startswith('JTSext'):
+            protocol_name = protocol_obj.get_short_name_by_protocol('JTSextL')
+        else:
+            protocol_name = protocol_obj.get_name_by_protocol(self.reports_protocol)
+
         pdf_filename = protocol_name + ' ' + self.reports_athlete + '.pdf'
         output_file = self.config_obj.path_results + self.reports_athlete + '/' + pdf_filename
 
-        pdf_obj = jtpdf2.JT_PDF_2_across(self.config_obj, self.reports_athlete, output_file)
+        pdf_obj = jtpdf2.JT_PDF_2_across(self.config_obj, self.reports_athlete, protocol_name, output_file)
         pdf_obj.add_plots(self.plot_list)
 
         print('create pdf')

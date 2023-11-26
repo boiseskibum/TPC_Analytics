@@ -20,13 +20,13 @@ class JT_protocol:
     def __init__(self):
 
         # Column headers
-        columns = ["protocol", "type", "name", "leg"]
+        columns = ["protocol", "type", "name", "short_name", "leg"]
 
         # Given data in rows
         data = [
-            ["JTDcmj", "double", "CMJ", "both"],
-            ["JTSextL", "single", "Quad Extension L", "left"],
-            ["JTSextR", "single", "Quad Extension R", "right"]
+            ["JTDcmj", "double", "CMJ", "short_name", "both"],
+            ["JTSextL", "single", "Quad Extension L", "Quad Extension", "left"],
+            ["JTSextR", "single", "Quad Extension R", "Quad Extension", "right"]
         ]
 
         self.df = pd.DataFrame(data, columns=columns)
@@ -45,6 +45,9 @@ class JT_protocol:
 
     def get_name_by_protocol(self, protocol):
         return self.df.loc[self.df['protocol'] == protocol, 'name'].values[0]
+
+    def get_short_name_by_protocol(self, protocol):
+        return self.df.loc[self.df['protocol'] == protocol, 'short_name'].values[0]
 
     def get_leg_by_protocol(self, protocol):
         return self.df.loc[self.df['protocol'] == protocol, 'leg'].values[0]

@@ -22,11 +22,12 @@ my_resources = 'resources/img/'
 log = util.jt_logging()
 
 class JT_PDF_2_across:
-    def __init__(self, config_obj, athlete, output_file):
+    def __init__(self, config_obj, athlete, protocol_title, output_file):
 
         self.config_obj = config_obj
         self.athlete = athlete
         self.output_file = output_file
+        self.title = protocol_title
 
     def add_plots(self, plots):
         self.plots = plots
@@ -47,6 +48,7 @@ class JT_PDF_2_across:
         pw = 210 - 2 * m
 
         athlete_name = self.athlete
+        title = self.title
         class PDF(FPDF):
             def header(self):
                 # Rendering logo:
@@ -57,7 +59,7 @@ class JT_PDF_2_across:
                 # Moving cursor to the right:
                 self.cell(pw / 2 - 20)  # the 20 is a fudge factor to account for the logo
                 # Printing title:
-                self.cell(30, 10, "CMJ Assessment:  " + athlete_name, align="C")
+                self.cell(30, 10, f"{title} Assessment:  " + athlete_name, align="C")
                 # Performing a line break:
 
             def footer(self):
@@ -127,5 +129,5 @@ if __name__ == "__main__":
 
     output_file = 'testing/jt_pdf_2_across.pdf'
     plots = jtpl.test_plots(17)
-    pdf_obj = JT_PDF_2_across(config_obj, "Carl Lewis", output_file)
+    pdf_obj = JT_PDF_2_across(config_obj, "Carl Lewis", "BIG TIME", output_file)
     pdf_obj.add_plots(plots)
