@@ -1,35 +1,53 @@
-from PyQt6.QtWidgets import QDialog, QApplication
-import jt_add_athlete_dialog
+from PyQt6.QtWidgets import QDialog, QApplication, QDialogButtonBox
+from jt_add_athlete_dialog_designer import Ui_Dialog_add_user
 
-class AddAthleteDialog(QDialog):
+class AddAthleteDialog(QDialog, Ui_Dialog_add_user):
     def __init__(self):
         super().__init__()
 
         # Set up the user interface from Designer
-        self.ui = jt_add_athlete_dialog.Ui_Dialog()
-        self.ui.setupUi(self)
+#        self = jt_add_athlete_dialog_Dialog()
+        self.setupUi(self)
 
         # Populate the combo box
-        self.ui.comboBox.addItem("Left")
-        self.ui.comboBox.addItem("Right")
+        self.left_right_comboBox.addItems(["left", "right"])
 
-        # Connect the OK and Cancel buttons
-        self.ui.okButton.clicked.connect(self.accept)
-        self.ui.cancelButton.clicked.connect(self.reject)
+        self.athlete_edit.textChanged.connect(self.validate_inputs)
+        self.shank_length_edit.textChanged.connect(self.validate_inputs)
+        self.left_right_comboBox.currentIndexChanged.connect(self.validate_inputs)
+
+        # Retrieve the OK button and disable it
+        self.ok_button = self.buttonBox.button(QDialogButtonBox.StandardButton.Ok)
+        self.ok_button.setEnabled(False)
+
+
+    def validate_inputs(self):
+        athlete = self.athlete_edit.text()
+        shank_length = self.shank_length_edit.text()
+
+        # Check if name is not empty and shan_length is a valid number
+        try:
+            shank_length_valid = float(shank_length) > 0
+        except ValueError:
+            shank_length_valid = False
+
+        # Enable or disable OK button
+        self.ok_button.setEnabled(athlete.strip() != "" and shank_length_valid)
 
     def get_values(self):
         # Retrieve values from the dialog
-        name = self.ui.athletes_name.text()
-        hand = self.ui.comboBox.currentText()
-        shan_length = self.ui.shan_length.text()  # Convert to float or int as needed
+        athlete = self.athlete_edit.text()
+        hand = self.left_right_comboBox.currentText()
+        shank_length = self.shank_length_edit.text()  # Convert to float or int as needed
 
-        return name, hand, shan_length
+        return athlete, hand, shank_length
 
-app = QApplication([])
-dialog = AddAthleteDialog()
+if __name__ == "__main__":
+    app = QApplication([])
+    dialog = AddAthleteDialog()
 
-if dialog.exec() == QDialog.DialogCode.Accepted:
-    name, hand, shan_length = dialog.get_values()
-    print(f"Name: {name}, Hand: {hand}, Shan Length: {shan_length}")
+    if dialog.exec() == QDialog.DialogCode.Accepted:
+        athlete, hand, shan_length = dialog.get_values()
+        print(f"Name: {athlete}, Hand: {hand}, Shan Length: {shan_length}")
 
-app.exec()
+    app.exec()

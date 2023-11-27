@@ -9,27 +9,27 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 
-class Ui_Dialog(object):
-    def setupUi(self, Dialog):
-        Dialog.setObjectName("Dialog")
-        Dialog.resize(371, 321)
-        self.buttonBox = QtWidgets.QDialogButtonBox(parent=Dialog)
+class Ui_Dialog_add_user(object):
+    def setupUi(self, Dialog_add_user):
+        Dialog_add_user.setObjectName("Dialog_add_user")
+        Dialog_add_user.resize(371, 321)
+        self.buttonBox = QtWidgets.QDialogButtonBox(parent=Dialog_add_user)
         self.buttonBox.setGeometry(QtCore.QRect(20, 260, 311, 31))
         self.buttonBox.setOrientation(QtCore.Qt.Orientation.Horizontal)
         self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.StandardButton.Cancel|QtWidgets.QDialogButtonBox.StandardButton.Ok)
         self.buttonBox.setObjectName("buttonBox")
-        self.formLayoutWidget = QtWidgets.QWidget(parent=Dialog)
+        self.formLayoutWidget = QtWidgets.QWidget(parent=Dialog_add_user)
         self.formLayoutWidget.setGeometry(QtCore.QRect(20, 20, 321, 101))
         self.formLayoutWidget.setObjectName("formLayoutWidget")
         self.formLayout = QtWidgets.QFormLayout(self.formLayoutWidget)
         self.formLayout.setContentsMargins(0, 0, 0, 0)
         self.formLayout.setObjectName("formLayout")
-        self.name_label = QtWidgets.QLabel(parent=self.formLayoutWidget)
-        self.name_label.setObjectName("name_label")
-        self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole.LabelRole, self.name_label)
-        self.name_lineEdit = QtWidgets.QLineEdit(parent=self.formLayoutWidget)
-        self.name_lineEdit.setObjectName("name_lineEdit")
-        self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole.FieldRole, self.name_lineEdit)
+        self.athlete_label = QtWidgets.QLabel(parent=self.formLayoutWidget)
+        self.athlete_label.setObjectName("athlete_label")
+        self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole.LabelRole, self.athlete_label)
+        self.athlete_edit = QtWidgets.QLineEdit(parent=self.formLayoutWidget)
+        self.athlete_edit.setObjectName("athlete_edit")
+        self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole.FieldRole, self.athlete_edit)
         self.left_right_label = QtWidgets.QLabel(parent=self.formLayoutWidget)
         self.left_right_label.setObjectName("left_right_label")
         self.formLayout.setWidget(1, QtWidgets.QFormLayout.ItemRole.LabelRole, self.left_right_label)
@@ -39,23 +39,23 @@ class Ui_Dialog(object):
         self.shank_length_label = QtWidgets.QLabel(parent=self.formLayoutWidget)
         self.shank_length_label.setObjectName("shank_length_label")
         self.formLayout.setWidget(2, QtWidgets.QFormLayout.ItemRole.LabelRole, self.shank_length_label)
-        self.shank_length_ineEdit = QtWidgets.QLineEdit(parent=self.formLayoutWidget)
-        self.shank_length_ineEdit.setObjectName("shank_length_ineEdit")
-        self.formLayout.setWidget(2, QtWidgets.QFormLayout.ItemRole.FieldRole, self.shank_length_ineEdit)
-        self.label = QtWidgets.QLabel(parent=Dialog)
+        self.shank_length_edit = QtWidgets.QLineEdit(parent=self.formLayoutWidget)
+        self.shank_length_edit.setObjectName("shank_length_edit")
+        self.formLayout.setWidget(2, QtWidgets.QFormLayout.ItemRole.FieldRole, self.shank_length_edit)
+        self.label = QtWidgets.QLabel(parent=Dialog_add_user)
         self.label.setGeometry(QtCore.QRect(30, 130, 311, 111))
         self.label.setWordWrap(True)
         self.label.setObjectName("label")
 
-        self.retranslateUi(Dialog)
-        self.buttonBox.accepted.connect(Dialog.accept) # type: ignore
-        self.buttonBox.rejected.connect(Dialog.reject) # type: ignore
-        QtCore.QMetaObject.connectSlotsByName(Dialog)
+        self.retranslateUi(Dialog_add_user)
+        self.buttonBox.accepted.connect(Dialog_add_user.accept) # type: ignore
+        self.buttonBox.rejected.connect(Dialog_add_user.reject) # type: ignore
+        QtCore.QMetaObject.connectSlotsByName(Dialog_add_user)
 
-    def retranslateUi(self, Dialog):
+    def retranslateUi(self, Dialog_add_user):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
-        self.name_label.setText(_translate("Dialog", "Athletes name: "))
-        self.left_right_label.setText(_translate("Dialog", "Injured leg:"))
-        self.shank_length_label.setText(_translate("Dialog", "Shank length"))
-        self.label.setText(_translate("Dialog", "Warning:  An athletes name can not be changed once created, type carefully!   To change the injured leg or shank length go to the config directory and carefully change their values in athletes.csv.  DO NOT change the the athletes name or the force will be disturbed..."))
+        Dialog_add_user.setWindowTitle(_translate("Dialog_add_user", "Dialog"))
+        self.athlete_label.setText(_translate("Dialog_add_user", "Athletes name: "))
+        self.left_right_label.setText(_translate("Dialog_add_user", "Injured leg:"))
+        self.shank_length_label.setText(_translate("Dialog_add_user", "Shank length(m)"))
+        self.label.setText(_translate("Dialog_add_user", "Warning:  An athletes name can not be changed once created, type carefully!   To change the injured leg or shank length go to the config directory and carefully change their values in athletes.csv.  DO NOT change the the athletes name or the force will be disturbed..."))
