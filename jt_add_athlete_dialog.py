@@ -37,17 +37,17 @@ class AddAthleteDialog(QDialog, Ui_Dialog_add_user):
     def get_values(self):
         # Retrieve values from the dialog
         athlete = self.athlete_edit.text()
-        hand = self.left_right_comboBox.currentText()
+        injured = self.left_right_comboBox.currentText()
         shank_length = self.shank_length_edit.text()  # Convert to float or int as needed
 
-        return athlete, hand, shank_length
+        return athlete, injured, shank_length
 
 if __name__ == "__main__":
     app = QApplication([])
     dialog = AddAthleteDialog()
 
     if dialog.exec() == QDialog.DialogCode.Accepted:
-        athlete, hand, shan_length = dialog.get_values()
-        print(f"Name: {athlete}, Hand: {hand}, Shan Length: {shan_length}")
+        athlete, injured, shank_length = dialog.get_values()
+        print(f"athletes name: {athlete}, injured: {injured}, Shank Length: {shank_length}")
 
     app.exec()

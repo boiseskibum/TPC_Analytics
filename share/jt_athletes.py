@@ -76,6 +76,21 @@ class JT_athletes:
             value = ""
         return value
 
+    # Add an athlete to the csv.   All fields are required
+    def add_athlete(self, athlete, injured, shank_length):
+
+        # validate athlete doesn't already exist
+        if athlete.lower() in self.df['athletes_name'].str.lower().values:
+            log.error(f'add_athlete failed to add user: |{athlete}| already exists')
+            return
+
+        self.get_athletes()
+        new_data = {'athletes_name': athlete, 'injured': injured, 'shank_length': shank_length}
+        new_row = pd.DataFrame([new_data])
+        #print (f'#####  self.df type: {type(self.df)}, new_row type: {type(new_row)}')
+        self.df = pd.concat([self.df, new_row], ignore_index=True)
+
+        self.df.to_csv(self.athletes_file_path, index=False)  # Save the DataFrame back to CSV
 
 #### Main ##########################################################
 
@@ -89,7 +104,7 @@ if __name__ == "__main__":
 
     # Get all unique types
     athletes = athletes_obj.get_athletes()
-    log.debug("Athletes:", athletes)
+    log.debug(f'Athletes: {athletes}' )
 
     for athlete in athletes:
         injured = athletes_obj.get_injured_side(athlete)

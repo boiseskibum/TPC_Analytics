@@ -46,6 +46,7 @@ from share import jt_video as jtv
 from share import jt_plot as jtpl
 from share import jt_maintenance_UI as jtmaint
 from share import jt_preferences_UI as jtpref
+import jt_add_athlete_dialog as jtaa
 import jt_main_analytics1 as jtanalytics
 
 # Testing data
@@ -166,16 +167,19 @@ class CMJ_UI(QMainWindow):
         # Creating actions for the File menu
         dirMaintAction = QAction('Directories and Maintenance', self)
         preferenceAction = QAction('Settings', self)   # this shows up as preferences in the MACOS
+        addAthleteAction = QAction('Add Athlete', self)
         aboutAction = QAction('About', self)
 
         # Adding actions to the File menu
         fileMenu.addAction(preferenceAction)
         fileMenu.addAction(dirMaintAction)
+        fileMenu.addAction(addAthleteAction)
         fileMenu.addAction(aboutAction)
 
         # Connect the actions to their respective functions
         preferenceAction.triggered.connect(self.preferences_screen)
         dirMaintAction.triggered.connect(self.showDirMaint)
+        addAthleteAction.triggered.connect(self.showUserAddDialog)
         aboutAction.triggered.connect(self.showAbout)
 
 
@@ -492,6 +496,20 @@ class CMJ_UI(QMainWindow):
         self.maintenance_window = jtmaint.JT_MaintenanceWindow(self.config_obj, self.reader_obj)
         self.maintenance_window.setModal(True)
         self.maintenance_window.show()
+
+    def showUserAddDialog(self):
+        dialog = jtaa.AddAthleteDialog()
+
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            athlete, injured, shank_length = dialog.get_values()
+            log.info(f"Adding new athlete: {athlete}, injured: {injured}, shank_length: {shank_length}")
+
+            self.config_obj.athletes_obj.add_athlete( athlete, injured, shank_length )
+            self.athletes = self.athletes_obj.get_athletes()
+
+            # clear and re-add items to the combo box
+            self.athlete_combobox.clear()
+            self.athlete_combobox.addItems(self.athletes)
 
     def showAbout(self):
         log.debug("About clicked")
