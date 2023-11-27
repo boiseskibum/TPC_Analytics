@@ -63,6 +63,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
         # configuration object for keys and values setup
         self.config_obj = jtc.JT_Config('Taylor Performance Consulting Analytics', 'TPC')
+        self.setWindowTitle(self.config_obj.app_name)
 
         if self.config_obj.validate_install() == False:
             # get desired directory from user
@@ -244,11 +245,8 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             # Filter DataFrame for the target dates
             athlete_df = df[df["athlete"] == athlete]
             unique_dates = athlete_df['date'].unique()
-            print(f'Unique dates type: {type(unique_dates)}')
-            print(unique_dates)
-            print(f'SORTED')
             unique_dates = np.sort(unique_dates)
-            print(unique_dates)
+#            log.debug(f'Unique dates\n {unique_dates}')
 
             for date in unique_dates:
                 date_item = QTreeWidgetItem([date])
@@ -284,8 +282,16 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             for i in range(item.childCount()):
                 expand_items(item.child(i))
 
-#        for i in range(tree_widget.topLevelItemCount()):
-#            expand_items(tree_widget.topLevelItem(i))
+        for i in range(tree_widget.topLevelItemCount()):
+            expand_items(tree_widget.topLevelItem(i))
+
+    def expand_single_item(self, item):
+        def expand_items(item):
+            item.setExpanded(True)
+            for i in range(item.childCount()):
+                expand_items(item.child(i))
+
+        expand_items(item)
 
     def item_clicked_browser(self, item, column):
 
@@ -321,6 +327,13 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
 
             log.debug(f"Clicked: {item_text}, Parent Path: {parent_path}, original_filename: {original_filename}, filepath {trial.file_path}---")
+        else:
+            log.debug(f'no item to selected, must be a folder.  item_text: {item.text(0)}')
+            if item.isExpanded():
+                item.setExpanded(False)
+            else:
+                item.setExpanded(True)
+                self.expand_single_item(item)
 
     def item_changed_browser(self, current, previous):
         # commented out for now, current can't just be passed along to the item clicked and not worth

@@ -126,7 +126,7 @@ class CMJ_UI(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.application_name = "Taylor Performance Consulting Analytics"
+        self.application_name = "Taylor Performance Consulting"
 
         str = ""
         str = f"The following things will need to be set up in order to run this applicaton:\n"

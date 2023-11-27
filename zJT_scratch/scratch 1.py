@@ -1,18 +1,42 @@
-total_elements = 4  # T - Total number of elements
-current_element_index = 0  # CE - Current element index (0-based)
+from PyQt6.QtWidgets import QApplication, QTreeWidget, QTreeWidgetItem, QWidget, QVBoxLayout
+from PyQt6.QtGui import QKeyEvent
+from PyQt6.QtCore import Qt
 
-# Each page holds 4 elements
-elements_per_page = 4
+class CustomTreeWidget(QTreeWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
-# Calculate total number of pages
-# We use ceil to round up because even a single element requires a whole page
-total_pages = -(-total_elements // elements_per_page)  # Equivalent to math.ceil(total_elements / elements_per_page)
+    def keyPressEvent(self, event: QKeyEvent):
+        if event.key() == Qt.Key.Key_Right:
+            current_item = self.currentItem()
+            if current_item and not current_item.isExpanded():
+                self.expandAllChildren(current_item)
+                return
+        super().keyPressEvent(event)
 
-# Calculate current page
-# We add 1 because we're counting pages from 1, but elements are 0-indexed
-current_page = (current_element_index // elements_per_page) + 1
+    def expandAllChildren(self, item: QTreeWidgetItem):
+        item.setExpanded(True)
+        for i in range(item.childCount()):
+            child = item.child(i)
+            self.expandAllChildren(child)
 
-# Create the string
-page_info = f"page {current_page} of {total_pages}"
+app = QApplication([])
 
-print(page_info)
+# Main window setup
+window = QWidget()
+layout = QVBoxLayout(window)
+
+# CustomTreeWidget
+tree = CustomTreeWidget()
+root = QTreeWidgetItem(tree, ["Root"])
+child1 = QTreeWidgetItem(root, ["Child 1"])
+subchild1 = QTreeWidgetItem(child1, ["Subchild 1"])
+subsubchild1 = QTreeWidgetItem(subchild1, ["Subsubchild 1"])
+child2 = QTreeWidgetItem(root, ["Child 2"])
+
+layout.addWidget(tree)
+window.setLayout(layout)
+window.show()
+
+app.exec()
+
