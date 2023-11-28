@@ -138,7 +138,8 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.video_widgets.append(self.checkBox_video2_enable)
         self.video_widgets.append(self.checkBox_video1_overlay)
         self.video_widgets.append(self.checkBox_video2_overlay)
-        self.video_widgets.append(self.checkBox_short_video)
+        # commented out because might want to see jump only even if there isn't a video
+#        self.video_widgets.append(self.checkBox_short_video)
         self.video_widgets.append(self.radioButton_full)
         self.video_widgets.append(self.radioButton_slow)
         self.video_widgets.append(self.radioButton_super_slow)
@@ -412,9 +413,9 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             if self.short_video == True and self.current_trial.short_end_index is not None:
                 self.max_data_point = self.current_trial.short_end_index    # change this in the future
 
-            final_line = line[self.min_data_point:self.max_data_point]
-            fl = len(final_line)
-            l = len(line)
+            tl = len(line)
+            short_line = line[self.min_data_point:self.max_data_point]
+            sl = len(short_line)
 #                log.debug(f"TOTAL DATA POINTS: {self.total_data_points}")
             #calculate the min and max times to show on the graph
             start_time = self.min_data_point / self.total_data_points * self.elapsed_time
@@ -423,20 +424,26 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             # create the x values so they are in seconds
             self.graph_x_seconds = np.linspace(start_time, end_time, (self.max_data_point - self.min_data_point ) )
             lxsecs = len(self.graph_x_seconds)
-            log.debug(f"line len: {l}, final_line len: {fl} graphx len {lxsecs}")
-            self.ax_browsing.plot(self.graph_x_seconds, final_line, linestyle='-', label=key, color=my_color, linewidth=1)
+            log.debug(f"total line len: {tl}, short_line len: {sl} graphx len {lxsecs}")
+            self.ax_browsing.plot(self.graph_x_seconds, short_line, linestyle='-', label=key, color=my_color, linewidth=1)
+            # print(f'Printing line: {key} and graph_x_seconds')
+            # print(self.graph_x_seconds)
             color_i += 1
             if color_i > len(jt_color_list):
                 color_i = 0
 
-        log.msg(f'#### short_video: {self.short_video} ')
-        log.msg(f'     current_trial ->>> short_start_index: {self.current_trial.short_start_index} short_end_index: {self.current_trial.short_end_index}')
-        log.msg(f'     set_trial - self.min_data_point {self.min_data_point}. max_data_point: {self.max_data_point}, total_data_points: {self.total_data_points}')
-        log.msg(f'     start_time: {start_time}, end_time: {end_time}')
-        
+        # code to debug start and end time calculations and put them on the graph correctly
+        # log.msg(f'#### short_video: {self.short_video} ')
+        # log.msg(f'     for reference in current trial: short_start_index: {self.current_trial.short_start_index} short_end_index: {self.current_trial.short_end_index}')
+        # log.msg(f'     full length        start_time: {0} end_time:  {self.elapsed_time} total_line len: {tl}')
+        # log.msg(f'     current_trial      start_time: {start_time}, end_time: {end_time}')
+        # log.msg(f"     current_trial      short_line len: {sl} graphx len {lxsecs}")
+        # log.msg(f'     current_trial      self.min_data_point {self.min_data_point}. max_data_point: {self.max_data_point}')
+
         #The intent was to create a vertical line where the person jumped which is not really necessary so commented out
         self.current_data_point = self.min_data_point
-        self.vertical_line = self.ax_browsing.axvline(x=self.current_data_point, color='g', linestyle='--')
+        self.vertical_line = self.ax_browsing.axvline(x=(start_time), color='g', linestyle='--')
+#        self.vertical_line = self.ax_browsing.axvline(x=(self.current_data_point-self.min_data_point), color='g', linestyle='--')
         self.ax_browsing.legend()
         self.canvas_browsing.draw()
 
