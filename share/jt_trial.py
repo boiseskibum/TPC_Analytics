@@ -339,12 +339,12 @@ class JT_Trial:
         #create filename
         self._create_orginal_filename()
 
-        log.debug(f'JT_Trial - path data athlete: {path_athlete}')
+        log.info(f'JT_Trial - path data athlete: {path_athlete}')
+
+        self.file_path = path_athlete + self.original_filename
 
         # sets up self.trial_dict which is used to hold the basics of what all was saved (not the raw data)
         self._setup_trial_dict()
-
-        self.file_path = path_athlete + self.original_filename
 
         try:
             self.results_df.to_csv(self.file_path, index=True)

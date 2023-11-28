@@ -105,7 +105,7 @@ class JT_JsonTrialManager:
         # Retrieve the corresponding original_json value
         if not filtered_df.empty:
             original_json = filtered_df.iloc[0]["original_json"]
-            log.debug(f"Original JSON value for {original_filename}: {original_filename}")
+            log.debug(f"Original JSON value for {original_json}: {original_filename}")
         else:
             self.error = True
             self.error_msg = f"No matching entry found for {original_filename}"

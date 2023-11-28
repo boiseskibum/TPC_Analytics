@@ -93,10 +93,13 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         ##################################################
         ### browser tab 
         ##################################################
+        self.video_widgets = []
+
         self.treeWidget.itemClicked.connect(self.item_clicked_browser)
         self.treeWidget.currentItemChanged.connect(self.item_changed_browser)
         self.browser_tree_clicked = True
 
+        # clicked events for video widges
         self.pushButton_play.clicked.connect(self.play)
         self.pushButton_forward.clicked.connect(self.forward)
         self.pushButton_forward_chunk.clicked.connect(self.forward_chunk)
@@ -105,8 +108,10 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.pushButton_rewind_chunk.clicked.connect(self.rewind_chunk)
         self.pushButton_rewind_to_start.clicked.connect(self.rewind_to_start)
         self.videoSlider.valueChanged.connect(self.slider_value_changed)
+
+        # state changes video buttons
         self.checkBox_video1_enable.stateChanged.connect(self.checkbox_video1_enable_changed)
-        self.checkBox_video1_enable.stateChanged.connect(self.checkbox_video2_enable_changed)
+        self.checkBox_video2_enable.stateChanged.connect(self.checkbox_video2_enable_changed)
         self.checkBox_video1_overlay.stateChanged.connect(self.checkbox_video1_overlay_changed)
         self.checkBox_video2_overlay.stateChanged.connect(self.checkbox_video2_overlay_changed)
         self.checkBox_short_video.stateChanged.connect(self.checkBox_short_video_changed)
@@ -118,6 +123,30 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.radioButton_super_slow.toggled.connect(self.radio_button_callback)
 
         self.videoSlider.setMinimum(0)
+
+        # create list of all video widgets so that they can be turned on or off if there isn't a video with the
+        # trial being displayed
+        self.video_widgets.append(self.pushButton_play)
+        self.video_widgets.append(self.pushButton_forward)
+        self.video_widgets.append(self.pushButton_forward_chunk)
+        self.video_widgets.append(self.pushButton_stop)
+        self.video_widgets.append(self.pushButton_rewind)
+        self.video_widgets.append(self.pushButton_rewind_chunk)
+        self.video_widgets.append(self.pushButton_rewind_to_start)
+        self.video_widgets.append(self.videoSlider)
+        self.video_widgets.append(self.checkBox_video1_enable)
+        self.video_widgets.append(self.checkBox_video2_enable)
+        self.video_widgets.append(self.checkBox_video1_overlay)
+        self.video_widgets.append(self.checkBox_video2_overlay)
+        self.video_widgets.append(self.checkBox_short_video)
+        self.video_widgets.append(self.radioButton_full)
+        self.video_widgets.append(self.radioButton_slow)
+        self.video_widgets.append(self.radioButton_super_slow)
+        self.video_widgets.append(self.qlabel_time)
+        self.video_widgets.append(self.label_L1)
+        self.video_widgets.append(self.label_L2)
+        self.video_widgets.append(self.label_video1)
+        self.video_widgets.append(self.label_video2)
 
         # reports tab
         self.treeWidget_reports.itemClicked.connect(self.item_clicked_reports)
@@ -169,6 +198,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.video2_capture = None
         self.srt_label_graphic = None
         self.video_play_timer = None
+        self.vertical_line = None
 
         #if this is launched from parent window then grab its child mgr object
         if parent != None:
@@ -310,7 +340,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             original_filename = item.data(0, Qt.ItemDataRole.UserRole)
 
             try:
-                log.info(f'Trial Browser item clicked: {original_filename} ')
+                log.info(f'Trial Browser item clicked: {original_filename} item_text: {item_text}')
                 trial = self.trial_mgr_obj.get_trial_file_path(original_filename, item_text)
 
                 trial.process_summary()
@@ -405,7 +435,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
         #The intent was to create a vertical line where the person jumped which is not really necessary so commented out
         self.current_data_point = self.min_data_point
-#        self.vertical_line = self.ax_browsing.axvline(x=self.current_data_point, color='g', linestyle='--')
+        self.vertical_line = self.ax_browsing.axvline(x=self.current_data_point, color='g', linestyle='--')
         self.ax_browsing.legend()
         self.canvas_browsing.draw()
 
@@ -416,9 +446,11 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             first_key, video = next(iter(trial.video_files.items()))
             if video is not None:
                 self.set_video1(video)
+                self.show_video_widgets(True)
         else:
             #should cause frame to be updated with static image
             self.update_frame()
+            self.show_video_widgets(False)
 
         #adjust the number of datapoints
         self.videoSlider.setMinimum( self.min_data_point )
@@ -766,6 +798,14 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
         # End painting
         painter.end()
+
+    # iterates over all video widgets and hides them if there isn't a video associated with the trial
+    def show_video_widgets(self, show = True):
+        for widget in self.video_widgets:
+            if show:
+                widget.show()
+            else:
+                widget.hide()
 
     ###############################################################
     #### Tab Reports
