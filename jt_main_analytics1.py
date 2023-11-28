@@ -680,6 +680,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
                 elapsed = current_time - self.debug_last_time
                 print(f'update_frame: {elapsed:.3f}, frame# {self.current_frame}')
         self.debug_last_time = current_time
+#        return
 
         if self.video1_cv2 == None:
             image_path = 'resources/img/camera_offline.png'
