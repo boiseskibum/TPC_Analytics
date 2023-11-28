@@ -254,8 +254,6 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         canvas_define(self.canvas_list, self.label_plot3)
         canvas_define(self.canvas_list, self.label_plot4)
 
-        print(f'######################################### len of plot_list {len(self.plot_list)} ##################')
-
 
     def closeEvent(self, event):
         self.closed.emit()
@@ -472,9 +470,9 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             # Do something to disable video
             pass
 
-        path_results = self.config_obj.path_results + self.current_trial.athlete + "/"
+        path_data = self.config_obj.path_data + self.current_trial.athlete + "/"
 
-        self.video1_cv2 = cv2.VideoCapture(path_results + filename)
+        self.video1_cv2 = cv2.VideoCapture(path_data + filename)
         self.video_play_timer = QTimer(self)
         self.video_play_timer.timeout.connect(self.update_frame)
 
@@ -888,7 +886,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
                 canvas_num += 1
             except:
                 canvas.draw()
-                print(f'plot_list has {len(self.plot_list)} elements, could  get to the {self.plot_current + canvas_num} element')
+                #print(f'plot_list has {len(self.plot_list)} elements, could  get to the {self.plot_current + canvas_num} element')
 
             num_plots = len(self.plot_list)  # T - Total number of elements
             current_element_index = self.plot_current  # CE - Current element index (0-based)
@@ -916,7 +914,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         num_canvas = len(self.canvas_list)
         if self.plot_current + num_canvas < num_plots:
             self.plot_current = self.plot_current + num_canvas
-        print(f'page forward - plot_current: {self.plot_current}')
+        #print(f'page forward - plot_current: {self.plot_current}')
 
         self.update_reports_plots()
 
@@ -926,7 +924,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             self.plot_current = self.plot_current - num_canvas
         else:
             self.plot_current = 0
-        print(f'page back - plot_current: {self.plot_current}')
+        #print(f'page back - plot_current: {self.plot_current}')
 
         self.update_reports_plots()
 
