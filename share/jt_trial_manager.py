@@ -75,11 +75,11 @@ class JT_JsonTrialManager:
 
         # Step 1: Create 'short_protocol' column
         df_copy['short_protocol'] = df_copy['protocol'].apply(lambda x: 'JTSext' if x.startswith('JTSext') else x)
-        print(df_copy)
+        #print(df_copy)
 
         # Get unique combinations of athlete and short_protocol
         unique_combinations_df = df_copy[['athlete', 'short_protocol']].drop_duplicates()
-        print(unique_combinations_df)
+        #print(unique_combinations_df)
         log.debug(unique_combinations_df)
 
         return(unique_combinations_df)
@@ -131,10 +131,8 @@ class JT_JsonTrialManager:
             if key.startswith("VIDEO"):
 
                 #convert the path if needed to handle OS changes
-                converted_file_path = self.config_obj.convert_file_path(value)
-                log.debug(f"Key: {key}, Value: {converted_file_path}")
-                trial.attach_video_file(key, converted_file_path)
-                log.info(f'Video File found: {value}, converted_path: {converted_file_path}')
+                video_file_path = value
+                trial.attach_video_file(key, video_file_path)
 
         return trial
 

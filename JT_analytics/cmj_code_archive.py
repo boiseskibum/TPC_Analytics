@@ -1854,11 +1854,11 @@ def process_iso_knee_ext(df):
     # test frequency
     freq = 80
 
-    print(df)
+    #print(df)
 
     # determining leg
     leg = df.loc[0, 'leg']
-    print(f"leg: {leg}")
+    #print(f"leg: {leg}")
 
     # rename columns so they are easier to deal with AND does abvolute value columns
     force = []

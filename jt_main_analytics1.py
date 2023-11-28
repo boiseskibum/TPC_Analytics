@@ -431,8 +431,11 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             if color_i > len(jt_color_list):
                 color_i = 0
 
-        log.debug(f'set_trial - self.min_data_poing {self.min_data_point}. max_data_point: {self.max_data_point}, total_data_points: {self.total_data_points}')
-
+        log.msg(f'#### short_video: {self.short_video} ')
+        log.msg(f'     current_trial ->>> short_start_index: {self.current_trial.short_start_index} short_end_index: {self.current_trial.short_end_index}')
+        log.msg(f'     set_trial - self.min_data_point {self.min_data_point}. max_data_point: {self.max_data_point}, total_data_points: {self.total_data_points}')
+        log.msg(f'     start_time: {start_time}, end_time: {end_time}')
+        
         #The intent was to create a vertical line where the person jumped which is not really necessary so commented out
         self.current_data_point = self.min_data_point
         self.vertical_line = self.ax_browsing.axvline(x=self.current_data_point, color='g', linestyle='--')
