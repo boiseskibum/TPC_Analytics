@@ -285,6 +285,7 @@ class JT_JsonTrialManager:
     def reprocess_all_files(self, my_pyqt_app = None):
         total_files = self.get_total_files()
 
+        # code to put up status - file n of total files
         if my_pyqt_app is not None:
             my_progressDialog = QProgressDialog("Processing Files...", "cancel", 0, total_files, my_pyqt_app)
             my_progressDialog.setWindowModality(QtCore.Qt.WindowModality.WindowModal)
@@ -338,6 +339,7 @@ class JT_JsonTrialManager:
                             trial_dict = trial.recreate_trial_dict()
                             self.save_trial_indexing(trial_dict)
 
+                # status on screen - file n of total files to process
                 if my_pyqt_app is not None:
                     my_progressDialog.setValue(total)
                     my_progressDialog.setLabelText(f"Processing File {total}/{total_files}")

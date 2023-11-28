@@ -16,7 +16,7 @@ Original file is located at
 import inspect
 import datetime
 import platform
-import os
+import os, sys, subprocess
 
 #############################################
 # jt_logging class
@@ -321,7 +321,46 @@ def jt_path_config():
     return my_path
 
 
-"""#**EXAMPLES**"""
+##### Open any file with a native viewer for the OS
+def open_file_in_native_viewer(filepath):
+
+    if os.path.exists(filepath):
+        # Make sure the file path is absolute
+        absolute_filepath = os.path.abspath(filepath)
+        print(f'OS opening file: {absolute_filepath}')
+        # Check the operating system
+        if sys.platform.startswith("darwin"):
+            # macOS
+            subprocess.run(["open", absolute_filepath])
+        elif sys.platform.startswith("win32"):
+            # Windows
+            subprocess.run(["start", absolute_filepath], shell=True)
+        else:
+            print("ERROR Unsupported OS")
+    else:
+        print(f'open_file_explorer ERROR:   filepath: {filepath} does not exist ')
+
+# opens the finder (macOS) or explorer (windows) to the path input.  Accepts either a filepath or just the path to
+# a directory
+def open_file_explorer(file_path):
+
+    # Extract the directory part from the file path
+    directory = os.path.dirname(file_path)
+
+    # Check if the directory exists
+    if os.path.isdir(directory):
+
+        # Make sure the path is absolute
+        absolute_path = os.path.abspath(directory)
+
+        if sys.platform.startswith('darwin'):
+            # For macOS
+            subprocess.run(['open', absolute_path])
+        elif sys.platform.startswith('win32'):
+            # For Windows
+            subprocess.run(['explorer', absolute_path])
+    else:
+        print(f'open_file_explorer ERROR:   directory: {directory} does not exist ')
 
 #######################################################################################################################
 ###  Examples

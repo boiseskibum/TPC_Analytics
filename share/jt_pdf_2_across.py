@@ -2,10 +2,13 @@
 # purpose: create pdf with graphs 2 across
 
 # Import necessary modules
-import os
+import os, time
 from datetime import date
 
 from fpdf import FPDF
+from PyQt6.QtWidgets import QProgressDialog
+from PyQt6 import QtCore, QtWidgets
+
 
 try:
     from . import jt_util as util
@@ -28,8 +31,7 @@ class JT_PDF_2_across:
         self.athlete = athlete
         self.output_file = output_file
         self.title = protocol_title
-
-    def add_plots(self, plots):
+    def add_plots_and_create_pdf(self, plots, my_pyqt_app = None):
         self.plots = plots
 
         today_date = date.today()
@@ -75,6 +77,16 @@ class JT_PDF_2_across:
                 # Printing name
                 self.cell(0, 0, f"Taylor Performance Consulting", align="L")
 
+        plot_num = 1
+        total_plots = len(plots)
+        row = 1
+
+        if my_pyqt_app is not None:
+            my_progressDialog = QProgressDialog("Processing graph...", "cancel", 0, total_plots, my_pyqt_app)
+            my_progressDialog.setWindowModality(QtCore.Qt.WindowModality.WindowModal)
+            QtWidgets.QApplication.processEvents()  # Process events to update the UI
+            time.sleep(1)  # delay a moment
+
         ### create PDF
         pdf = PDF()
         pdf.add_page()
@@ -90,11 +102,8 @@ class JT_PDF_2_across:
         image_w = 70
         image_h = 62
 
-        plot_num = 1
-        row = 1
-        max_plots = len(plots)
-#        max_plots = 3   # allows me to shorten the list so I don't have to wait while debugging
-        for plot in plots[:max_plots]:
+#        total_plots = 3   # allows me to shorten the list so I don't have to wait while debugging
+        for plot in plots[:total_plots]:
 
             filepath = plot.save_to_file()
 
@@ -108,18 +117,34 @@ class JT_PDF_2_across:
                 pdf.image(filepath, x=half_pw, y=y_start, w=image_w, h=0)
                 y_start += image_h
                 row += 1
+
+            #update progress on number of plots complete
+            if my_pyqt_app is not None:
+                my_progressDialog.setValue(plot_num)
+                my_progressDialog.setLabelText(f"Processing graph {plot_num}/{total_plots}")
+                QtWidgets.QApplication.processEvents()  # Process events to update the UI
+                if total_plots < 15:
+                    time.sleep(.1)  # Simulate file processing time
+
             plot_num += 1
 
-            # add a new graph if the 8th graph has been shown
+            # add a new page if the 8th graph has been shown
             if (plot_num - 1) % 8 == 0:
                 pdf.add_page()
                 y_start = master_y_start_master
                 row = 1
 
 
+        if my_pyqt_app is not None:
+            my_progressDialog.setValue(total_plots)  # Ensure the progress bar reaches 100%
+            my_progressDialog.setLabelText(f"Processing graph {plot_num}/{total_plots}")
+            QtWidgets.QApplication.processEvents()  # Process events to update the UI
+            time.sleep(2)  # Simulate file processing time
+
         log.info(f'saving PDF file: {self.output_file}')
         # save PDF File
         pdf.output(self.output_file)
+        return self.output_file
 
 if __name__ == "__main__":
 
@@ -130,4 +155,4 @@ if __name__ == "__main__":
     output_file = 'testing/jt_pdf_2_across.pdf'
     plots = jtpl.test_plots(17)
     pdf_obj = JT_PDF_2_across(config_obj, "Carl Lewis", "BIG TIME", output_file)
-    pdf_obj.add_plots(plots)
+    pdf_obj.add_plots_and_create_pdf(plots)

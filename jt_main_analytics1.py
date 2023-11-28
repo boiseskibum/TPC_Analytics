@@ -904,13 +904,22 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         else:
             protocol_name = protocol_obj.get_name_by_protocol(self.reports_protocol)
 
+        # pdf filename to be created
         pdf_filename = protocol_name + ' ' + self.reports_athlete + '.pdf'
         output_file = self.config_obj.path_results + self.reports_athlete + '/' + pdf_filename
 
+        #create the PDF file
         pdf_obj = jtpdf2.JT_PDF_2_across(self.config_obj, self.reports_athlete, protocol_name, output_file)
-        pdf_obj.add_plots(self.plot_list)
+        pdf_filepath = pdf_obj.add_plots_and_create_pdf(self.plot_list, self)
 
-        print('create pdf')
+        log.info(f'created pdf{pdf_filepath}')
+
+        # have the OS display the pdf
+        util.open_file_in_native_viewer(pdf_filepath)
+
+    def open_results_directory_in_OS(self):
+        results_dir = self.config_obj.path_results
+        util.open_file_explorer(results_dir)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
