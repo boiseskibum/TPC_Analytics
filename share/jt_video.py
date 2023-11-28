@@ -38,6 +38,7 @@ class JT_Video(QThread):
         self.error_msg = ""
         self.error = False
 
+    #this is equivalent to starting the video camera
     def run(self):
         self._is_running = True
         cap = cv2.VideoCapture(self.camera_index)

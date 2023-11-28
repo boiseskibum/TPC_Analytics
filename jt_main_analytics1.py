@@ -200,6 +200,8 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.srt_label_graphic = None
         self.video_play_timer = None
         self.vertical_line = None
+        self.debug_last_time = None
+        self.debug_update_frame_count = None
 
         #if this is launched from parent window then grab its child mgr object
         if parent != None:
@@ -522,7 +524,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             self.video_play_timer.stop()
         else:
             self.video_play_timer.start(self.video_speed)  #FPS
-            log.debug(f'play - milliseconds/frame: {self.video_speed}')
+            log.msg(f'play - milliseconds/frame: {self.video_speed}')
 
 
     def stop(self):
@@ -669,6 +671,16 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             self.canvas_browsing.draw()
 
     def update_frame(self):
+
+        #debug timer to see how fast this function is being run
+        current_time = time.time()
+        if self.debug_last_time is not None:
+            # only print out every tenth value
+            if self.current_frame % 10 == 0:
+                elapsed = current_time - self.debug_last_time
+                print(f'update_frame: {elapsed:.3f}, frame# {self.current_frame}')
+        self.debug_last_time = current_time
+
         if self.video1_cv2 == None:
             image_path = 'resources/img/camera_offline.png'
             image = QImage(image_path)
