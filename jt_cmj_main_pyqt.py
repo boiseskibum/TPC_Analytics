@@ -858,7 +858,7 @@ class CMJ_UI(QMainWindow):
 
             protocol_filename = self.protocol_obj.get_protocol_by_name(self.protocol_name_selected)
 
-            # Create Trial which will allow dataframe, videos and images to be saved
+            # Create Trial which will allow dataframe and videos to be saved
             self.trial = jtt.JT_Trial(self.config_obj)
             self.trial.setup_for_save(self.last_run_athlete, protocol_filename )
             self.trial.attach_results_df(self.results_df)
@@ -883,15 +883,10 @@ class CMJ_UI(QMainWindow):
                 pass
 
             # save the summary data
-            images_dict = self.trial.save_summary()
+            self.trial.save_summary()
 
             #save the last_original filename - not sure why but what the heck
             self.config_obj.set_config("last_original_filename", self.last_original_filename)
-
-            if(images_dict != False):
-                trial_dict.update(images_dict)
-            else:
-                log.error(f'No Dictionary returned trial.save_summary while processing: {filepath}')
 
             #save trial structural information to disk
             self.trial_mgr_obj.save_trial_indexing(trial_dict)

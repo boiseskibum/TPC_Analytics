@@ -52,7 +52,6 @@ class JT_Trial:
         #for saving trial information
         self.trial_dict = {}
         self.jt_videos = {}
-        self.graph_images = {}      # IBSOLETE - Not used any more
 
         self.short_start_index = None
         self.short_end_index = None
@@ -148,7 +147,7 @@ class JT_Trial:
                 protocol_specific_obj = p_JTSext.JTSext(self)
                 self.summary_results_dict = protocol_specific_obj.process()
             except:
-                self.error_msg = f'failed to Kneww proceess protocol: {self.protocol_summary_name} file: {self.original_filename}'
+                self.error_msg = f'failed to proceess JTSext protocol: {self.protocol_summary_name} file: {self.original_filename}'
                 self.error = True
 #                log.error(self.error_msg)
                 return False
@@ -162,7 +161,7 @@ class JT_Trial:
                 self.short_start_index = self.summary_results_dict['jump_onset_moment_index']
                 self.short_end_index = self.summary_results_dict['takeoff_moment_index']
             except:
-                self.error_msg = f'failed to proceess CMJ protocol: {self.protocol_summary_name} file: {self.original_filename}'
+                self.error_msg = f'failed to process CMJ protocol: {self.protocol_summary_name} file: {self.original_filename}'
                 self.error = True
  #               log.error(self.error_msg)
                 return False
@@ -212,7 +211,6 @@ class JT_Trial:
         standard_dict['athlete_name'] = self.athlete
         standard_dict["col_timestamp_str"] = self.convert_timestamp_str(self.timestamp_str)
         standard_dict["date_str"] = self.date_str
-        images_dict = {}
 
         # create a copoy of results dict so it remains the same.  Append the standard stuff to the temp copy. then
         # save it to summary file.   Return the graphs that are saved for possible usage of the calling routine
@@ -220,9 +218,6 @@ class JT_Trial:
             temp_dict = self.summary_results_dict.copy()
             temp_dict.update(standard_dict)
             self._save_results(temp_dict, self.protocol)
-
-            #grab the graphs to be returned if there are any and return those from this function
-            images_dict = {key: value for key, value in self.summary_results_dict.items() if "GRAPH_" in key}
 
         except:
             log.error(f'save_summary failed: {self.file_path} no such protocol: {self.protocol_summary_name}')
@@ -242,7 +237,7 @@ class JT_Trial:
             log.error(self.error_msg)
             return False
 
-        return images_dict
+        return
 
     ###############################################
     #### log results to csv file ####
@@ -313,14 +308,6 @@ class JT_Trial:
 
         self.jt_videos[key] = video
 
-    # images keys should be: main, ????
-    # images value shoiuld be: BytesIO imported from io
-    def attach_graph_images(self, key, image):
-        if not isinstance(image, io.BytesIO):
-            raise TypeError("Video must be JT_Video")
-
-        self.graph_images[key] = image
-
     ##################################
     # save_raw_Trial
     # this is called when all results are to be saved
@@ -353,19 +340,17 @@ class JT_Trial:
             self.error_msg = f"failed to save results_df: {self.file_path}"
             log.error(self.error_msg)
 
-        ##### Graphs/Images and Videos Saving
+        ###### Videos stored in the data directory ######
         # check if the results/athlete/date path exists and if not makes it
-        path_results = self.config_obj.path_results + self.athlete + "/"
-        if not os.path.exists(path_results):
-            os.makedirs(path_results)
-            log.debug(f'Directory created: {path_results}')
+        path_data = self.config_obj.path_data + self.athlete + "/"
+        if not os.path.exists(path_data):
+            os.makedirs(path_data)
+            log.debug(f'Directory created: {path_data}')
 
-        ###### Videos and images/graphs or stored in the results directory ######
-
-        # save videos in results directory
+        # save videos in data directory
         for key, value in self.jt_videos.items():
             filename = f"{self.protocol}_{self.athlete}_{self.timestamp_str}_{key}.mp4"
-            path_filename = path_results + filename
+            path_filename = path_data + filename
             try:
                 value.save_video(path_filename)
                 log.msg(f"Saved Video: {path_filename}")
@@ -374,21 +359,6 @@ class JT_Trial:
             except:
                 self.error_msg = f"FAILED to saved Video key: {key}: file: {path_filename}"
                 log.error(self.error_msg)
-
-        # save images in results directory
-        for key, value in self.graph_images.items():
-            filename = f"{self.protocol}_{self.athlete}_{self.timestamp_str}_{key}."
-            path_filename = path_results + filename
-            try:
-                with open(path_filename, 'wb') as f:
-                    f.write(value.getvalue())
-                    log.msg(f"Saved graph/image: {path_filename}")
-                    self.trial_dict[key] = path_filename
-
-            except:
-                self.error_msg = f"FAILED to saved graph/image key: {key}: file: {path_filename}"
-                log.error(self.error_msg)
-        return(self.trial_dict)
 
     # this is a utility function just used for recreating the JSON list of all information for all trials.
     def recreate_trial_dict(self, filepath=None):
@@ -401,10 +371,10 @@ class JT_Trial:
         # get the trial dict setup
         self._setup_trial_dict()
 
-        #check if there are videos or images to attach and add them to the dictionary
-        path_results = self.config_obj.path_results + self.athlete + "/"
-        if os.path.exists(path_results) and os.listdir(path_results):
-            mp4_files = [file for file in os.listdir(path_results) if
+        #check if there are videos and add them to the dictionary
+        path_data = self.config_obj.path_data + self.athlete + "/"
+        if os.path.exists(path_data) and os.listdir(path_data):
+            mp4_files = [file for file in os.listdir(path_data) if
                          file.startswith(self.short_filename) and file.endswith(".mp4")]
 
             for mp4_file in mp4_files:
@@ -415,13 +385,6 @@ class JT_Trial:
                         self.trial_dict[json_attribute_name] = mp4_file
                 except:
                     log.error(f"something went wrong with finding videos for : {filepath} : file: {mp4_file}")
-
-            #check if there are images to attach and add them to the dictionary
-            png_files = [file for file in os.listdir(path_results) if
-                         file.startswith(self.short_filename) and file.endswith(".png")]
-
-            for png_file in png_files:
-                self.trial_dict['GRAPH_1'] = png_file
 
         return(self.trial_dict)
     def _setup_trial_dict(self):
