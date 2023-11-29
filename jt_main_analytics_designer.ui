@@ -275,16 +275,9 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QLabel" name="label_L1">
-                   <property name="text">
-                    <string>l1</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QLabel" name="label_L2">
-                   <property name="text">
-                    <string>l2</string>
+                  <widget class="QSlider" name="videoAlignmentSlider">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
                    </property>
                   </widget>
                  </item>

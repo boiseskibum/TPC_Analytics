@@ -281,14 +281,14 @@ class CMJ_UI(QMainWindow):
         self.stop_button.setEnabled(False)
         self.grid_layout.addWidget(self.stop_button, trow, 1)
 
-        self.data_button = QPushButton("Analytics", clicked=self.jt_analytics)
-        self.data_button.setEnabled(True)
-        self.grid_layout.addWidget(self.data_button, trow, 2)
-
         # Save Data button and dropdown menu for user
         self.save_button = QPushButton("Save Data", clicked=self.save_data_to_csv)
         self.save_button.setEnabled(False)
-        self.grid_layout.addWidget(self.save_button, trow, 3)
+        self.grid_layout.addWidget(self.save_button, trow, 2)
+
+        self.data_button = QPushButton("Analytics", clicked=self.jt_analytics)
+        self.data_button.setEnabled(True)
+        self.grid_layout.addWidget(self.data_button, trow, 3)
 
         #create area for graph
         trow += 1

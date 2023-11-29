@@ -99,7 +99,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.treeWidget.currentItemChanged.connect(self.item_changed_browser)
         self.browser_tree_clicked = True
 
-        # clicked events for video widges
+        # clicked events for video widgets
         self.pushButton_play.clicked.connect(self.play)
         self.pushButton_forward.clicked.connect(self.forward)
         self.pushButton_forward_chunk.clicked.connect(self.forward_chunk)
@@ -108,6 +108,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.pushButton_rewind_chunk.clicked.connect(self.rewind_chunk)
         self.pushButton_rewind_to_start.clicked.connect(self.rewind_to_start)
         self.videoSlider.valueChanged.connect(self.slider_value_changed)
+        self.videoAlignmentSlider.valueChanged.connect(self.videoAlignmentSlider_changed)
 
         # state changes video buttons
         self.checkBox_video1_enable.stateChanged.connect(self.checkbox_video1_enable_changed)
@@ -144,10 +145,13 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.video_widgets.append(self.radioButton_slow)
         self.video_widgets.append(self.radioButton_super_slow)
         self.video_widgets.append(self.qlabel_time)
-        self.video_widgets.append(self.label_L1)
-        self.video_widgets.append(self.label_L2)
+        self.video_widgets.append(self.videoAlignmentSlider)
         self.video_widgets.append(self.label_video1)
         self.video_widgets.append(self.label_video2)
+
+        self.videoAlignmentSlider.setMinimum(-30)
+        self.videoAlignmentSlider.setMaximum( 30)
+
 
         # reports tab
         self.treeWidget_reports.itemClicked.connect(self.item_clicked_reports)
@@ -194,6 +198,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.max_data_point = 0
         self.total_frames = 0
         self.total_data_points = 0
+        self.video_tweak_x = 0
 
         self.video1_cv2 = None
         self.video2_capture = None
@@ -594,6 +599,12 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.current_data_point = value
         self.update_frame()
 
+    # function to tweak the video left or right to align with the graph
+    def videoAlignmentSlider_changed(self, value):
+        print(f'video slider: {value}')
+        self.video_tweak_x = value
+        self.update_frame()
+
     def checkbox_video1_enable_changed(self, checked):
         if checked != 0:
             self.video1_enabled = True
@@ -702,7 +713,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         else:
             # calculate which frame should be shown.  This is basically the number of
             # frames of video divided by the total points being graphed.
-            self.current_frame = int( (self.current_data_point - self.min_data_point)* ratio)
+            self.current_frame = int( (self.current_data_point - self.min_data_point)* ratio) + self.video_tweak_x
             if self.current_frame < self.min_frame:
                 self.current_frame = self.min_frame
             elif self.current_frame >= self.max_frame:
@@ -746,6 +757,14 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             self.videoSlider.setValue(self.current_data_point)
             self.videoSlider.valueChanged.connect(self.slider_value_changed)  # Reconnect the signal
 
+        # the following accounts for if we are showing a short video
+        x_point = self.current_data_point - self.min_data_point
+        graph_time = self.graph_x_seconds[x_point]
+        graph_time = f'{graph_time:.3f}'
+        print(f'graph_time: {graph_time}')
+        self.qlabel_time.setText(graph_time)
+
+
     def frame_add_lines(self, scaled_pixmap):
 
         lines_dict = self.graph["lines"]
@@ -766,7 +785,6 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)  # Optional: Enable anti-aliasing for smoother lines
 
         # Set the line properties (e.g., color and width)
-
         linew = 10
         pen = QPen(Qt.GlobalColor.darkGreen)  # Red color
         pen.setWidth(linew)  # Line width
