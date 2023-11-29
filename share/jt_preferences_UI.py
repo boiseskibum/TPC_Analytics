@@ -261,12 +261,17 @@ class JT_PreferencesWindow(QMainWindow):
 
     def start_video1(self):
         log.debug(f"checking to start video1: {self.video1.camera_index}")
+        video_start_time = time.time()
 
         selected_item = self.camera1_combobox.currentText()
         value = convert_to_int(selected_item)
         if self.video1 and value > -1:
             self.video1.start()
             log.debug(f"starting video1.   value: {value}")
+
+            video_end_time = time.time()
+            delta_time = video_end_time - video_start_time
+            print(f'Time for camera to start up: {delta_time:.3f}')
 
     def start_video2(self):
         log.debug(

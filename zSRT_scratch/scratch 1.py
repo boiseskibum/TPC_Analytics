@@ -8,7 +8,7 @@ class MainWindow(QMainWindow):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.on_timeout)
-        self.timer.start(1000 // 33)  # Approximately 33 times per second
+        self.timer.start(1000 // 50)  # Approximately 33 times per second
 
         self.last_call = time.perf_counter()
 
