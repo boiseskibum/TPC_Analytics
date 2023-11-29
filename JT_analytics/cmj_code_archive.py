@@ -45,23 +45,7 @@ my_platform = platform.system()
 
 # mount drive if in google collab()
 my_platform = platform.system()
-if my_platform == "Linux":
 
-    from google.colab import drive
-
-    try:
-        drive.mount('/gdrive')
-
-    except:
-        print("INFO: Drive already mounted")
-
-    # required to import jt_util
-    sys.path.append('/gdrive/MyDrive/Colab Notebooks')
-    !pip
-    install
-    icecream
-
-from icecream import ic
 import jt_util as util
 
 # set base and application path
