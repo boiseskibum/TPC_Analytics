@@ -1,7 +1,7 @@
 from jt_main_analytics_designer import Ui_MainAnalyticsWindow
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QTreeWidgetItem,  QRadioButton
 from PyQt6.QtGui import QImage, QPixmap, QPainter, QPen, QColor, QIcon, QTransform
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QEvent
 
 import sys, cv2, platform, time
 import numpy as np
@@ -95,9 +95,26 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         ##################################################
         self.video_widgets = []
 
+        # Tree Widget
         self.treeWidget.itemClicked.connect(self.item_clicked_browser)
         self.treeWidget.currentItemChanged.connect(self.item_changed_browser)
         self.browser_tree_clicked = True
+
+        # the following is created so that when the user uses the up or down arrow it essentially
+        # clicks on that particular field assuming it is the leaf (when UserRole has data)
+        # def tree_event_filter(obj, event):
+        #     if event.type() == QEvent.Type.KeyPress:
+        #         if event.key() in (Qt.Key.Key_Up, Qt.Key.Key_Down):
+        #             current_item = tree.currentItem()
+        #             if current_item and current_item.data(0, Qt.ItemDataRole.UserRole) is not None:
+        #                 # Perform your action here
+        #                 print(f"Key Pressed on Item: {current_item.text(0)}")
+        #                 self.item_clicked_browser(current_item)
+        #
+        #             return True
+        #     return False
+
+        self.treeWidget.installEventFilter(self)
 
         # clicked events for video widgets
         self.pushButton_play.clicked.connect(self.play)
@@ -158,6 +175,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.pushButton_page_forward.clicked.connect(self.reports_page_forward)
         self.pushButton_page_back.clicked.connect(self.reports_page_back)
         self.pushButton_create_pdf.clicked.connect(self.reports_create_pdf)
+        self.pushbutton_results_directory.clicked.connect(self.open_results_directory_in_OS)
 
         #player buttons
         # utility function to set icons on pushbuttons
@@ -263,6 +281,24 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         canvas_define(self.canvas_list, self.label_plot4)
 
 
+    # for TreeWidget get the key up or down captured and then pass it to my own handler
+    def eventFilter(self, obj, event):
+        if obj == self.treeWidget and event.type() == QEvent.Type.KeyPress:
+            if event.key() in (Qt.Key.Key_Up, Qt.Key.Key_Down):
+                # Let the tree widget handle the event first
+                QTimer.singleShot(0, self.treeWidget_check_current_item)
+                return False
+        return super().eventFilter(obj, event)
+
+    #this code does an item clicked for the new item in the tree view being shown
+    def treeWidget_check_current_item(self):
+        current_item = self.treeWidget.currentItem()
+        if current_item and current_item.data(0, Qt.ItemDataRole.UserRole) is not None:
+            # Perform your action here for the current item
+#            print(f"Current Item: {current_item.text(0)}")
+
+            self.item_clicked_browser(current_item)
+
     def closeEvent(self, event):
         self.closed.emit()
 
@@ -329,7 +365,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
         expand_items(item)
 
-    def item_clicked_browser(self, item, column):
+    def item_clicked_browser(self, item, column=0):
 
         if item.childCount() == 0:
             self.browser_tree_clicked = True
@@ -346,7 +382,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             original_filename = item.data(0, Qt.ItemDataRole.UserRole)
 
             try:
-                log.info(f'Trial Browser item clicked: {original_filename} item_text: {item_text}')
+                log.debug(f'Trial Browser item clicked: {original_filename} item_text: {item_text}')
                 trial = self.trial_mgr_obj.get_trial_file_path(original_filename, item_text)
 
                 trial.process_summary()
@@ -464,7 +500,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
                 self.show_video_widgets(True)
         else:
             #should cause frame to be updated with static image
-            self.update_frame()
+#            self.update_frame()
             self.show_video_widgets(False)
 
         #adjust the number of datapoints
@@ -485,7 +521,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
         if len(filename) < 1:
             # Do something to disable video
-            pass
+            return
 
         path_data = self.config_obj.path_data + self.current_trial.athlete + "/"
 
