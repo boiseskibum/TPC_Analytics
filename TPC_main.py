@@ -47,7 +47,7 @@ from share import jt_plot as jtpl
 from share import jt_maintenance_UI as jtmaint
 from share import jt_preferences_UI as jtpref
 import jt_add_athlete_dialog as jtaa
-import jt_main_analytics1 as jtanalytics
+import TPC_analytics_main as jtanalytics
 
 # Testing data
 # if set to >= 0 it utilizes test data instead of data from serial line
