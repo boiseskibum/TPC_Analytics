@@ -1,4 +1,14 @@
 # Main program
+######################################################################
+# debuggging and logging
+from share import jt_util as util
+
+# logging configuration - the default level if not set is DEBUG
+log = util.jt_logging()
+
+log.msg(f'INFO - Valid logging levels are: {util.logging_levels}')
+log.set_logging_level("WARNING")  # this will show errors but not files actually processed
+
 
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox
@@ -26,15 +36,7 @@ colors_icefire = sns.color_palette('icefire', 10)
 colors3 = sns.color_palette('rainbow', 5)
 colors_seismic = sns.color_palette('seismic', 10)
 
-######################################################################
-# debuggging and logging
-from share import jt_util as util
 
-# logging configuration - the default level if not set is DEBUG
-log = util.jt_logging()
-
-log.msg(f'INFO - Valid logging levels are: {util.logging_levels}')
-log.set_logging_level("WARNING")  # this will show errors but not files actually processed
 
 # import Jakes files
 from share import jt_dialog as jtd
@@ -194,14 +196,15 @@ class CMJ_UI(QMainWindow):
         h = 75
 
         image = jtc.validate_path_and_return_QImage("jt.ico")
-        scaled_image = image.scaled(w,h)
-        ico_image = QPixmap.fromImage(scaled_image)
+        if image is not None:
+            scaled_image = image.scaled(w,h)
+            ico_image = QPixmap.fromImage(scaled_image)
 
-        # Create the ico label
-        ico_label = QLabel(self)
-        ico_label.setPixmap(ico_image)
-        ico_label.setStyleSheet("background-color: rgba(255, 255, 255, 0);")   #make background transparent
-        self.grid_layout.addWidget(ico_label, trow,0, 3, 1)
+            # Create the ico label
+            ico_label = QLabel(self)
+            ico_label.setPixmap(ico_image)
+            ico_label.setStyleSheet("background-color: rgba(255, 255, 255, 0);")   #make background transparent
+            self.grid_layout.addWidget(ico_label, trow,0, 3, 1)
 
         # Preferences/Configurate/Settings button
         settings_image = QPixmap( jtc.validate_path_and_return_Pixmap("icon_settings.png") ).scaled(30, 30)
