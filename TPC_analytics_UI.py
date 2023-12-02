@@ -1,9 +1,9 @@
 # TPC_analytics_UI.py
 
-import os, sys, cv2, platform, time
+import sys, cv2, platform, time
 import numpy as np
 
-from jt_main_analytics_designer import Ui_MainAnalyticsWindow
+from TPC_analytics_UI_designer import Ui_MainAnalyticsWindow
 
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QTreeWidgetItem,  QRadioButton
 from PyQt6.QtGui import QImage, QPixmap, QPainter, QPen, QColor, QIcon, QTransform
@@ -93,6 +93,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.checkBox_video1_overlay.stateChanged.connect(self.checkbox_video1_overlay_changed)
         self.checkBox_video2_overlay.stateChanged.connect(self.checkbox_video2_overlay_changed)
         self.checkBox_short_video.stateChanged.connect(self.checkBox_short_video_changed)
+        self.checkBox_freeze_y_axis.stateChanged.connect(self.checkBox_freeze_y_axis_changed)
 
         # video playback speed
         self.radioButton_full.setChecked(True)
@@ -123,6 +124,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.video_widgets.append(self.radioButton_super_slow)
         self.video_widgets.append(self.qlabel_time)
         self.video_widgets.append(self.videoAlignmentSlider)
+        self.video_widgets.append(self.label_align_video)
         self.video_widgets.append(self.label_video1)
         self.video_widgets.append(self.label_video2)
 
@@ -172,6 +174,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.starting_frame = 0
         self.min_data_point = 0
         self.min_frame = 0
+        self.current_trial = None
         self.current_frame = 0
         self.current_data_point = 0
         self.max_frame = 0
@@ -179,6 +182,9 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.total_frames = 0
         self.total_data_points = 0
         self.video_tweak_x = 0
+        self.freeze_y_axis = False
+        self.browsing_yMin = None
+        self.browsing_yMax = None
 
         self.video1_cv2 = None
         self.video2_capture = None
@@ -456,6 +462,8 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.vertical_line = self.ax_browsing.axvline(x=(start_time), color='g', linestyle='--')
 #        self.vertical_line = self.ax_browsing.axvline(x=(self.current_data_point-self.min_data_point), color='g', linestyle='--')
         self.ax_browsing.legend()
+        # will set limits if they aren't equal to None
+        self.ax_browsing.set_ylim(self.browsing_yMin, self.browsing_yMax)
         self.canvas_browsing.draw()
 
         # set the video files for video 1
@@ -674,6 +682,23 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
         self.update_frame()
 
+    # handles freezing the y-axis to better see difference between different jumps
+    def checkBox_freeze_y_axis_changed(self, checked):
+
+        if checked != 0:
+            self.freeze_y_axis = True
+            if self.current_trial is not None:
+                self.browsing_yMin, self.browsing_yMax = self.ax_browsing.get_ylim()
+
+        else:
+            self.freeze_y_axis = False
+            self.browsing_yMin = None
+            self.browsing_yMax = None
+
+        # this should force a redraw of the graph
+        if self.current_trial is not None:
+            self.set_trial(self.current_trial)
+
     def set_vertical_bar(self):
 
         if self.vertical_line is not None:
@@ -764,7 +789,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         # the following accounts for if we are showing a short video
         x_point = self.current_data_point - self.min_data_point
         graph_time = self.graph_x_seconds[x_point]
-        graph_time = f'{graph_time:.3f}'
+        graph_time = f'Time: {graph_time:.2f}'
         print(f'graph_time: {graph_time}')
         self.qlabel_time.setText(graph_time)
 

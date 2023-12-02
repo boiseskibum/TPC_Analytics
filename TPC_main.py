@@ -55,8 +55,6 @@ colors_icefire = sns.color_palette('icefire', 10)
 colors3 = sns.color_palette('rainbow', 5)
 colors_seismic = sns.color_palette('seismic', 10)
 
-
-
 # import Jakes files
 from share import jt_dialog as jtd
 from share import jt_serial as jts
