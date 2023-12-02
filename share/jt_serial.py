@@ -66,7 +66,7 @@ class SerialDataReader(threading.Thread):
         self.port_name = port
         my_return = False
 
-        log.f(f"Attempting connection to port: {self.port_name}")
+        log.debug(f"Attempting connection to port: {self.port_name}")
 
         try:
 

@@ -461,7 +461,7 @@ def asym_index(i_r, i_l, injured):
 
 if __name__ == "__main__":
 
-    config_obj = jtc.JT_Config('taylor performance', 'TPC')
+    config_obj = jtc.JT_Config('taylor performance', 'TPC', None)
     val = config_obj.validate_install()
     print('convig_obj.validate return value: {val}')
 

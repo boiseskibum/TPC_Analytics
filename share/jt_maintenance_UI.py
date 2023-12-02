@@ -1,7 +1,7 @@
-import sys, time
+import sys
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QDialog
 from PyQt6.QtWidgets import QPushButton
-from PyQt6.QtCore import Qt  # Import the Qt module
+
 
 try:
     from . import jt_serial as jts
@@ -51,8 +51,6 @@ class JT_MaintenanceWindow(QDialog):
 
             trial_mgr_obj = jttm.JT_JsonTrialManager(self.config_obj)
 
-            log.set_logging_level("INFO")
-
             trial_mgr_obj.reprocess_all_files(self)
     def resizeEvent(self, event):
         # Ignore resize event
@@ -67,8 +65,8 @@ if __name__ == '__main__':
             super().__init__()
 
             self.reader_obj = jts.SerialDataReader()
-#            self.config_obj = jtc.JT_Config('taylor performance', 'TPC', "testing_config.json")
-            self.config_obj = jtc.JT_Config('taylor performance', 'TPC')
+#            self.config_obj = jtc.JT_Config('taylor performance', 'TPC', None, "testing_config.json")
+            self.config_obj = jtc.JT_Config('taylor performance', 'TPC', None)
             val = self.config_obj.validate_install()
             print(f'config_obj.validate return value: {val}')
 

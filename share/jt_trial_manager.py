@@ -61,7 +61,7 @@ class JT_JsonTrialManager:
             total_rows = len(self.df)
             self.df.drop_duplicates(subset=['original_filename'], keep='last', inplace=True)
             unique_rows = len(self.df)
-            log.info(f"Trial manager total rows: {total_rows}, unique rows: {unique_rows},   wasted rows: {total_rows-unique_rows}")
+            log.debug(f"Trial manager total rows: {total_rows}, unique rows: {unique_rows},   wasted rows: {total_rows-unique_rows}")
 
         return self.df
 
@@ -80,7 +80,6 @@ class JT_JsonTrialManager:
         # Get unique combinations of athlete and short_protocol
         unique_combinations_df = df_copy[['athlete', 'short_protocol']].drop_duplicates()
         #print(unique_combinations_df)
-        log.debug(unique_combinations_df)
 
         return(unique_combinations_df)
 
@@ -376,12 +375,10 @@ class FileProcessor(QWidget):
     def process_files(self):
 
         #WARNING THIS WILL REPROCESS ALL FILES
-        config_obj = jtc.JT_Config('taylor performance', 'TPC')
+        config_obj = jtc.JT_Config('taylor performance', 'TPC', None)
         config_obj.validate_install()
 
         trial_mgr_obj = JT_JsonTrialManager(config_obj)
-
-        log.set_logging_level("INFO")
 
         trial_mgr_obj.reprocess_all_files(self)
 

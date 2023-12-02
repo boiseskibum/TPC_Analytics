@@ -3,8 +3,8 @@
 # the main screen can be updated
 
 import sys
-from PyQt6.QtWidgets import (QApplication, QLabel, QWidget, QPushButton, QMessageBox,
-                             QVBoxLayout, QDialog, QDialogButtonBox, QInputDialog)
+from PyQt6.QtWidgets import (QApplication, QWidget, QPushButton, QMessageBox,
+                             QVBoxLayout,  QInputDialog)
 
 #used just for the testing routine at the bottom of file
 import tkinter as tk

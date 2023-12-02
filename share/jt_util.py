@@ -46,7 +46,7 @@ class jt_logging(object):
         return jt_logging.__instance
 
     def __init__(self):
-        self.level_str = "DEBUG"
+        self.level_str = "INFO"
         self.level = logging_levels[self.level_str]
 
     #### PUBLIC Functions  ####

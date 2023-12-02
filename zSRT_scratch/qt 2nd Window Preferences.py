@@ -165,7 +165,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.jt_reader_obj = jts.SerialDataReader()
-        self.jt_config_obj = jtc.JT_Config('taylor performance', 'TPC', "testing_config.json")
+        self.jt_config_obj = jtc.JT_Config('taylor performance', 'TPC', None, "testing_config.json")
 
 
         self.setWindowTitle("Main Window")

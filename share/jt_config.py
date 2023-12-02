@@ -1,7 +1,7 @@
 # jt_config.py
 # purpose: ability to store configuration data (keys and values) into a file
 
-import json, os, platform
+import json, os, sys, platform
 from PyQt6.QtGui import QImage, QPixmap
 
 try:
@@ -12,8 +12,6 @@ except:
     import jt_util as util
     import jt_protocol as jtp
     import jt_athletes as jta
-
-my_resources = 'resources/img/'
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
@@ -37,16 +35,19 @@ log = util.jt_logging()
 #       of my_config.validate() or inside of my_config.set_app_location
 #
 class JT_Config:
-    def __init__(self, app_name, short_app_name, debug_path="" ):
+    def __init__(self, app_name, short_app_name, base_path, debug_path="" ):
 
         self.error_msg = ""
         self.error = False
         self.app_name = app_name
         self.short_app_name = short_app_name
         self.debug_path = debug_path
-        self.resources = my_resources
         self.current_directory = os.getcwd()
-        log.info(f"Current Working Directory: {self.current_directory}")
+        log.msg(f"Current Working Directory: {self.current_directory}")
+        if base_path is not None:
+            self.base_path = base_path  # this is the base path
+        else:
+            self.base_path = self.current_directory
 
     # this validates if the install has happened.  see descriptions above
     def validate_install(self):
@@ -113,7 +114,7 @@ class JT_Config:
 
         # Create AppDirectory if it doesn't exist
         os.makedirs(self.path_app, exist_ok=True)
-        log.info(f"creating directory structure in: {self.path_app}")
+        log.msg(f"creating directory structure in: {self.path_app}")
 
         # Create subdirectories inside AppDirectory
         subdirectories = ["config", "data", "db", "results", "log", "temp", "temp/debug"]
@@ -121,7 +122,7 @@ class JT_Config:
             subdirectory_path = os.path.join(self.path_app, subdirectory)
             os.makedirs(subdirectory_path, exist_ok=True)
 
-        log.info(f"Installation directory structure created successfully.{subdirectories}")
+        log.msg(f"Installation directory structure created successfully.{subdirectories}")
 
         #write out config.json with new path_app value
         data = { "AppDirectory": self.path_app }
@@ -129,7 +130,7 @@ class JT_Config:
         # Write the data to the JSON file
         with open(self.path_app_config_json, "w") as json_file:
             json.dump(data, json_file, indent=4)
-        log.info(f"JSON file with key 'AppDirectory' created at: {self.path_app_config_json}")
+        log.msg(f"JSON file with key 'AppDirectory' created at: {self.path_app_config_json}")
 
         self._set_paths()
 
@@ -150,7 +151,7 @@ class JT_Config:
         self.protocol_obj = None
         self.athletes_obj = None
 
-        #get protocol object
+        # setup protocol object
         try:
             self.protocol_obj = jtp.JT_protocol()
             ret = self.protocol_obj.validate_data()
@@ -163,7 +164,7 @@ class JT_Config:
             self.error = True
             log.error(self.error_msg)
 
-        # get athletes object
+        # setup athletes object
         try:
             # create the athletes Object
             self.athletes_obj = jta.JT_athletes(self) # get list of valid athletes from CSV file
@@ -193,7 +194,7 @@ class JT_Config:
         if not os.path.exists(path):
             # Create the directory if it doesn't exist
             os.makedirs(path)
-            log.debug(f'Directory created: {path}')
+            log.msg(f'Directory created: {path}')
         return (path)
 
     def path_results_athlete(self, athlete):
@@ -202,7 +203,7 @@ class JT_Config:
         if not os.path.exists(path):
             # Create the directory if it doesn't exist
             os.makedirs(path)
-            log.debug(f'Directory created: {path}')
+            log.msg(f'Directory created: {path}')
         return (path)
 
     def path_athlete_images(self, athlete):
@@ -211,16 +212,7 @@ class JT_Config:
         if not os.path.exists(path):
             # Create the directory if it doesn't exist
             os.makedirs(path)
-            log.debug(f'Directory created: {path}')
-        return (path)
-
-    def path_athlete_videos(self, athlete):
-        path = self.path_results + athlete + "/videos/"
-        # Check if the directory already exists
-        if not os.path.exists(path):
-            # Create the directory if it doesn't exist
-            os.makedirs(path)
-            log.debug(f'Directory created: {path}')
+            log.msg(f'Directory created: {path}')
         return (path)
 
     #####################################
@@ -280,29 +272,39 @@ class JT_Config:
 # Utility functions
 ########################################################
 
-#function to validate if a image/icon/png is out there and if so it returns a QImage, otherwise it returns None
-def validate_path_and_return_QImage(image_path):
+    # function to validate if a image/icon/png is out there and if so it returns
+    # a QImage, otherwise it returns None
+    def validate_path_and_return_QImage(self, image_name):
 
-    if not os.path.exists(image_path):
-        image_path = my_resources + image_path
-
-        if not os.path.exists(image_path):
-            log.error(f'Could not find image_path for: {image_path}')
-            return None
-
-    image = QImage(image_path)
-    return image
-
-def validate_path_and_return_Pixmap(image_path):
-
-    if not os.path.exists(image_path):
-        image_path = my_resources + image_path
+        image_path = self.get_img_path() + image_name
 
         if not os.path.exists(image_path):
             log.error(f'Could not find image_path for: {image_path}')
             return None
-    pixmap = QPixmap(image_path)
-    return pixmap
+
+        image = QImage(image_path)
+        return image
+
+    def validate_path_and_return_Pixmap(self, image_name):
+
+        image_path = self.get_img_path() + image_name
+
+        if not os.path.exists(image_path):
+            log.error(f'Could not find image_path for: {image_path}')
+            return None
+        pixmap = QPixmap(image_path)
+        return pixmap
+
+    # Utility functions to access resources or demo files.  This is required for
+    # pyinstaller which will hide these files away with in the imnage
+    def get_img_path(self):
+
+        path = os.path.join(self.base_path, 'resources/img/')
+        return path
+
+    def get_demo_path(self):
+        path = os.path.join(self.base_path, 'resources/demo/')
+        return path
 
 ########################################################
 
@@ -311,7 +313,7 @@ if __name__ == "__main__":
     file_path = 'config_testing.csv'  # Replace with the actual path to your CSV file
 
     # Create an instance of the DataProcessor
-    config_obj = JT_Config('testLongName', 'TestSRT', file_path)
+    config_obj = JT_Config('testLongName', 'TestSRT', None, file_path)
 
     config_obj.validate_install()
 

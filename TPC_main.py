@@ -1,5 +1,26 @@
-# Main program
+# TPC_Main program
+"""
+    This software is designed to provide data from sensors (load cells), store the data,
+    and provide the data in a usable format for Strength and Conditioning coats
+    Copyright (C) 2023  Jake Taylor and Steve Taylor
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
 ######################################################################
+
+__version__ = '2023-12-2.0'   #Format is date and build number from that day (hopefully the latter isn't used')
+
 # debuggging and logging
 from share import jt_util as util
 
@@ -7,8 +28,6 @@ from share import jt_util as util
 log = util.jt_logging()
 
 log.msg(f'INFO - Valid logging levels are: {util.logging_levels}')
-log.set_logging_level("WARNING")  # this will show errors but not files actually processed
-
 
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox
@@ -49,7 +68,7 @@ from share import jt_plot as jtpl
 from share import jt_maintenance_UI as jtmaint
 from share import jt_preferences_UI as jtpref
 import jt_add_athlete_dialog as jtaa
-import TPC_analytics_main as jtanalytics
+import TPC_analytics_UI as TPCa
 
 # Testing data
 # if set to >= 0 it utilizes test data instead of data from serial line
@@ -195,7 +214,14 @@ class CMJ_UI(QMainWindow):
         w = 75
         h = 75
 
-        image = jtc.validate_path_and_return_QImage("jt.ico")
+        # this code is to handle both PyCharm (local directory) or the case for PyInstaller
+        base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+        log.info(f'Base_path: {base_path}')
+
+        # get config data.  REquired to do the icon.
+        self.config_obj = jtc.JT_Config(self.application_name, 'TPC', base_path)
+
+        image = self.config_obj.validate_path_and_return_QImage("jt.ico")
         if image is not None:
             scaled_image = image.scaled(w,h)
             ico_image = QPixmap.fromImage(scaled_image)
@@ -207,7 +233,7 @@ class CMJ_UI(QMainWindow):
             self.grid_layout.addWidget(ico_label, trow,0, 3, 1)
 
         # Preferences/Configurate/Settings button
-        settings_image = QPixmap( jtc.validate_path_and_return_Pixmap("icon_settings.png") ).scaled(30, 30)
+        settings_image = QPixmap( self.config_obj.validate_path_and_return_Pixmap("icon_settings.png") ).scaled(30, 30)
         settings_icon = QIcon(settings_image)
 
         # Create the ico image button
@@ -332,8 +358,7 @@ class CMJ_UI(QMainWindow):
     def initial_setup_and_config(self):
 
         # config_obj for keys and values setup, first validate it and if it returns False then
-        #
-        self.config_obj = jtc.JT_Config(self.application_name, 'TPC')
+        # we know that we need to request from the user where to store their data (db, data, config, results, log)
         if self.config_obj.validate_install() == False:
             # get desired directory from user
 
@@ -537,7 +562,6 @@ class CMJ_UI(QMainWindow):
         self.r_calibration_display.setVisible(False)
 
     def protocol_type_double(self):
-        log.f()
         self.protocol_type_selected = "double"
         self.config_obj.set_config("protocol_type", self.protocol_type_selected)
 
@@ -563,7 +587,6 @@ class CMJ_UI(QMainWindow):
             return 'Calibrate Left'
 
     def protocol_name_combobox_changed(self, value):
-        log.f()
         self.protocol_name_selected = value
         self.config_obj.set_config("protocol_name", self.protocol_name_selected )
         log.debug(f"protocol name: {self.protocol_type_selected}, name_selected: {self.protocol_name_selected}, name_list: {self.protocol_name_list}")
@@ -828,11 +851,7 @@ class CMJ_UI(QMainWindow):
     def jt_analytics(self):
 
         if self.analytics_ui == None:
-            self.analytics_ui = jtanalytics.JT_Analytics_UI(parent=self)
-
-# not sure that this was needed in order to go to jt_analytics
-#            if self.last_original_filename:
-#                self.trial_mgr_obj.load_all_trials()
+            self.analytics_ui = TPCa.TPC_Analytics_UI(self.config_obj, parent=self)
 
             if self.trial != None:
                 self.analytics_ui.set_trial( self.trial)
@@ -938,7 +957,7 @@ class CMJ_UI(QMainWindow):
 if __name__ == "__main__":
     # Replace these values with the correct serial port and baud rate for your sensor
 
-    log.set_logging_level("DEBUG")
+    log.set_logging_level("INFO")
 
     app = QApplication(sys.argv)
     window = CMJ_UI()
@@ -946,10 +965,7 @@ if __name__ == "__main__":
     window.adjustSize()
     window.show()
 
-#    window.initial_setup_and_config()
-
-    # update clock initially which also starts timer for it
-#    window.update_fields()
+    window.statusBar().showMessage(f"Version {__version__}")
     result = app.exec()
     sys.exit(result)
 

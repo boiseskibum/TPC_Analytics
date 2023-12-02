@@ -15,7 +15,6 @@ except ImportError:
     import jt_plot as jtpl
 
 log = util.jt_logging()
-log.set_logging_level("WARNING")   # this will show errors but not files actually processed
 
 # Importing Colors
 colors_blue = sns.color_palette('Blues', 10)
@@ -115,7 +114,7 @@ class JTDcmj:
         xlabel = "Time"
         ylabel = "Force (Nm)"
 
-        if "DEBUG" in log.get_level():
+        if self.debug_graphs:
             plt.figure(figsize=(10, 6))
             plt.title(title, fontdict={'fontweight':'bold', 'fontsize': 12})
             plt.plot(self.force_norm_r, linestyle = '-', label = 'Right', color=colors_seismic[2], linewidth = 1)

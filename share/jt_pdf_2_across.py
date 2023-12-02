@@ -19,8 +19,6 @@ except:
     import jt_plot as jtpl
     import jt_config as jtc
 
-my_resources = 'resources/img/'
-
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
 
@@ -36,7 +34,7 @@ class JT_PDF_2_across:
 
         today_date = date.today()
 
-        logo = self.config_obj.resources + "jt.png"
+        logo = self.config_obj.get_img_path() + "jt.png"
         if not os.path.exists(logo):
             logo = "jt.png"
             if not os.path.exists(logo):
@@ -149,7 +147,7 @@ class JT_PDF_2_across:
 if __name__ == "__main__":
 
     # set base and application path
-    config_obj = jtc.JT_Config('taylor performance', 'TPC')
+    config_obj = jtc.JT_Config('taylor performance', 'TPC', None)
     config_obj.validate_install()
 
     output_file = 'testing/jt_pdf_2_across.pdf'

@@ -6,7 +6,7 @@
 #   name - long version displayed to the user
 #   leg - will be either left or right
 #
-import os
+
 import pandas as pd
 try:
     from . import jt_util as util
@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     # Get all unique types
     unique_types = protocol_obj.get_unique_types()
-    log.debug("Unique Types:", unique_types)
+    log.debug(f'Unique Types: {unique_types}')
 
     # Loop through each type and get the associated protocol
     for type in unique_types:

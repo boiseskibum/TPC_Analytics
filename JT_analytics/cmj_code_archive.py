@@ -2020,7 +2020,7 @@ def iso_knee_ext_calc(torque, elapsed_time, leg):  # leg - "left", "right"
 # Debug timestamp for files
 
 # log.set_logging_level("WARNING")
-log.set_logging_level("DEBUG")
+#log.set_logging_level("DEBUG")
 
 main()
 

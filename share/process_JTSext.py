@@ -24,7 +24,6 @@ except ImportError:
 
 
 log = util.jt_logging()
-log.set_logging_level("WARNING")  # this will show errors but not files actually processed
 
 """#SL ISO Knee Extension Testing"""
 
@@ -109,7 +108,7 @@ class JTSext:
         title = ' Iso Knee Extension'
         xlabel = "Time"
         ylabel = "Force (Nm)"
-        if "DEBUG" in log.get_level():
+        if self.debug_graphs:
             plt.figure(figsize=(10, 6))
             plt.title(title, fontdict={'fontweight': 'bold', 'fontsize': 12})
             plt.plot(torque, linestyle='-', label=ylabel, color=colors_seismic[2], linewidth=1)

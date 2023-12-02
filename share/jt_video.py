@@ -116,7 +116,7 @@ class JT_Video(QThread):
 
         # Load the image from diskj - trys local directory and then trys the resources directory
         image_name = 'camera_offline.png'
-        image = jtc.validate_path_and_return_QImage(image_name)
+        image = self.config_obj.validate_path_and_return_QImage(image_name)
 
         if image is not None:
             image = image.scaledToWidth(self.display_width)
@@ -221,7 +221,7 @@ if __name__ == "__main__":
                 self.video1.camera_index = 1
                 self.video2.camera_index = 0
 
-    config_obj = jtc.JT_Config('taylor performance', 'TPC')
+    config_obj = jtc.JT_Config('taylor performance', 'TPC', None)
     app = QApplication(sys.argv)
 
     window = MainWindow(config_obj)

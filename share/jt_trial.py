@@ -5,7 +5,7 @@
 #  - upon creation of the object this grabs the date and timestamp for future saving operations
 #  - for saving or retrieving there is no reset of this class, use once and discard
 
-import io, os, datetime
+import os, datetime
 from datetime import datetime
 import pandas as pd
 
@@ -26,6 +26,8 @@ except:
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
+print(f'####### inside trial level_str: {log.level_str}, level {log.level}')
+
 
 ##########################################################
 class JT_Trial:
@@ -421,7 +423,7 @@ class JT_Trial:
 if __name__ == "__main__":
 
     # set base and application path
-    config_obj = jtc.JT_Config('taylor performance', 'TPC')
+    config_obj = jtc.JT_Config('taylor performance', 'TPC', None)
     config_obj.validate_install()
 
     trial_mgr_obj = jttm.JT_JsonTrialManager(config_obj)

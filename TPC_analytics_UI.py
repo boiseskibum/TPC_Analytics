@@ -1,10 +1,14 @@
+# TPC_analytics_UI.py
+
+import os, sys, cv2, platform, time
+import numpy as np
+
 from jt_main_analytics_designer import Ui_MainAnalyticsWindow
+
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QTreeWidgetItem,  QRadioButton
 from PyQt6.QtGui import QImage, QPixmap, QPainter, QPen, QColor, QIcon, QTransform
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QEvent
 
-import sys, cv2, platform, time
-import numpy as np
 #import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -30,65 +34,32 @@ from share import jt_util as util
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
 
-log.msg(f'INFO - Valid logging levels are: {util.logging_levels}')
-log.set_logging_level("WARNING")  # this will show errors but not files actually processed
-
-my_username = gt.getuser()
-my_platform = platform.system()
-log.msg(f"my_username: {my_username}")
-log.msg(f"my_system: {my_platform}")
+log.set_logging_level("INFO")
+log.debug(f'INFO - Valid logging levels are: {util.logging_levels}')
 
 from share import jt_dialog as jtd
 from share import jt_trial as jtt
 from share import jt_trial_manager as jttm
 from share import jt_config as jtc
-from share import jt_protocol as jtp
-from share import jt_athletes as jta
 from share import analytics_knee_extension as ake
 from share import analytics_cmj as acmj
 from share import jt_pdf_2_across as jtpdf2
-
 
 trial_mgr_filename = 'all_athletes.json'
 
 ######################################################################################
 ######################################################################################
 ######################################################################################
-class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
+class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
+
+    #used to handle closed event
     closed = pyqtSignal()
-    def __init__(self, parent=None):
+    def __init__(self, config_obj, parent=None):
         super().__init__(parent)
+
+        self.config_obj = config_obj
         # calls the setup method instead of the python class created from the UI
         self.setupUi(self)
-
-        # configuration object for keys and values setup
-        self.config_obj = jtc.JT_Config('Taylor Performance Consulting Analytics', 'TPC')
-        self.setWindowTitle(self.config_obj.app_name)
-
-        if self.config_obj.validate_install() == False:
-            # get desired directory from user
-
-            instructions = 'To set the app up correctly you must run the main application first, sorry young Jedi'
-            value = jtd.JT_Dialog(parent=self, title="Installation Directory",
-                                  msg=instructions,
-                                  type="ok")  # this is custom dialog class created above
-            sys.exit()
-
-        log.info(f'JT_Analytics_UI path_app: {self.config_obj.path_app}')
-
-        ##### Athletes #####
-        try:
-            # create the athletes Object
-            self.athletes_obj = jta.JT_athletes(self.config_obj) # get list of valid athletes from CSV file
-        except:
-            log.critical(f'Could not load athletes')
-
-        ##### Protocol #####
-        # Get list of protocols, throw error message if unsuccessful at getting list
-        try:
-            self.protocol_obj = jtp.JT_protocol(self.config_obj)
-        except:
-            log.critical(f'Could not load athletes')
 
         ##################################################
         ### browser tab 
@@ -102,17 +73,6 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
         # the following is created so that when the user uses the up or down arrow it essentially
         # clicks on that particular field assuming it is the leaf (when UserRole has data)
-        # def tree_event_filter(obj, event):
-        #     if event.type() == QEvent.Type.KeyPress:
-        #         if event.key() in (Qt.Key.Key_Up, Qt.Key.Key_Down):
-        #             current_item = tree.currentItem()
-        #             if current_item and current_item.data(0, Qt.ItemDataRole.UserRole) is not None:
-        #                 # Perform your action here
-        #                 print(f"Key Pressed on Item: {current_item.text(0)}")
-        #                 self.item_clicked_browser(current_item)
-        #
-        #             return True
-        #     return False
 
         self.treeWidget.installEventFilter(self)
 
@@ -179,23 +139,25 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
         #player buttons
         # utility function to set icons on pushbuttons
-        def add_pb_icon(image_path, pb, flip=False):
+        def add_pb_icon(image_name, pb, flip=False):
+            image_path = self.config_obj.get_img_path() + image_name
+#            print(f'image_path of video widgets: {image_path}')
             pixmap = QPixmap(image_path)  # Replace with the path to your image
             if pixmap.isNull():
-                print(f"Image '{image_path}' does not exist or is invalid.\n")
+                log.info(f"Image '{image_path}' does not exist or is invalid.\n")
             if flip:
                 pixmap = pixmap.transformed(QTransform().scale(-1, 1))
             icon = QIcon(pixmap)  # Replace with the path to your image
             pb.setIcon(icon)
             pb.setText("")
 
-        add_pb_icon ( "resources/img/rewind-to-start.png", self.pushButton_rewind_to_start)
-        add_pb_icon ( "resources/img/next-button-ff.png", self.pushButton_rewind_chunk, True)
-        add_pb_icon ( "resources/img/next-button.png", self.pushButton_rewind, True)
-        add_pb_icon ( "resources/img/stop-button.png", self.pushButton_stop)
-        add_pb_icon ( "resources/img/play-button.png", self.pushButton_play)
-        add_pb_icon ( "resources/img/next-button.png", self.pushButton_forward)
-        add_pb_icon ( "resources/img/next-button-ff.png", self.pushButton_forward_chunk)
+        add_pb_icon ( "rewind-to-start.png", self.pushButton_rewind_to_start)
+        add_pb_icon ( "next-button-ff.png", self.pushButton_rewind_chunk, True)
+        add_pb_icon ( "next-button.png", self.pushButton_rewind, True)
+        add_pb_icon ( "stop-button.png", self.pushButton_stop)
+        add_pb_icon ( "play-button.png", self.pushButton_play)
+        add_pb_icon ( "next-button.png", self.pushButton_forward)
+        add_pb_icon ( "next-button-ff.png", self.pushButton_forward_chunk)
 
         self.chunk = 10
 
@@ -283,11 +245,15 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
     # for TreeWidget get the key up or down captured and then pass it to my own handler
     def eventFilter(self, obj, event):
-        if obj == self.treeWidget and event.type() == QEvent.Type.KeyPress:
-            if event.key() in (Qt.Key.Key_Up, Qt.Key.Key_Down):
-                # Let the tree widget handle the event first
-                QTimer.singleShot(0, self.treeWidget_check_current_item)
-                return False
+        try:
+            if obj == self.treeWidget and event.type() == QEvent.Type.KeyPress:
+                if event.key() in (Qt.Key.Key_Up, Qt.Key.Key_Down):
+                    # Let the tree widget handle the event first, then follow up with the timer.  ChatGPT said
+                    # use 0 milliseconds for the delay.  I have moved it to 50 to see if it helps not crash so much
+                    QTimer.singleShot(50, self.treeWidget_check_current_item)
+                    return False
+        except:
+            log.error('eventFilter for up/down key press failed')
         return super().eventFilter(obj, event)
 
     #this code does an item clicked for the new item in the tree view being shown
@@ -295,12 +261,14 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         current_item = self.treeWidget.currentItem()
         if current_item and current_item.data(0, Qt.ItemDataRole.UserRole) is not None:
             # Perform your action here for the current item
+            self.item_clicked_browser(current_item)
 #            print(f"Current Item: {current_item.text(0)}")
 
-            self.item_clicked_browser(current_item)
+
 
     def closeEvent(self, event):
         self.closed.emit()
+        super().closeEvent(event)
 
     #load tree widget
     def load_browser_tree(self):
@@ -637,7 +605,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
     # function to tweak the video left or right to align with the graph
     def videoAlignmentSlider_changed(self, value):
-        print(f'video slider: {value}')
+#        print(f'video slider: {value}')
         self.video_tweak_x = value
         self.update_frame()
 
@@ -730,7 +698,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 #        return
 
         if self.video1_cv2 == None:
-            image_path = 'resources/img/camera_offline.png'
+            image_path = self.config_obj.get_img_path() + 'camera_offline.png'
             image = QImage(image_path)
             image = image.scaledToWidth(self.label_video1.width())
             pixmap = QPixmap.fromImage(image)
@@ -929,7 +897,7 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             self.reports_protocol = split_list[1]
 
             log.debug(f"childcount Clicked: {item_text}, Parent Path: {parent_path}---")
-            log.info(f"report selected - athlete: {self.reports_athlete}  protocol: {self.reports_protocol}")
+            log.debug(f"report selected - athlete: {self.reports_athlete}  protocol: {self.reports_protocol}")
 
             self.plot_current = 0
             if self.reports_protocol == 'JTDcmj':
@@ -1037,10 +1005,28 @@ class JT_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         util.open_file_explorer(results_dir)
 
 if __name__ == "__main__":
+    my_username = gt.getuser()
+    my_platform = platform.system()
+    log.msg(f"my_username: {my_username}")
+    log.msg(f"my_system: {my_platform}")
+    print(f'#######level_str: {log.level_str}, level {log.level}')
+
     app = QApplication(sys.argv)
 
-    window = JT_Analytics_UI()
+    # configuration object for keys and values setup
+    config_obj = jtc.JT_Config('Taylor Performance Consulting Analytics', 'TPC', None)
 
+    #validate
+    if config_obj.validate_install() == False:
+        # get desired directory from user
+
+        print('program has not been set up with all the necessary directions - run TPC_MAIN() to do so')
+        sys.exit()
+
+    window = TPC_Analytics_UI(config_obj)
+    log.info(f'TPC_Analytics_UI path_app: {config_obj.path_app}')
+
+    window.setWindowTitle(config_obj.app_name)
 
     def test_specific_trial():
         log.msg(f"path_app: {window.config_obj.path_app}")
