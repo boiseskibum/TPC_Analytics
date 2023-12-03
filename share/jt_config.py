@@ -97,7 +97,7 @@ class JT_Config:
             #default scenario: make directory in documents folder with app name, and config if it doesn't exsist
             os.makedirs(path_app_config, exist_ok=True)
 
-            # write out config.json with new defaultapp value
+            # write out config.json with new default app value
             data = {"AppDirectory": starting_path_app}
 
             # Write the data to the JSON file
@@ -150,6 +150,13 @@ class JT_Config:
         self.trial_mgr_filename = self.path_db + 'all_athletes.json'
         self.protocol_obj = None
         self.athletes_obj = None
+
+        log.msg(f'path_app: {self.path_app}')
+        log.msg(f'path_data: {self.path_data}')
+        log.msg(f'path_results: {self.path_results}')
+        log.msg(f'path_log: {self.path_log}')
+        log.msg(f'path_db: {self.path_db}')
+        log.msg(f'path_config: {self.path_config}')
 
         # setup protocol object
         try:

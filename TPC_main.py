@@ -1,13 +1,12 @@
 # TPC_Main program
-"""
-    This software is designed to provide data from sensors (load cells), store the data,
-    and provide the data in a usable format for Strength and Conditioning coats
+__copyright__ = """This software is designed to provide data from sensors (load cells), store the data,
+    and provide the data in a usable format for Strength and Conditioning analytics
     Copyright (C) 2023  Jake Taylor and Steve Taylor
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    any later version.
 
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -20,6 +19,7 @@
 ######################################################################
 
 __version__ = '2023-12-2.0'   #Format is date and build number from that day (hopefully the latter isn't used')
+__application_name__ = 'Taylor Performance Consulting Analytics'
 
 # debuggging and logging
 from share import jt_util as util
@@ -27,6 +27,8 @@ from share import jt_util as util
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
 
+log.msg(f'**** {__application_name__} ****\n  **** Version: {__version__}, Authors: Jake and Steve Taylor ****\n')
+log.msg(f'Copyright Information:\n{__copyright__}\n')
 log.msg(f'INFO - Valid logging levels are: {util.logging_levels}')
 
 from PyQt6.QtCore import Qt, QTimer
@@ -146,7 +148,7 @@ class CMJ_UI(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.application_name = "Taylor Performance Consulting"
+        self.application_name = __application_name__
 
         str = ""
         str = f"The following things will need to be set up in order to run this applicaton:\n"
@@ -341,13 +343,6 @@ class CMJ_UI(QMainWindow):
         self.status_display = QLabel("")
         self.grid_layout.addWidget(self.status_display, trow, 0, 1, 4)
 
-        #fire off timer that updates time as well as the weight fields
-        time_interval = 500      # in milliseconds
-        self.timer = QTimer()
-        self.timer.setInterval(time_interval)  # Update every 0.5 seconds
-        self.timer.timeout.connect(self.update_fields)
-        self.timer.start()
-
         QTimer.singleShot(250, self.initial_setup_and_config)  # this does the initial setup of config/serial/athlete/etc
 
     #################################
@@ -378,7 +373,7 @@ class CMJ_UI(QMainWindow):
                 if value == None:
                     sys.exit()
 
-        log.msg(f"path_app: {window.config_obj.path_app}")
+#        log.msg(f"path_app: {window.config_obj.path_app}")
 
         ##### serial port setup #####
         self.reader_obj = jts.SerialDataReader()
@@ -495,7 +490,12 @@ class CMJ_UI(QMainWindow):
         #variables for utilizing test data
         self.file_list = glob.glob("output*.txt")
 
-
+        #fire off timer that updates time as well as the weight fields
+        time_interval = 500      # in milliseconds
+        self.timer = QTimer()
+        self.timer.setInterval(time_interval)  # Update every 0.5 seconds
+        self.timer.timeout.connect(self.update_fields)
+        self.timer.start()
 
     def check_serial_port(self):
 
@@ -548,7 +548,6 @@ class CMJ_UI(QMainWindow):
             log.error(f"self.preferences_window.show() an error occurred: {e}")
 
     def protocol_type_single(self):
-        log.f()
         self.protocol_type_selected = "single"
         self.config_obj.set_config("protocol_type", self.protocol_type_selected)
 
@@ -965,6 +964,7 @@ if __name__ == "__main__":
 
     window.statusBar().showMessage(f"Version {__version__}")
     result = app.exec()
+    log.msg(f'Application Closed Properly.  Result: {result}')
     sys.exit(result)
 
 

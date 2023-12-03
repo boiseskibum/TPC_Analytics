@@ -26,8 +26,6 @@ except:
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
-print(f'####### inside trial level_str: {log.level_str}, level {log.level}')
-
 
 ##########################################################
 class JT_Trial:
