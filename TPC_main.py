@@ -150,16 +150,17 @@ class CMJ_UI(QMainWindow):
 
         self.application_name = __application_name__
 
-        str = ""
-        str = f"The following things will need to be set up in order to run this applicaton:\n"
-        str = str + f"- assign USB communications port, see Settings tab\n"
-        str = str + f"- assign list of users file (.csv), see Settings tab\n"
-        str = str + f"- assign directory location of where to create output or saved files, see Settings tab\n"
-        str = str + f"- calibration will need to be done for the left and right plates\n"
-        str = str + f"  if only a single device is used then just the one calibration is necessary\n"
-        str = str + f"  it is recommended that calibration be done for each testing session\n"
-        str = str + f"  \n"
+        str = """
+        The following things will need to be set up in order to run this applicaton:
+        - assign USB communications port, see Settings tab
+        - assign list of users file (.csv), see Settings tab
+        - assign directory location of where to create output or saved files, see Settings tab
+        - calibration will need to be done for the left and right plates
+          if only a single device is used then just the one calibration is necessary
+          it is recommended that calibration be done for each testing session
+        """
         self.help_str = str
+        self.debug_mode = False
 
         self.jt_reader = None
         self.video1 = None
@@ -186,21 +187,24 @@ class CMJ_UI(QMainWindow):
         fileMenu = menubar.addMenu('File')
 
         # Creating actions for the File menu
-        dirMaintAction = QAction('Directories and Maintenance', self)
         preferenceAction = QAction('Settings', self)   # this shows up as preferences in the MACOS
         addAthleteAction = QAction('Add Athlete', self)
+        dirMaintAction = QAction('Directories and Maintenance', self)
+        toggleDebugAction = QAction('Toggle Debug Logging', self)
         aboutAction = QAction('About', self)
 
         # Adding actions to the File menu
         fileMenu.addAction(preferenceAction)
-        fileMenu.addAction(dirMaintAction)
         fileMenu.addAction(addAthleteAction)
+        fileMenu.addAction(dirMaintAction)
+        fileMenu.addAction(toggleDebugAction)
         fileMenu.addAction(aboutAction)
 
         # Connect the actions to their respective functions
         preferenceAction.triggered.connect(self.preferences_screen)
-        dirMaintAction.triggered.connect(self.showDirMaint)
         addAthleteAction.triggered.connect(self.showUserAddDialog)
+        dirMaintAction.triggered.connect(self.showDirMaint)
+        toggleDebugAction.triggered.connect(self.toggleDebugLog)
         aboutAction.triggered.connect(self.showAbout)
 
 
@@ -541,7 +545,20 @@ class CMJ_UI(QMainWindow):
             self.athlete_combobox.addItems(self.athletes)
 
     def showAbout(self):
-        log.debug("About clicked")
+        bigB = jtd.JT_DialogLongText(self, title="About TPC", msg=__copyright__)
+        bigB.exec()
+
+    def toggleDebugLog(self):
+        if self. debug_mode == False:
+            value = jtd.JT_Dialog(self, "Debug Logging", "Turning ON Debug Logging", "okcancel")
+            if value:
+                self.debug_mode = True
+                log.set_logging_level("DEBUG")
+        else:
+            value = jtd.JT_Dialog(self, "Debug Logging", "Turning OFF Debug Logging", "okcancel")
+            if value:
+                self.debug_mode = False
+                log.set_logging_level("INFO")
 
     def preferences_screen(self):
         self.preferences_window = jtpref.JT_PreferencesWindow(self.config_obj, self.reader_obj)

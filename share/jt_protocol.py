@@ -20,13 +20,13 @@ class JT_protocol:
     def __init__(self):
 
         # Column headers
-        columns = ["protocol", "type", "name", "short_name", "leg"]
+        columns = ["protocol", "short_protocol", "type", "name", "short_name", "leg"]
 
         # Given data in rows
         data = [
-            ["JTDcmj", "double", "CMJ", "short_name", "both"],
-            ["JTSextL", "single", "Quad Extension L", "Quad Extension", "left"],
-            ["JTSextR", "single", "Quad Extension R", "Quad Extension", "right"]
+            ["JTDcmj",  "JTDcmj", "double", "CMJ", "CMJ", "both"],
+            ["JTSextL", "JTSext", "single", "Quad Extension L", "Quad Extension", "left"],
+            ["JTSextR", "JTSext", "single", "Quad Extension R", "Quad Extension", "right"]
         ]
 
         self.df = pd.DataFrame(data, columns=columns)
@@ -46,8 +46,13 @@ class JT_protocol:
     def get_name_by_protocol(self, protocol):
         return self.df.loc[self.df['protocol'] == protocol, 'name'].values[0]
 
-    def get_short_name_by_protocol(self, protocol):
-        return self.df.loc[self.df['protocol'] == protocol, 'short_name'].values[0]
+    def get_short_name_by_short_protocol(self, short_protocol):
+        try:
+            val = self.df.loc[self.df['short_protocol'] == short_protocol, 'short_name'].values[0]
+        except:
+            log.info(f'Could not find protocol: {short_protocol}')
+            val = None
+        return val
 
     def get_leg_by_protocol(self, protocol):
         return self.df.loc[self.df['protocol'] == protocol, 'leg'].values[0]

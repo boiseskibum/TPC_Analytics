@@ -1,64 +1,45 @@
-import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from PyQt6.QtWidgets import QApplication, QDialog, QVBoxLayout, QTextEdit, QPushButton
 
-class PlotWidget(QWidget):
+__copyright__ = """This software is designed to provide data from sensors (load cells), store the data,
+    and provide the data in a usable format for Strength and Conditioning analytics
+    Copyright (C) 2023  Jake Taylor and Steve Taylor
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+
+class AboutDialog(QDialog):
     def __init__(self, parent=None):
-        super().__init__(parent)
-        self.figure, self.ax = plt.subplots()
-        self.canvas = FigureCanvas(self.figure)
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.setLayout(layout)
+        super(AboutDialog, self).__init__(parent)
 
-    def plot(self, x, y):
-        self.ax.clear()
-        self.ax.plot(x, y)
-        self.canvas.draw()
+        self.setWindowTitle("About")
 
-class MainWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.current_plot_index = 0
-        self.initUI()
+        self.layout = QVBoxLayout(self)
 
-    def initUI(self):
-        self.plot_data = [
-            ([j for j in range(10)], [j * (i + 1) for j in range(10)]) for i in range(4)
-        ]
+        # Add a text edit for the long text
+        self.textEdit = QTextEdit(self)
+        self.textEdit.setReadOnly(True)
+        self.textEdit.setText(__copyright__)
+        self.layout.addWidget(self.textEdit)
 
-        self.plot_widget = PlotWidget()
-        self.plot_widget.plot(*self.plot_data[self.current_plot_index])
+        # Add a close button
+        self.closeButton = QPushButton("Close", self)
+        self.closeButton.clicked.connect(self.close)
+        self.layout.addWidget(self.closeButton)
 
-        next_button = QPushButton('Next', self)
-        next_button.clicked.connect(self.showNextPlot)
+        self.resize(600, 400)  # You can adjust the size as needed
 
-        prev_button = QPushButton('Previous', self)
-        prev_button.clicked.connect(self.showPreviousPlot)
+app = QApplication([])
 
-        layout = QVBoxLayout()
-        layout.addWidget(self.plot_widget)
-        layout.addWidget(next_button)
-        layout.addWidget(prev_button)
-
-        central_widget = QWidget()
-        central_widget.setLayout(layout)
-        self.setCentralWidget(central_widget)
-
-        self.setGeometry(100, 100, 800, 600)
-        self.setWindowTitle('Multiple Plots Example')
-        self.show()
-
-    def showNextPlot(self):
-        self.current_plot_index = (self.current_plot_index + 1) % len(self.plot_data)
-        self.plot_widget.plot(*self.plot_data[self.current_plot_index])
-
-    def showPreviousPlot(self):
-        self.current_plot_index = (self.current_plot_index - 1) % len(self.plot_data)
-        self.plot_widget.plot(*self.plot_data[self.current_plot_index])
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    sys.exit(app.exec())
+dialog = AboutDialog()
+dialog.exec()

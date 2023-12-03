@@ -1,46 +1,26 @@
-import sys
-import time
-from PyQt6.QtWidgets import QApplication, QProgressDialog, QLabel, QVBoxLayout, QPushButton, QWidget
-from PyQt6 import QtCore, QtWidgets
+from PyQt6.QtWidgets import QApplication, QMessageBox
+__copyright__ = """This software is designed to provide data from sensors (load cells), store the data,
+    and provide the data in a usable format for Strength and Conditioning analytics
+    Copyright (C) 2023  Jake Taylor and Steve Taylor
 
-class FileProcessor(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("File Processor")
-        self.setGeometry(100, 100, 400, 200)
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    any later version.
 
-        layout = QVBoxLayout(self)
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-        # Button to start processing files
-        start_button = QPushButton("Process Files", self)
-        start_button.clicked.connect(self.process_files)
-        layout.addWidget(start_button)
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+app = QApplication([])
 
-        # Label to display progress
-        self.progress_label = QLabel(self)
-        layout.addWidget(self.progress_label)
-
-    def process_files(self):
-        total_files = 129
-        delay = 0.05  # Delay in seconds for each file processing
-
-        # Create QProgressDialog
-        progress = QProgressDialog("Processing Files...", "Cancel", 0, total_files, self)
-        progress.setWindowModality(QtCore.Qt.WindowModality.WindowModal)
-
-        for file_number in range(1, total_files + 1):
-            time.sleep(delay)  # Simulate file processing time
-            progress.setValue(file_number)
-            progress.setLabelText(f"Processing File {file_number}/{total_files}")
-            QtWidgets.QApplication.processEvents()  # Process events to update the UI
-            if progress.wasCanceled():
-                break
-
-        progress.setValue(total_files)  # Ensure the progress bar reaches 100%
-        self.progress_label.setText("Processing completed.")
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = FileProcessor()
-    window.show()
-    sys.exit(app.exec())
+msgBox = QMessageBox()
+msgBox.setWindowTitle("About")
+msgBox.setText(__copyright__)  # Your long about text
+#msgBox.setStandardButtons(QMessageBox.Ok)
+msgBox.setStandardButtons(QMessageBox.StandardButton.Ok)
+msgBox.exec()

@@ -886,6 +886,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             return
 
         list_of_combos = self.trial_mgr_obj.get_athletes_and_protocols_combinations()
+#        print(f'list of combos \n {list_of_combos}')
 
         if len(list_of_combos) < 1:
             log.info(f'No data has been retrieved for any athletes')
@@ -899,14 +900,17 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             athlete_item = QTreeWidgetItem([athlete])
             self.treeWidget_reports.addTopLevelItem(athlete_item)
 
+            # get protocols that are valid for a given athlete
             protocols_for_athlete = list_of_combos[list_of_combos['athlete'] == athlete]['short_protocol'].unique().tolist()
 
             # for specific athlete, load protocols that they have done
             for protocol in protocols_for_athlete:
-                protocol_item = QTreeWidgetItem([protocol])
-                athlete_item.addChild(protocol_item)
-                protocol_item.setData(0, Qt.ItemDataRole.UserRole, athlete + '||' + protocol)
-
+                short_name = self.config_obj.protocol_obj.get_short_name_by_short_protocol(protocol)
+                if short_name is not None:
+                    protocol_item = QTreeWidgetItem([short_name])
+                    athlete_item.addChild(protocol_item)
+                    protocol_item.setData(0, Qt.ItemDataRole.UserRole, athlete + '||' + protocol)
+#                    print (f'***** athlete: {athlete}  protocol: {protocol} short_name: {short_name}')
         self.expand_tree_widget(self.treeWidget_reports)
 
     def item_clicked_reports(self, item, column):
