@@ -18,6 +18,7 @@ __copyright__ = """This software is designed to provide data from sensors (load 
 """
 ######################################################################
 
+
 __version__ = '2023-12-2.0'   #Format is date and build number from that day (hopefully the latter isn't used')
 __application_name__ = 'Taylor Performance Consulting Analytics'
 
@@ -26,7 +27,7 @@ from share import jt_util as util
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
-log.prefix = '$$'
+#log.prefix = '$$'
 log.set_temp_startup_buffering()
 
 log.msg(f'**** {__application_name__} ****\n  **** Version: {__version__}, Authors: Jake and Steve Taylor ****\n')
