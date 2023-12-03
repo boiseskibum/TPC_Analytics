@@ -53,6 +53,10 @@ class jt_logging(object):
     log_prefix = None
     start_timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     file_handle = None
+    prefix = ''
+    temp_buffer = None
+    level_str = "INFO"
+    level = logging_levels[level_str]
 
     def __new__(cls, *args, **kwargs):
         if not jt_logging.__instance:
@@ -61,9 +65,7 @@ class jt_logging(object):
         return jt_logging.__instance
 
     def __init__(self):
-        self.level_str = "INFO"
-        self.level = logging_levels[self.level_str]
-        self.temp_buffer = None
+        pass
 
     #### PUBLIC Functions  ####
 
@@ -173,7 +175,7 @@ class jt_logging(object):
         self.print_to_file(output_str)
 
         #write to screen
-        print(f"{output_str}")
+        print(f"{self.prefix}{output_str}")
 
         return output_str
 

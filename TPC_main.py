@@ -26,6 +26,7 @@ from share import jt_util as util
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
+log.prefix = '$$'
 log.set_temp_startup_buffering()
 
 log.msg(f'**** {__application_name__} ****\n  **** Version: {__version__}, Authors: Jake and Steve Taylor ****\n')
@@ -44,7 +45,6 @@ from PIL import Image, ImageTk   # used for icon
 # Import necessary modules
 import os, platform, glob, sys, time, json, datetime
 import getpass as gt   #username info
-from datetime import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg

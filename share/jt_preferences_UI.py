@@ -136,6 +136,12 @@ class JT_PreferencesWindow(QMainWindow):
         else:
             self.video2.camera_offline()
 
+
+        ###### Ok ######
+        trow += 1
+        self.ok_button = QPushButton("  Ok  ", clicked=self.close)
+        layout.addWidget(self.ok_button, trow, 1)
+
     def reload_serial_ports(self):
 
         # get list of ports
