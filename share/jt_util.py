@@ -18,6 +18,21 @@ import datetime
 import platform
 import os, sys, subprocess
 
+# This is a class to be utilized locally to hold a string buffer.  This is utilized to temporarily hold
+# strings before the path is known to store information to log files
+class StringBuffer:
+    def __init__(self, max_size=1000):
+        self.buffer = []
+        self.max_size = max_size
+
+    def add(self, string):
+        if len(self.buffer) >= self.max_size:
+            self.buffer.pop(0)  # Remove the oldest entry
+        self.buffer.append(string)
+
+    def get_all(self):
+        return self.buffer
+
 #############################################
 # jt_logging class
 #
@@ -48,6 +63,7 @@ class jt_logging(object):
     def __init__(self):
         self.level_str = "INFO"
         self.level = logging_levels[self.level_str]
+        self.temp_buffer = None
 
     #### PUBLIC Functions  ####
 
@@ -84,6 +100,20 @@ class jt_logging(object):
         self.log_path = path
         self.log_prefix = prefix
 
+        # if using buffer, iterate through strings in buffer sending them to the log file.  After doing so
+        # then eliminate the buffer and in the future srings will go directly there
+        if self.temp_buffer is not None:
+            buff = self.temp_buffer.get_all()
+            print(f'***** len buff: {len(buff)}')
+            for str in buff:
+                self.print_to_file(str)
+            self.temp_buffer = None
+
+    # this function is utilized to turn buffering on until at which point the set_log_file function can
+    # be called with the path information which is unknown on application startup.
+    def set_temp_startup_buffering(self):
+        self.temp_buffer = StringBuffer()
+
     #outputs message regardless
     def msg(self, msg = ""):
         self.print(": " + msg, 1)
@@ -114,7 +144,7 @@ class jt_logging(object):
             self.print(output_str, 1)
 
     ## The PRIVATE functions below are for internal use only
-    def print(self, output_str = "", indentation_subtaction = 0, include_stack = False):
+    def print(self, output_str = "", indentation_subtraction = 0, include_stack = False):
         #output_str is any string to print out.  For the user of this
         #indentation_subtraction is for internal use only. speficially the f function
         indentation_block = ".  "
@@ -125,7 +155,7 @@ class jt_logging(object):
         num_functions_deep = jt_num_functions_deep(wholeStack)
 
         #create spacing (tabs going over)
-        x = 1 + indentation_subtaction
+        x = 1 + indentation_subtraction
         while x < num_functions_deep:
           indentation_str = indentation_str + indentation_block
           x += 1
@@ -135,6 +165,9 @@ class jt_logging(object):
           output_str = stack_str + "  " + output_str
 
         output_str = indentation_str + output_str
+
+        if self.temp_buffer is not None:
+            self.temp_buffer.add(output_str)
 
         #write to log file if set up
         self.print_to_file(output_str)

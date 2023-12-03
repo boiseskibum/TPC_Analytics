@@ -26,6 +26,7 @@ from share import jt_util as util
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
+log.set_temp_startup_buffering()
 
 log.msg(f'**** {__application_name__} ****\n  **** Version: {__version__}, Authors: Jake and Steve Taylor ****\n')
 log.msg(f'Copyright Information:\n{__copyright__}\n')
@@ -374,6 +375,9 @@ class CMJ_UI(QMainWindow):
                     sys.exit()
 
 #        log.msg(f"path_app: {window.config_obj.path_app}")
+
+        # Initiate logging to a file in the log file directory
+        log.set_log_file(self.config_obj.path_log, 'TPC_')
 
         ##### serial port setup #####
         self.reader_obj = jts.SerialDataReader()
