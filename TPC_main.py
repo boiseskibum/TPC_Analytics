@@ -24,6 +24,7 @@ __application_name__ = 'Taylor Performance Consulting Analytics'
 
 # debuggging and logging
 from share import jt_util as util
+from share import UI_add_athlete as jtaa
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
@@ -35,16 +36,14 @@ log.msg(f'Copyright Information:\n{__copyright__}\n')
 log.msg(f'INFO - Valid logging levels are: {util.logging_levels}')
 
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox
-from PyQt6.QtWidgets import QLineEdit, QPushButton, QMenu, QComboBox, QToolBar, QRadioButton
-from PyQt6.QtWidgets import QMessageBox, QDialog, QFileDialog
+from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QLabel, QCheckBox
+from PyQt6.QtWidgets import QPushButton, QComboBox, QRadioButton
+from PyQt6.QtWidgets import QDialog, QFileDialog
 from PyQt6.QtGui import QPixmap, QIcon
 from PyQt6.QtGui import QAction
 
-from PIL import Image, ImageTk   # used for icon
-
 # Import necessary modules
-import os, platform, glob, sys, time, json, datetime
+import os, platform, glob, sys, time, json
 import getpass as gt   #username info
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -67,9 +66,8 @@ from share import jt_trial as jtt
 from share import jt_trial_manager as jttm
 from share import jt_video as jtv
 from share import jt_plot as jtpl
-from share import jt_maintenance_UI as jtmaint
-from share import jt_preferences_UI as jtpref
-import jt_add_athlete_dialog as jtaa
+from share import UI_maintenance as jtmaint
+from share import UI_preferences as jtpref
 import TPC_analytics_UI as TPCa
 
 # Testing data

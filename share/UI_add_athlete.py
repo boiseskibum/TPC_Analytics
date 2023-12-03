@@ -1,7 +1,11 @@
 from PyQt6.QtWidgets import QDialog, QApplication, QDialogButtonBox
-from jt_add_athlete_dialog_designer import Ui_Dialog_add_user
 
-class AddAthleteDialog(QDialog, Ui_Dialog_add_user):
+try:
+    from . import UI_add_athlete_designer as aaUI
+except:
+    import UI_add_athlete_designer as aaUI
+
+class AddAthleteDialog(QDialog, aaUI.Ui_Dialog_add_user):
     def __init__(self):
         super().__init__()
 
