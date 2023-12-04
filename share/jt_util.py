@@ -44,7 +44,7 @@ logging_levels = {
     "INFO": 20,
     "WARNING": 30,
     "ERROR": 40,
-    "CRITICAL": 50
+    "CRITCAL": 50
     }
 
 class jt_logging(object):

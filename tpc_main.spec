@@ -1,11 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 
-block_cipher = None
-
-
 a = Analysis(
-    ['tpc_main.py'],
+    ['TPC_main.py'],
     pathex=[],
     binaries=[],
     datas=[('resources/img/', 'resources/img/')],
@@ -14,21 +11,17 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
     noarchive=False,
 )
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+pyz = PYZ(a.pure)
 
 exe = EXE(
     pyz,
     a.scripts,
     a.binaries,
-    a.zipfiles,
     a.datas,
     [],
-    name='tpc_main',
+    name='TPC_main',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -41,4 +34,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['/resources/img/jt1.icns'],
 )

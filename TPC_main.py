@@ -1,26 +1,28 @@
 # TPC_Main program
 __copyright__ = """This software is designed to provide data from sensors (load cells), store the data,
-    and provide the data in a usable format for Strength and Conditioning analytics
-    Copyright (C) 2023  Jake Taylor and Steve Taylor
+and provide the data in a usable format for Strength and Conditioning analytics
+Copyright (C) 2023, 2024  Jake Taylor and Steve Taylor
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 ######################################################################
 
 
-__version__ = '2023-12-2.0'   #Format is date and build number from that day (hopefully the latter isn't used')
+__version__ = '2023-12-3.0'   #Format is date and build number from that day (hopefully the latter isn't used')
 __application_name__ = 'Taylor Performance Consulting Analytics'
+__about__ = f'{__application_name__}, Version: {__version__} \n\n{__copyright__}'
+
 
 # debuggging and logging
 from share import jt_util as util
@@ -31,16 +33,14 @@ log = util.jt_logging()
 #log.prefix = '$$'
 log.set_temp_startup_buffering()
 
-log.msg(f'**** {__application_name__} ****\n  **** Version: {__version__}, Authors: Jake and Steve Taylor ****\n')
+log.msg(f'**** {__application_name__} ****\n  **** Version: {__version__}, Authors: Jake Taylor and Steve Taylor ****\n')
 log.msg(f'Copyright Information:\n{__copyright__}\n')
 log.msg(f'INFO - Valid logging levels are: {util.logging_levels}')
 
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QTimer, QSize
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QLabel, QCheckBox
-from PyQt6.QtWidgets import QPushButton, QComboBox, QRadioButton
-from PyQt6.QtWidgets import QDialog, QFileDialog
-from PyQt6.QtGui import QPixmap, QIcon
-from PyQt6.QtGui import QAction
+from PyQt6.QtWidgets import QPushButton, QComboBox, QRadioButton, QDialog, QFileDialog
+from PyQt6.QtGui import QPixmap, QIcon, QAction
 
 # Import necessary modules
 import os, platform, glob, sys, time, json
@@ -214,10 +214,6 @@ class CMJ_UI(QMainWindow):
 
         trow = 0
 
-        # Add Icon - Load the PNG image using PIL
-        w = 75
-        h = 75
-
         # this code is to handle both PyCharm (local directory) or the case for PyInstaller
         base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
         log.info(f'Base_path: {base_path}')
@@ -226,8 +222,10 @@ class CMJ_UI(QMainWindow):
         self.config_obj = jtc.JT_Config(self.application_name, 'TPC', base_path)
 
         image = self.config_obj.validate_path_and_return_QImage("jt.ico")
+        image = self.config_obj.validate_path_and_return_QImage("jt_app_round.png")
         if image is not None:
-            scaled_image = image.scaled(w,h)
+            size = 88
+            scaled_image = image.scaled(size,size)
             ico_image = QPixmap.fromImage(scaled_image)
 
             # Create the ico label
@@ -315,11 +313,14 @@ class CMJ_UI(QMainWindow):
         self.grid_layout.addWidget(self.stop_button, trow, 1)
 
         # Save Data button and dropdown menu for user
-        self.save_button = QPushButton("Save Data", clicked=self.save_data_to_csv)
+        self.save_button = QPushButton("Save Trial", clicked=self.save_trial_to_csv)
         self.save_button.setEnabled(False)
         self.grid_layout.addWidget(self.save_button, trow, 2)
 
         self.data_button = QPushButton("Analytics", clicked=self.jt_analytics)
+        self.data_button.setIcon(QIcon(self.config_obj.get_img_path() + "line-chart.png"))
+        size = 30
+        self.data_button.setIconSize(QSize(size, size))
         self.data_button.setEnabled(True)
         self.grid_layout.addWidget(self.data_button, trow, 3)
 
@@ -545,7 +546,7 @@ class CMJ_UI(QMainWindow):
             self.athlete_combobox.addItems(self.athletes)
 
     def showAbout(self):
-        bigB = jtd.JT_DialogLongText(self, title="About TPC", msg=__copyright__)
+        bigB = jtd.JT_DialogLongText(self, title="About TPC", msg=__about__)
         bigB.exec()
 
     def toggleDebugLog(self):
@@ -710,7 +711,7 @@ class CMJ_UI(QMainWindow):
                                        type="yesno")
             # save the data if requested
             if value == True:
-                self.save_data_to_csv(True)
+                self.save_trial_to_csv(True)
             else:
                 pass
 
@@ -886,7 +887,7 @@ class CMJ_UI(QMainWindow):
         self.analytics_ui = None
 
     ########  SAVE DATA ########
-    def save_data_to_csv(self, lose_last_run=False):
+    def save_trial_to_csv(self, lose_last_run=False):
 
         if lose_last_run == True:
             value = jtd.JT_Dialog(parent=self, title="Save Last Run", msg="If you say NO it will be lost", type="yesno")
