@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ######################################################################
 
 
-__version__ = '2023-12-3.0'   #Format is date and build number from that day (hopefully the latter isn't used')
+__version__ = '2023-12-5.0'   #Format is date and build number from that day (hopefully the latter isn't used')
 __application_name__ = 'TPC Analytics'
 __about__ = f'{__application_name__}, Version: {__version__} \n\n{__copyright__}'
 
