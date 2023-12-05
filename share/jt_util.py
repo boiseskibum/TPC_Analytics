@@ -362,7 +362,7 @@ def open_file_in_native_viewer(filepath):
     if os.path.exists(filepath):
         # Make sure the file path is absolute
         absolute_filepath = os.path.abspath(filepath)
-        print(f'OS opening file: {absolute_filepath}')
+        log.debug(f'OS opening file: {absolute_filepath}')
         # Check the operating system
         if sys.platform.startswith("darwin"):
             # macOS
@@ -371,9 +371,9 @@ def open_file_in_native_viewer(filepath):
             # Windows
             subprocess.run(["start", absolute_filepath], shell=True)
         else:
-            print("ERROR Unsupported OS")
+            log.error("ERROR Unsupported OS")
     else:
-        print(f'open_file_explorer ERROR:   filepath: {filepath} does not exist ')
+        log.error(f'open_file_explorer ERROR:   filepath: {filepath} does not exist ')
 
 # opens the finder (macOS) or explorer (windows) to the path input.  Accepts either a filepath or just the path to
 # a directory
@@ -395,196 +395,188 @@ def open_file_explorer(file_path):
             # For Windows
             subprocess.run(['explorer', absolute_path])
     else:
-        print(f'open_file_explorer ERROR:   directory: {directory} does not exist ')
+        log.error(f'open_file_explorer ERROR:   directory: {directory} does not exist ')
+
+##################################################
+# log is utilized for internally for this function
+log = jt_logging()
 
 #######################################################################################################################
 ###  Examples
 #######################################################################################################################
-# function nesting example
-def foo1(my_string):
-    log = jt_logging()
-    log.f("srt foo1()")
-    log.print(f'whoami {jt_whoami()}')
-    jt_whoami()
-    log.print(f"jt in foo1: {my_string}")
-    log.debug("debug log entry")
-    log.info("info log entry")
-    log.warning("warning log entry")
 
-    log.set_logging_level("INFO")
-    foo2("abc foo2 testing")
-
-def foo2(my_string):
-    log = jt_logging()
-    log.f("srt foo2()")
-    log.print(f"jt in foo2: {my_string}")
-    log.debug("debug log entry")
-    log.info("info log entry")
-    log.warning("warning log entry")
-
-    log.set_logging_level("WARNING")
-    log.warning("warning log entry try 2")
-    log.f()
-
-    log.error("error log entry")
-
-    log.set_logging_level("SCREW UP)")
-
-    foo3("def")
-
-def foo3(my_string):
-    log = jt_logging()
-    log.f("srt foo3()")
-    log.print(f"jt in foo3: {my_string}")
-    log.print(jt_whoami())
-
-    foo4("xyz")
-
-
-def foo4(my_string):
-    log = jt_logging()
-    log.f("srt foo4()")
-    my_int = 39
-    log.print(f"jt in foo4: {my_string}")
-    log.print(f"Here: {jt_whoami()}, {my_int}")
-
-#######################
-def example1():
-  log = jt_logging()
-  log.f("srt example1()")
-  log.print("abc")
-  log.print("def")
-
-  log.debug("debug log entry")
-  log.info("info log entry")
-  log.warning("warning log entry")
-
-  foo1("ohmy")
-
-
-######################
-def example2():
-
-  log = jt_logging("srt example2()")
-
-  log.print("my test str")
-  print(log.set_logging_level("INFO"))
-
-  # should not print anything
-  log.debug("abc def")
-
-  #should print
-  log.info("xyz")
-
-  log.set_logging_level("DEBUG")
-
-  #should print
-  log.debug("abc def")
-
-###########################
-def example_with_logging():
-  log = jt_logging()
-  log.set_log_file('/gdrive/MyDrive/', 'example_')
-  log.f()
-  log.print("abc")
-  log.print("")
-
-  log.debug("debug log entry")
-  log.info("info log entry")
-  log.warning("warning log entry")
-
-  foo1("ohmy")
-
-def example_a():
-   log.f("srt example_a()")
-   log.print("abc")
-   foo1("ohmy")
-
-
-def example_b():
-   log.f("srt example_b()")  
-   example1()
-
-def example_c(): 
-    #example writing to log file
-    log.f("srt example_c()")
-
-    from google.colab import drive
-    drive.mount('/gdrive')
-
-    example_with_logging()
-
-#debug stack size
-
-def funct_debug():
-  print(f'funct_debug - who am I: {jt_whoami()}')
-  wholeStack = inspect.stack()
-
-  stack_str = jt_stack_str(wholeStack)
-  depth = jt_num_functions_deep(wholeStack)
-
-  print( f'  depth {depth}, stack: {stack_str}')
-
-def jt_funct1():
-  print(f'\nfunct1 - who am I: {jt_whoami()}')
-  funct_debug()
-
-def jt_funct2():
-  print(f'\nfunct2 - who am I: {jt_whoami()}')
-  funct_debug()
-  jt_funct1()
-
-# essentially the main starts here
-#print(f'\ntop - who am I: {jt_whoami()}')
-
-#funct_debug()
-
-#jt_funct1()
-
-#jt_funct2()
-
-import inspect
-
-def func1():
-    func2()
-
-def func2():
-    func3()
-
-def func3():
-    stack = inspect.stack()
-    print(f'stack type {type(stack)}')
-    funct_name = stack[0].function
-    print(f'func {funct_name}')
-    for frame in stack:
-        if(frame.function[0] == '<'):
-            break
-        print(frame.function)
-
-
-#func1()
-
-#Print out whole stack
-
-def more_debug():
-    wholeStack = inspect.stack()
-
-    stack = []
-    num_functions_deep = 0
-
-    for frame in wholeStack:
-
-        if(frame.function[0] == '<'):
-            break
-        stack.append(frame.function)
-        num_functions_deep += 1
-
-    print (f'\nstack {stack}, {num_functions_deep}')
 
 ### Main routines
 if __name__ == '__main__':
 
-    log = jt_logging()
+    # function nesting example
+    def foo1(my_string):
+        log = jt_logging()
+        log.f("srt foo1()")
+        log.print(f'whoami {jt_whoami()}')
+        jt_whoami()
+        log.print(f"jt in foo1: {my_string}")
+        log.debug("debug log entry")
+        log.info("info log entry")
+        log.warning("warning log entry")
+
+        log.set_logging_level("INFO")
+        foo2("abc foo2 testing")
+
+    def foo2(my_string):
+        log = jt_logging()
+        log.f("srt foo2()")
+        log.print(f"jt in foo2: {my_string}")
+        log.debug("debug log entry")
+        log.info("info log entry")
+        log.warning("warning log entry")
+
+        log.set_logging_level("WARNING")
+        log.warning("warning log entry try 2")
+        log.f()
+
+        log.error("error log entry")
+
+        log.set_logging_level("SCREW UP)")
+
+        foo3("def")
+
+    def foo3(my_string):
+        log = jt_logging()
+        log.f("srt foo3()")
+        log.print(f"jt in foo3: {my_string}")
+        log.print(jt_whoami())
+
+        foo4("xyz")
+
+
+    def foo4(my_string):
+        log = jt_logging()
+        log.f("srt foo4()")
+        my_int = 39
+        log.print(f"jt in foo4: {my_string}")
+        log.print(f"Here: {jt_whoami()}, {my_int}")
+
+    #######################
+    def example1():
+      log = jt_logging()
+      log.f("srt example1()")
+      log.print("abc")
+      log.print("def")
+
+      log.debug("debug log entry")
+      log.info("info log entry")
+      log.warning("warning log entry")
+
+      foo1("ohmy")
+
+
+    ######################
+    def example2():
+
+      log = jt_logging("srt example2()")
+
+      log.print("my test str")
+      print(log.set_logging_level("INFO"))
+
+      # should not print anything
+      log.debug("abc def")
+
+      #should print
+      log.info("xyz")
+
+      log.set_logging_level("DEBUG")
+
+      #should print
+      log.debug("abc def")
+
+    ###########################
+    def example_with_logging():
+      log = jt_logging()
+      log.set_log_file('/gdrive/MyDrive/', 'example_')
+      log.f()
+      log.print("abc")
+      log.print("")
+
+      log.debug("debug log entry")
+      log.info("info log entry")
+      log.warning("warning log entry")
+
+      foo1("ohmy")
+
+    def example_a():
+       log.f("srt example_a()")
+       log.print("abc")
+       foo1("ohmy")
+
+    def example_b():
+       log.f("srt example_b()")
+       example1()
+
+    def example_c():
+        #example writing to log file
+        log.f("srt example_c()")
+
+        from google.colab import drive
+        drive.mount('/gdrive')
+
+        example_with_logging()
+
+    #debug stack size
+
+    def funct_debug():
+      print(f'funct_debug - who am I: {jt_whoami()}')
+      wholeStack = inspect.stack()
+
+      stack_str = jt_stack_str(wholeStack)
+      depth = jt_num_functions_deep(wholeStack)
+
+      print( f'  depth {depth}, stack: {stack_str}')
+
+    def jt_funct1():
+      print(f'\nfunct1 - who am I: {jt_whoami()}')
+      funct_debug()
+
+    def jt_funct2():
+      print(f'\nfunct2 - who am I: {jt_whoami()}')
+      funct_debug()
+      jt_funct1()
+
+
+    import inspect
+
+    def func1():
+        func2()
+
+    def func2():
+        func3()
+
+    def func3():
+        stack = inspect.stack()
+        print(f'stack type {type(stack)}')
+        funct_name = stack[0].function
+        print(f'func {funct_name}')
+        for frame in stack:
+            if(frame.function[0] == '<'):
+                break
+            print(frame.function)
+
+    def more_debug():
+        wholeStack = inspect.stack()
+
+        stack = []
+        num_functions_deep = 0
+
+        for frame in wholeStack:
+
+            if(frame.function[0] == '<'):
+                break
+            stack.append(frame.function)
+            num_functions_deep += 1
+
+        print (f'\nstack {stack}, {num_functions_deep}')
+
+
     log.msg("srt message")
     log.f("SRT top")
     more_debug()

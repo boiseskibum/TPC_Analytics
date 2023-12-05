@@ -349,16 +349,17 @@ class JT_Trial:
 
         # save videos in data directory
         for key, value in self.jt_videos.items():
-            filename = f"{self.protocol}_{self.athlete}_{self.timestamp_str}_{key}.mp4"
-            path_filename = path_data + filename
+            video_filename = f"{self.protocol}_{self.athlete}_{self.timestamp_str}_{key}.mp4"
+            path_filename = path_data + video_filename
             try:
                 value.save_video(path_filename)
                 log.msg(f"Saved Video: {path_filename}")
-                self.trial_dict[key] = path_filename
+                self.trial_dict[key] = video_filename
 
             except:
                 self.error_msg = f"FAILED to saved Video key: {key}: file: {path_filename}"
                 log.error(self.error_msg)
+        return(self.trial_dict)
 
     # this is a utility function just used for recreating the JSON list of all information for all trials.
     def recreate_trial_dict(self, filepath=None):
@@ -387,6 +388,7 @@ class JT_Trial:
                     log.error(f"something went wrong with finding videos for : {filepath} : file: {mp4_file}")
 
         return(self.trial_dict)
+
     def _setup_trial_dict(self):
         self.trial_dict = {}
         self.trial_dict['original_filename'] = self.original_filename

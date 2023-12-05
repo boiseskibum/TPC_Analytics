@@ -128,16 +128,15 @@ class JT_plot:
 
         plt.close()
 
-    # save filename to disk
-    # save_to_disk
-    def save_to_file(self, save_to_disk=True):
+    # save file to disk  (unless debugging
+    def save_plot_to_file(self, debug_it=False):
 
         # if filename isn't specified then get it from the local variable
         filepath = self.output_filepath
 
         # if filepath still isn't specifid then error out.
         if filepath == None:
-            log.error(f'Save_to_file - filepath to save is not specified')
+            log.error(f'Save_plot_to_file - filepath to save is not specified')
             return
 
         # start with clear the existing graph
@@ -192,20 +191,21 @@ class JT_plot:
 
         ax.set_ylim(self.yMin, self.yMax)
 
-#        plt.show
-
-        if(save_to_disk == True):
+        if debug_it == False:
             if (len(filepath) > 0):
+#                print(f"  ### saving image: {filepath}")
                 plt.savefig(filepath,
                             transparent=False,
                             facecolor='white', dpi=200,
                             bbox_inches="tight")
                 log.debug(f'Saved Graph: {filepath}')
             else:
-                log.error(f'jt_plot - no file path specified')
+                log.error(f'jt_plot - no file path specified: {filepath}')
                 return ''
         else:
+            log.error(f'****** SHOULD NOT BE HERE- about to plt.show: debug_it: {debug_it}  file_path: {filepath}')
             plt.show()
+            pass
 
         plt.close()
 
@@ -333,8 +333,8 @@ if __name__ == "__main__":
 
         def savePlot2(self):
             self.my_plot2.output_filepath = "testing/plot2_test.png"
-            self.my_plot2.save_to_file(False)   #shows the plot
-            self.my_plot2.save_to_file(True)    # saves plot to disk
+            self.my_plot2.save_plot_to_file(True)   #shows the plot
+            self.my_plot2.save_plot_to_file(False)    # saves plot to disk
 
 
     app = QApplication(sys.argv)

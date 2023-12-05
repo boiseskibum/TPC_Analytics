@@ -177,21 +177,22 @@ class JT_JsonTrialManager:
     # Appends the information from one Trial to the master file containing all trials
     def save_trial_indexing(self, trial_dict):
 
-        with open(self.trial_mgr_index_file_path, 'a') as file:
-            json.dump(trial_dict, file)
-            file.write('\n')
+        #add the index information to the existing file
+        try:
+            with open(self.trial_mgr_index_file_path, 'a') as file:
+                json.dump(trial_dict, file)
+                file.write('\n')
+        except:
+            log.error(f'While saving trial failed to append index for file: {trial_dict["original_filename"]} ')
 
-        log.debug(f"Trial Manager - writing trial to {self.trial_mgr_index_file_path}")
-
-# commenting out backup trial index because it can be reproduced.  Maybe the future but not right now
-#        self.backup_trial_index(trial_dict)
+        log.debug(f"Trial Manager - wrote trial index info to to {self.trial_mgr_index_file_path}")
 
         # if self.df is initialized then add the new row to it
-        if self.df != None:
+        if self.df is not None:
             # append data to existing df
             # this gets is the exact same as the process above where it creates a json, then extracts it back out
             # so that we can append it to the dataframe we already have.
-            json_str = json.dump(trial_dict)
+            json_str = json.dumps(trial_dict)
             data = []
             data.append(self._extract_keys(json_str))
             self.df = self.df.append(pd.Series(data, index=self.df.columns), ignore_index=True)

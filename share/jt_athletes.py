@@ -34,8 +34,8 @@ class JT_athletes:
             columns = ["athletes_name", "injured", "shank_length"]
             # Data in row format
             data = [
-                ["huey", "right", .25],
-                ["dewey", "left", .3]
+                ["-huey", "right", .25],
+                ["-dewey", "left", .3]
             ]
             self.df = pd.DataFrame(data, columns=columns)
 
@@ -45,7 +45,8 @@ class JT_athletes:
         try:
             self.df = pd.read_csv(self.athletes_file_path)
             unique_athletes = self.df["athletes_name"].unique()
-            return unique_athletes.tolist()
+            unique_athletes_sorted = sorted(unique_athletes)
+            return unique_athletes_sorted
         except:
             raise ValueError(f"Could not open athletes file: {self.athletes_file_path}")
 

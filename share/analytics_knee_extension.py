@@ -364,7 +364,7 @@ class JT_analytics_knee_ext_iso:
 
     def create_pdf(self):
         today_date = date.today()
-        logo = self.config_obj.resources + "jt.png"
+        logo = self.config_obj.get_img_path() + "jt.png"
         if not os.path.exists(logo):
             logo = "jt.png"
             if not os.path.exists(logo):
@@ -468,7 +468,7 @@ if __name__ == "__main__":
     leg_ext_analytics = JT_analytics_knee_ext_iso(config_obj, 'Isaiah Wright')
 
     for plot in leg_ext_analytics.plot_list:
-        plot.save_to_file(True)
+        plot.save_plot_to_file(True)
 
     leg_ext_analytics.create_pdf()
 

@@ -1,3 +1,4 @@
+import re
 from PyQt6.QtWidgets import QDialog, QApplication, QDialogButtonBox
 
 try:
@@ -29,18 +30,37 @@ class AddAthleteDialog(QDialog, aaUI.Ui_Dialog_add_user):
         athlete = self.athlete_edit.text()
         shank_length = self.shank_length_edit.text()
 
+        # remove any double spaces within the string and push it back
+
+        if bool(re.search(r' {2,}', athlete)):
+            athlete = re.sub(r'\s{2,}', ' ', athlete)
+            self.athlete_edit.setText(athlete)
+
         # Check if name is not empty and shan_length is a valid number
         try:
             shank_length_valid = float(shank_length) > 0
         except ValueError:
             shank_length_valid = False
 
+        def validate_name(s):
+            # Regular expression pattern
+            pattern = r'^[a-zA-Z0-9 ~]+$'
+
+            # Using re.match to check if the entire string matches the pattern
+            if re.match(pattern, s):
+                return True
+            else:
+                return False
+
+        valid_name = validate_name(athlete)
+
         # Enable or disable OK button
-        self.ok_button.setEnabled(athlete.strip() != "" and shank_length_valid)
+        self.ok_button.setEnabled(athlete.strip() != "" and shank_length_valid and valid_name)
 
     def get_values(self):
         # Retrieve values from the dialog
         athlete = self.athlete_edit.text()
+        athlete = athlete.strip()
         injured = self.left_right_comboBox.currentText()
         shank_length = self.shank_length_edit.text()  # Convert to float or int as needed
 
@@ -52,6 +72,7 @@ if __name__ == "__main__":
 
     if dialog.exec() == QDialog.DialogCode.Accepted:
         athlete, injured, shank_length = dialog.get_values()
-        print(f"athletes name: {athlete}, injured: {injured}, Shank Length: {shank_length}")
+        print(f"athletes name: |||{athlete}|||, injured: {injured}, Shank Length: {shank_length}")
 
     app.exec()
+    app.exit()

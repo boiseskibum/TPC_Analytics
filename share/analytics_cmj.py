@@ -215,10 +215,10 @@ class JT_analytics_cmj:
         my_plot.set_output_filepath(self.path_athlete_images + 'cmj_peak_power_graph.png')
         self.plot_list.append(my_plot)
 
-    def save_to_disk(self):
-
-        for plot in self.plot_list:
-            plot.save_to_file()
+    # def save_to_disk(self):
+    #
+    #     for plot in self.plot_list:
+    #         plot.save_plot_to_file()
 
     # PDF Standard graphs
     # code to create header and footer
@@ -227,7 +227,7 @@ class JT_analytics_cmj:
 
         today_date = date.today()
 
-        logo = self.config_obj.resources + "jt.png"
+        logo = self.config_obj.get_img_path() + "jt.png"
         if not os.path.exists(logo):
             logo = "jt.png"
             if not os.path.exists(logo):
@@ -321,7 +321,7 @@ class JT_analytics_cmj:
     # Documentation here: https://pyfpdf.github.io/fpdf2/Tutorial.html
     def create__pdf2(self):
         today_date = date.today()
-        logo = self.config_obj.resources + "jt.png"
+        logo = self.config_obj.get_img_path() + "jt.png"
         if not os.path.exists(logo):
             logo = "jt.png"
             if not os.path.exists(logo):
@@ -415,9 +415,9 @@ if __name__ == "__main__":
 
     cmj_analytics = JT_analytics_cmj(config_obj, 'huey')
 
-    #show graphs by passisng save_to_file a False parameter
+    #show graphs by passisng save_plot_to_file a False parameter
     for plot in cmj_analytics.plot_list:
-        plot.save_to_file()
+        plot.save_plot_to_file()
 
     cmj_analytics.create_pdf()
 

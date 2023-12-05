@@ -103,7 +103,7 @@ class JT_PDF_2_across:
 #        total_plots = 3   # allows me to shorten the list so I don't have to wait while debugging
         for plot in plots[:total_plots]:
 
-            filepath = plot.save_to_file()
+            filepath = plot.save_plot_to_file()
 
             # odd plot #
             if plot_num % 2 != 0:
@@ -119,7 +119,9 @@ class JT_PDF_2_across:
             #update progress on number of plots complete
             if my_pyqt_app is not None:
                 my_progressDialog.setValue(plot_num)
-                my_progressDialog.setLabelText(f"Processing graph {plot_num}/{total_plots}")
+                str = f"Processing graph {plot_num}/{total_plots}"
+                my_progressDialog.setLabelText(str)
+#                print(f'***{str}')
                 QtWidgets.QApplication.processEvents()  # Process events to update the UI
                 if total_plots < 15:
                     time.sleep(.1)  # Simulate file processing time
@@ -132,16 +134,19 @@ class JT_PDF_2_across:
                 y_start = master_y_start_master
                 row = 1
 
-
         if my_pyqt_app is not None:
             my_progressDialog.setValue(total_plots)  # Ensure the progress bar reaches 100%
             my_progressDialog.setLabelText(f"Processing graph {plot_num}/{total_plots}")
             QtWidgets.QApplication.processEvents()  # Process events to update the UI
             time.sleep(2)  # Simulate file processing time
 
-        log.info(f'saving PDF file: {self.output_file}')
         # save PDF File
-        pdf.output(self.output_file)
+        try:
+            pdf.output(self.output_file)
+            log.info(f'saved PDF file: {self.output_file}')
+        except:
+            log.error((f'Could not save PDF file: {self.output_file}'))
+
         return self.output_file
 
 if __name__ == "__main__":

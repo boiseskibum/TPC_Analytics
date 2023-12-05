@@ -1,6 +1,6 @@
 # TPC_analytics_UI.py
 
-import sys, cv2, platform, time
+import os, sys, cv2, platform, time
 import numpy as np
 
 from TPC_analytics_UI_designer import Ui_MainAnalyticsWindow
@@ -34,8 +34,8 @@ from share import jt_util as util
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
 
-log.set_logging_level("INFO")
-log.debug(f'INFO - Valid logging levels are: {util.logging_levels}')
+# log.set_logging_level("INFO")
+# log.debug(f'INFO - Valid logging levels are: {util.logging_levels}')
 
 from share import jt_dialog as jtd
 from share import jt_trial as jtt
@@ -284,6 +284,8 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             return
 
         unique_athletes = df['athlete'].unique()
+        unique_athletes.sort()
+
         for athlete in unique_athletes:
             athlete_item = QTreeWidgetItem([athlete])
             self.treeWidget.addTopLevelItem(athlete_item)
@@ -500,15 +502,34 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             return
 
         path_data = self.config_obj.path_data + self.current_trial.athlete + "/"
+        file_path = path_data + filename
 
-        self.video1_cv2 = cv2.VideoCapture(path_data + filename)
+        #validate if video file exists
+        if not os.path.exists(file_path):
+            log.error(f'Video file does not seem to exist: {file_path}')
+            return
+
+        try:
+            if os.path.exists(file_path):
+                self.video1_cv2 = cv2.VideoCapture(file_path)
+
+            # validated if file was successfully opened
+            if not self.video1_cv2.isOpened():
+                log.error(f"Error: cv2.VideoCapture Error: Could not open video file {file_path}")
+                self.video1_cv2.release()
+                self.video1_cv2 = None
+                return
+
+            log.debug(f'Opened video file: {file_path}, filename: {filename}')
+        except:
+            log.error(f'Failed to open video file: {file_path}')
+
         self.video_play_timer = QTimer(self)
         self.video_play_timer.timeout.connect(self.update_frame)
 
         self.video_speed_full = int( 1000/30 )   #frames per second
 
         self.video_speed = int(self.video_speed_full/self.speed_multiplier)
-
 
         #set iniitial frames mins and maxes and current
         self.starting_frame = 0   # this will always be zero
@@ -894,6 +915,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
         # Using a set to get unique values from the first element of each tuple
         unique_athletes = list_of_combos['athlete'].unique()
+        unique_athletes.sort()
 
         #load all athletes
         for athlete in unique_athletes:
@@ -1008,23 +1030,19 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         output_file = 'testing/asf.pdf'
         protocol_obj = self.config_obj.protocol_obj
 
+        log.debug(f'reports_create_pdf:  self.reports_protocol: {self.reports_protocol} reports_protocol: {self.reports_protocol}')
+
         # the following is a total hack to deal with what happens with when the protocol is shortened to
         # eliminate L or R at the end.   Oh well, probably not the last HACK.   Something clearly needs
         # to be done to improve this model on protocols
-        if self.reports_protocol.startswith('JTSext'):
-            protocol_name = protocol_obj.get_short_name_by_protocol('JTSextL')
-        else:
-            protocol_name = protocol_obj.get_name_by_protocol(self.reports_protocol)
-
+        protocol_name = protocol_obj.get_short_name_by_short_protocol(self.reports_protocol)
         # pdf filename to be created
-        pdf_filename = protocol_name + ' ' + self.reports_athlete + '.pdf'
+        pdf_filename = protocol_name + ' - ' + self.reports_athlete + '.pdf'
         output_file = self.config_obj.path_results + self.reports_athlete + '/' + pdf_filename
 
         #create the PDF file
         pdf_obj = jtpdf2.JT_PDF_2_across(self.config_obj, self.reports_athlete, protocol_name, output_file)
         pdf_filepath = pdf_obj.add_plots_and_create_pdf(self.plot_list, self)
-
-        log.info(f'created pdf{pdf_filepath}')
 
         # have the OS display the pdf
         util.open_file_in_native_viewer(pdf_filepath)
