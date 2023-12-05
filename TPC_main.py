@@ -378,8 +378,6 @@ class CMJ_UI(QMainWindow):
                 if value == None:
                     sys.exit()
 
-#        log.msg(f"path_app: {window.config_obj.path_app}")
-
         # Initiate logging to a file in the log file directory
         log.set_log_file(self.config_obj.path_log, 'TPC_')
 
@@ -497,6 +495,12 @@ class CMJ_UI(QMainWindow):
         self.l_calibration = False
         self.r_calibration = False
 
+        # Camera and video setup
+        camera_count, cameras = jtv.external_camera_count()
+        log.info(f'External Camera count: {camera_count}, Models: {cameras}')
+        if(camera_count > 0):
+            self.video_checkbox.setChecked(True)
+
         #variables for utilizing test data
         self.file_list = glob.glob("output*.txt")
 
@@ -507,6 +511,9 @@ class CMJ_UI(QMainWindow):
         self.timer.timeout.connect(self.update_fields)
         self.timer.start()
 
+    ##############################
+    #### INTERFACE Callbacks
+    ##############################
     # update branding
     def update_branding(self):
         brand = self.config_obj.get_config("branding")
@@ -695,6 +702,7 @@ class CMJ_UI(QMainWindow):
 
     def on_video_checkbox_checkbox_changed(self, value):
 
+#        print(f'######video changed was called: {value} ')
         if value != 0:
             self.video_on = True
             camera_index = self.config_obj.get_config('camera1')
@@ -714,15 +722,15 @@ class CMJ_UI(QMainWindow):
 
         #check if athlete selected
         if len(self.last_run_athlete) < 1:
-            jtd.JT_Dialog(parent=self, title="Start Run",
-                                   msg="You Must specify an athlete to run",
+            jtd.JT_Dialog(parent=self, title="Start Trial",
+                                   msg="You Must specify an athlete",
                                    type="ok")
             return
 
         #prior run saved?  if it has not been saved then request for them to save it
         if self.saved == False:
 
-            value = jtd.JT_Dialog(parent=self, title="Save Last Run", msg="Save last run? NO will lose data",
+            value = jtd.JT_Dialog(parent=self, title="Save Last Trial", msg="Save last Trial? NO will lose data",
                                        type="yesno")
             # save the data if requested
             if value == True:
@@ -730,19 +738,19 @@ class CMJ_UI(QMainWindow):
             else:
                 pass
 
-            jtd.JT_Dialog(parent=self, title="Start Run", msg="Press ok to start run", type="ok")
+            jtd.JT_Dialog(parent=self, title="Start Trial", msg="Press ok to start Trial", type="ok")
 
-        # Calibration - check with user if they want to proceed without calibration?
-        if self.protocol_type_selected == 'single' and self.l_calibration == False:
-            value = jtd.JT_Dialog(parent=self, title="Uncalibrated", msg="Continue uncalibrated?",
-                                   type="yesno")  # this is custom dialog class created above
-            if value == False:
-                return
-        elif self.protocol_type_selected == 'double' and (self.l_calibration == False or self.r_calibration == False):
-            value = jtd.JT_Dialog(parent=self, title="Uncalibrated", msg="Continue uncalibrated?",
-                                   type="yesno")  # this is custom dialog class created above
-            if value == False:
-                return
+        # # Calibration - check with user if they want to proceed without calibration?
+        # if self.protocol_type_selected == 'single' and self.l_calibration == False:
+        #     value = jtd.JT_Dialog(parent=self, title="Uncalibrated", msg="Continue uncalibrated?",
+        #                            type="yesno")  # this is custom dialog class created above
+        #     if value == False:
+        #         return
+        # elif self.protocol_type_selected == 'double' and (self.l_calibration == False or self.r_calibration == False):
+        #     value = jtd.JT_Dialog(parent=self, title="Uncalibrated", msg="Continue uncalibrated?",
+        #                            type="yesno")  # this is custom dialog class created above
+        #     if value == False:
+        #         return
 
         # remove the graph from the canvas
         if self.canvas:
@@ -759,10 +767,23 @@ class CMJ_UI(QMainWindow):
 
         # if in testing mode them skip actually getting data and allow the stop button to read it from a file
         if test_data_file == None:
-            self.reader_obj.start_reading()
+
             #start video
+            start_time = time.perf_counter()
             if self.video_on == True:
                 self.video1.start()
+            end_video_time = time.perf_counter()
+
+            #start recording points
+            self.reader_obj.start_reading()
+            end_recording_time = time.perf_counter()
+
+            video_startup = end_video_time - start_time
+            recording_startup = end_recording_time - end_video_time
+            log.info(f'Trial startup times >>> video_startup: {video_startup:.3f}, recording_startup: {recording_startup:.3f}')
+
+        # End the timer
+
 
         log.debug(f"Start recording, protocol: {self.protocol_name_selected}, athlete: {self.last_run_athlete}")
 
@@ -779,7 +800,7 @@ class CMJ_UI(QMainWindow):
         if test_data_file == None:
             self.num_measurements = self.reader_obj.stop_reading()
             if self.num_measurements == 0:
-                jtd.JT_Dialog(parent=self, title="Run Error", msg="No data collected, press ok to continue", type="ok")
+                jtd.JT_Dialog(parent=self, title="Trial Error", msg="No data collected, press ok to continue", type="ok")
                 return
         else:
             log.debug(f"UTILIZING TEST FILE: {test_data_file}")
@@ -811,7 +832,7 @@ class CMJ_UI(QMainWindow):
         #     axes.plot(self.results_df['r_force_N'], linewidth=1, color=jt_color2, label="Right")
         #
         # axes.legend()
-        # axes.set_title("Current run", fontdict={'fontweight': 'bold', 'fontsize': 12})
+        # axes.set_title("Current trial", fontdict={'fontweight': 'bold', 'fontsize': 12})
         # axes.set_ylabel("force (N)")
         # axes.set_xlabel("measurement number")
 
@@ -824,7 +845,7 @@ class CMJ_UI(QMainWindow):
                 {'y': self.results_df['l_force_N'], 'label': 'Left', 'color': 0},
                 {'y': self.results_df['r_force_N'], 'label': 'Right', 'color': 1}]
 
-        my_plot = jtpl.JT_plot('Current run', 'measurement number', 'force (N)', line_data)
+        my_plot = jtpl.JT_plot('Current Trial', 'measurement number', 'force (N)', line_data)
         my_plot.set_marker_none()
         my_plot.draw_on_pyqt(axes, self.canvas.figure)
 
@@ -875,7 +896,7 @@ class CMJ_UI(QMainWindow):
                 l_force = self.get_force_lbs(left_weight, self.l_zero, self.l_mult)
                 self.l_calibration_display.setText("{:.0f}".format(l_force))  #format force to just an integer
 
-                #only do the measurements if both legs are being measured
+                #only do the right measurements if both legs are being measured
                 if self.protocol_type_selected != 'single':
                     right_weight = self.get_average_reading('s2_clean', 0, self.updated_weight_count)
                     r_force = self.get_force_lbs(right_weight, self.r_zero, self.r_mult)
@@ -905,9 +926,9 @@ class CMJ_UI(QMainWindow):
     def save_trial_to_csv(self, lose_last_run=False):
 
         if lose_last_run == True:
-            value = jtd.JT_Dialog(parent=self, title="Save Last Run", msg="If you say NO it will be lost", type="yesno")
+            value = jtd.JT_Dialog(parent=self, title="Save Last Trial", msg="If you say NO it will be lost", type="yesno")
         else:
-            value = jtd.JT_Dialog(parent=self, title="Save Last Run", msg="Do you want to save the last run?", type="yesno")
+            value = jtd.JT_Dialog(parent=self, title="Save Last Trial", msg="Do you want to save the last Trial?", type="yesno")
 
         if value:
 
@@ -925,7 +946,7 @@ class CMJ_UI(QMainWindow):
             if self.video2 != None:
                 self.trial.attach_video('VIDEO_2', self.video2)
 
-            # save Trial to disk (run/videos/images)
+            # save Trial to disk (trial/videos/images)
             trial_dict = self.trial.save_raw_trial()
             self.last_original_filename = trial_dict['original_filename']
             filepath = self.config_obj.path_data + '/' + self.last_run_athlete + '/' + self.last_original_filename

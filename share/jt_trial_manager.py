@@ -187,15 +187,19 @@ class JT_JsonTrialManager:
 
         log.debug(f"Trial Manager - wrote trial index info to to {self.trial_mgr_index_file_path}")
 
-        # if self.df is initialized then add the new row to it
-        if self.df is not None:
-            # append data to existing df
-            # this gets is the exact same as the process above where it creates a json, then extracts it back out
-            # so that we can append it to the dataframe we already have.
-            json_str = json.dumps(trial_dict)
-            data = []
-            data.append(self._extract_keys(json_str))
-            self.df = self.df.append(pd.Series(data, index=self.df.columns), ignore_index=True)
+        # this is the easy way to just for a self.df to be reread from disk because a new trial was added.  Probably
+        # doesn't make any difference because I don't think self.df was used for anything but loading the "TreeWidgets"
+        # and that is a onetime thing.   It just wasn't worth debugging the code to append to self.df
+        self.df = None
+        # # if self.df is initialized then add the new row to it
+        # if self.df is not None:
+        #     # append data to existing df
+        #     # this gets is the exact same as the process above where it creates a json, then extracts it back out
+        #     # so that we can append it to the dataframe we already have.
+        #     json_str = json.dumps(trial_dict)
+        #     data = []
+        #     data.append(self._extract_keys(json_str))
+        #     self.df = self.df.append(pd.Series(data, index=self.df.columns), ignore_index=True)
 
         return
 

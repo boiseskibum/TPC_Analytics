@@ -667,7 +667,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.update_frame()
 
     def radio_button_callback(self, sender ):
-        sender = window.sender()  # Get the sender of the signal
+        sender = self.sender()  # Get the sender of the signal
 
         # ignore when something is turned off
         if sender.isChecked() == False:
@@ -741,7 +741,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             # only print out every tenth value
             if self.current_frame % 10 == 0:
                 elapsed = current_time - self.debug_last_time
-                print(f'update_frame: {elapsed:.3f}, frame# {self.current_frame}')
+#                print(f'update_frame: {elapsed:.3f}, frame# {self.current_frame}')
         self.debug_last_time = current_time
 #        return
 
@@ -780,40 +780,46 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
 #        print(f"data: {self.current_data_point}, frame: {self.current_frame}   ---   d: {old_d}, f: {old_f}")
 
+
         # Set the frame position to the desired frame number
         self.video1_cv2.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame)
 
-        # Read the specific frame
-        ret, frame = self.video1_cv2.read()
-        if ret:
+        update_video = False  #this is used to turn off for debugging
+        if(update_video):
+            # Read and display the specific video frame
+            ret, frame = self.video1_cv2.read()
+            if ret:
 
-            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            h, w, ch = rgb_frame.shape
-            bytes_per_line = ch * w
+                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                h, w, ch = rgb_frame.shape
+                bytes_per_line = ch * w
 
-            q_image = QImage(rgb_frame.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
+                q_image = QImage(rgb_frame.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
 
 
-            scaled_pixmap = QPixmap.fromImage(q_image).scaled(self.label_video1.size(), Qt.AspectRatioMode.KeepAspectRatio)
+                scaled_pixmap = QPixmap.fromImage(q_image).scaled(self.label_video1.size(), Qt.AspectRatioMode.KeepAspectRatio)
 
-            #add in lines/graphics
-            if(self.video1_overlay == True):
-                self.frame_add_lines(scaled_pixmap)
+                #add in lines/graphics
+                if(self.video1_overlay == True):
+                    self.frame_add_lines(scaled_pixmap)
 
-            self.label_video1.setPixmap(scaled_pixmap)
+                self.label_video1.setPixmap(scaled_pixmap)
 
-            self.set_vertical_bar()
+        # sets the vertical bar on the graph
+        self.set_vertical_bar()
 
-            #update the slider position
-            self.videoSlider.valueChanged.disconnect(self.slider_value_changed) # disconnect the signla
-            self.videoSlider.setValue(self.current_data_point)
-            self.videoSlider.valueChanged.connect(self.slider_value_changed)  # Reconnect the signal
+        #update the slider position
+        self.videoSlider.valueChanged.disconnect(self.slider_value_changed) # disconnect the signla
+        self.videoSlider.setValue(self.current_data_point)
+        self.videoSlider.valueChanged.connect(self.slider_value_changed)  # Reconnect the signal
 
         # the following accounts for if we are showing a short video
         x_point = self.current_data_point - self.min_data_point
         graph_time = self.graph_x_seconds[x_point]
         graph_time = f'Time: {graph_time:.2f}'
-        print(f'graph_time: {graph_time}')
+
+        # display the current time into the video in the label
+#        print(f'graph_time: {graph_time}')
         self.qlabel_time.setText(graph_time)
 
 

@@ -1,6 +1,6 @@
-import sys, time, os
+import sys, subprocess, time
 import cv2
-from PyQt6.QtCore import Qt, QThread
+from PyQt6.QtCore import QThread
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 
@@ -13,6 +13,55 @@ except ImportError:
 
 log = util.jt_logging()
 
+
+# External Camera Count - since we are not interested in built-in cameras on MacOS, this routine determines the number
+# of connected cameras.  I suspect this code is very finicky to changes to the OS so be fore warned.  The plan is to
+# see if there is 1 or more and default to recording if so.  It should be implemented to do no harm if it shows
+# a number less than this so program carefully on this!!!
+def external_camera_count():
+    # this function is hypersensitive to the output coming in and is for MacOS only
+    def count_model_id_without_facetime(strings):
+        count = 0
+        model_names = []
+        last_string = ''
+        for string in strings:
+            if "Model ID" in string and "FaceTime" not in string:
+                count += 1
+                model = f'{last_string.strip()} {string.strip()}'
+                model_names.append(model)
+            last_string = string
+
+        return count, model_names
+    def list_cameras_stdout():
+        if sys.platform == "win32":
+            # Windows-specific command (requires pywin32)
+            pass
+        elif sys.platform == "darwin":
+            # macOS-specific command
+            result = subprocess.run(["system_profiler", "SPCameraDataType"], capture_output=True, text=True)
+            return result.stdout
+        elif sys.platform == "linux" or sys.platform == "linux2":
+            # Linux-specific command (requires v4l2-ctl)
+            result = subprocess.run(["v4l2-ctl", "--list-devices"], capture_output=True, text=True)
+            return result.stdout
+        else:
+            return "Unsupported OS"
+
+    ## parse the stdout into list of strings with no blank lines
+    stdout = list_cameras_stdout()
+#    print(f' Stdout: {stdout}')
+    #break into list of strings
+    lines = stdout.splitlines()
+    # Using list comprehension to filter out empty or whitespace-only strings
+    lines = [line for line in lines if line.strip()]
+#    print(f'lines: {lines}')
+
+
+    #get count and model names
+    count, models = count_model_id_without_facetime(lines)
+    log.debug(f'External Camera count: {count}, Models: {models}')
+
+    return count, models
 
 def resize_with_aspect_ratio(img, target_width):
     height, width = img.shape[:2]
@@ -47,6 +96,8 @@ class JT_Video(QThread):
             self.error = True
             log.error(self.error_msg)
             return
+        else:
+            log.debug('"cv2.VideoCapture opened camera index: {self.camera_index}')
 
         self.w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -112,9 +163,19 @@ class JT_Video(QThread):
     def stop(self):
         self._is_running = False
 
+    def validate_camera(self):
+        cap = cv2.VideoCapture(self.camera_index)
+        if cap.isOpened():
+            log.debug(f'Valid camera_index: {self.camera_index}')
+            return True
+        else:
+            log.debug(f'Invalid camera_index: {self.camera_index}')
+            return False
+
+
     def camera_offline(self):
 
-        # Load the image from diskj - trys local directory and then trys the resources directory
+        # Load the image from disk
         image_name = 'camera_offline.png'
         image = self.config_obj.validate_path_and_return_QImage(image_name)
 
@@ -184,9 +245,11 @@ if __name__ == "__main__":
 
             #start videos
             self.video1 = JT_Video(config_obj, self.video_label1)
+            self.video1.validate_camera()
             if self.num_cameras == 2:
-                self.video2 = JT_Video(self.video_label2)
+                self.video2 = JT_Video(config_obj, self.video_label2)
                 self.video2.camera_index = 1
+                self.video2.validate_camera()
 
             self.start_button.clicked.connect(self.start_video)
             self.stop_button.clicked.connect(self.stop_video)
@@ -222,6 +285,8 @@ if __name__ == "__main__":
                 self.video2.camera_index = 0
 
     config_obj = jtc.JT_Config('taylor performance', 'TPC', None)
+    log.set_logging_level("DEBUG")
+    external_camera_count()
     app = QApplication(sys.argv)
 
     window = MainWindow(config_obj)

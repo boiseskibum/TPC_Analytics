@@ -127,12 +127,13 @@ class JT_PreferencesWindow(QDialog):
         cam1_index = self.config_obj.get_config("camera1")
         cam2_index = self.config_obj.get_config("camera2")
 
-        if cam1_index and cam1_index > -1:
+        if cam1_index is not None and cam1_index > -1:
             self.camera1_combobox.setCurrentIndex(cam1_index + 1)
+#            print(f'Setting combobox index to: {cam1_index+1}')
         else:
             self.video1.camera_offline()
 
-        if cam2_index and cam2_index > -1:
+        if cam2_index is not None and cam2_index > -1:
             self.camera2_combobox.setCurrentIndex(cam2_index + 1)
         else:
             self.video2.camera_offline()
@@ -295,7 +296,7 @@ class JT_PreferencesWindow(QDialog):
 
             video_end_time = time.time()
             delta_time = video_end_time - video_start_time
-            print(f'Time for camera to start up: {delta_time:.3f}')
+            log.debug(f'Time for camera to start up: {delta_time:.3f}')
 
     def start_video2(self):
         log.debug(
