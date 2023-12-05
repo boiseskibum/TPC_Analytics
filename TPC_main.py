@@ -517,7 +517,7 @@ class CMJ_UI(QMainWindow):
     # update branding
     def update_branding(self):
         brand = self.config_obj.get_config("branding")
-        if brand is not None:
+        if brand is not None and len(brand)>0:
             new_title = f'{brand} - Powered by {self.application_name}'
         else:
             new_title = f'{self.application_name}'
@@ -925,51 +925,52 @@ class CMJ_UI(QMainWindow):
     ########  SAVE DATA ########
     def save_trial_to_csv(self, lose_last_run=False):
 
-        if lose_last_run == True:
-            value = jtd.JT_Dialog(parent=self, title="Save Last Trial", msg="If you say NO it will be lost", type="yesno")
-        else:
-            value = jtd.JT_Dialog(parent=self, title="Save Last Trial", msg="Do you want to save the last Trial?", type="yesno")
+        # lose_last_run would be True if being called where the user had tried to start a run without the last one being
+        # saved.   Otherwise it is false and we ask the user for sure if they want to save it.
+        # if lose_last_run == False:
+        #     value = jtd.JT_Dialog(parent=self, title="Save Last Trial", msg="Do you want to save the last Trial?", type="yesno")
+        #
+        #     if value == False:
+        #         return
 
-        if value:
+        protocol_filename = self.protocol_obj.get_protocol_by_name(self.protocol_name_selected)
 
-            protocol_filename = self.protocol_obj.get_protocol_by_name(self.protocol_name_selected)
+        # Create Trial which will allow dataframe and videos to be saved
+        self.trial = jtt.JT_Trial(self.config_obj)
+        self.trial.setup_for_save(self.last_run_athlete, protocol_filename )
+        self.trial.attach_results_df(self.results_df)
 
-            # Create Trial which will allow dataframe and videos to be saved
-            self.trial = jtt.JT_Trial(self.config_obj)
-            self.trial.setup_for_save(self.last_run_athlete, protocol_filename )
-            self.trial.attach_results_df(self.results_df)
+        # add videos
+        if self.video1 != None:
+            self.trial.attach_video('VIDEO_1', self.video1)
 
-            # add videos
-            if self.video1 != None:
-                self.trial.attach_video('VIDEO_1', self.video1)
+        if self.video2 != None:
+            self.trial.attach_video('VIDEO_2', self.video2)
 
-            if self.video2 != None:
-                self.trial.attach_video('VIDEO_2', self.video2)
+        # save Trial to disk (trial/videos/images)
+        trial_dict = self.trial.save_raw_trial()
+        self.last_original_filename = trial_dict['original_filename']
+        filepath = self.config_obj.path_data + '/' + self.last_run_athlete + '/' + self.last_original_filename
 
-            # save Trial to disk (trial/videos/images)
-            trial_dict = self.trial.save_raw_trial()
-            self.last_original_filename = trial_dict['original_filename']
-            filepath = self.config_obj.path_data + '/' + self.last_run_athlete + '/' + self.last_original_filename
+        # process the Trial (this creates summary data from it
+        # this creates the summary data and there is also some graphs that are produced
+        # the graph location(s) are returned in the return_dict
+        if self.trial.process_summary() == False:
+            # do something - throw message up on screen about couldn't write summarize trial
+            pass
 
-            # process the Trial (this creates summary data from it
-            # this creates the summary data and there is also some graphs that are produced
-            # the graph location(s) are returned in the return_dict
-            if self.trial.process_summary() == False:
-                # do something - throw message up on screen about couldn't write summarize trial
-                pass
+        # save the summary data
+        self.trial.save_summary()
 
-            # save the summary data
-            self.trial.save_summary()
+        #save the last_original filename - not sure why but what the heck
+        self.config_obj.set_config("last_original_filename", self.last_original_filename)
 
-            #save the last_original filename - not sure why but what the heck
-            self.config_obj.set_config("last_original_filename", self.last_original_filename)
+        #save trial structural information to disk
+        self.trial_mgr_obj.save_trial_indexing(trial_dict)
 
-            #save trial structural information to disk
-            self.trial_mgr_obj.save_trial_indexing(trial_dict)
-
-            self.saved = True
-            self.save_button.setEnabled(False)
-            self.message_line(f"saved file: {self.last_original_filename}")
+        self.saved = True
+        self.save_button.setEnabled(False)
+        self.message_line(f"saved file: {self.last_original_filename}")
 
 
     #get weight (lbs or kg) using zero, multiplier, and wether or not kb or lbs

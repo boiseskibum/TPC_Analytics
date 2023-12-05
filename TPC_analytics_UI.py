@@ -784,7 +784,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         # Set the frame position to the desired frame number
         self.video1_cv2.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame)
 
-        update_video = False  #this is used to turn off for debugging
+        update_video = True  #this is used to turn off for debugging
         if(update_video):
             # Read and display the specific video frame
             ret, frame = self.video1_cv2.read()
