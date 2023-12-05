@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
 __version__ = '2023-12-3.0'   #Format is date and build number from that day (hopefully the latter isn't used')
-__application_name__ = 'Taylor Performance Consulting Analytics'
+__application_name__ = 'TPC Analytics'
 __about__ = f'{__application_name__}, Version: {__version__} \n\n{__copyright__}'
 
 
@@ -337,7 +337,7 @@ class CMJ_UI(QMainWindow):
  #       self.setLayout(self.grid_layout)
 
         # quit button
-        trow += 1
+        trow += 3
         self.quit_button = QPushButton("Quit", clicked=self.close)
         self.grid_layout.addWidget(self.quit_button, trow, 3)
 
@@ -382,6 +382,8 @@ class CMJ_UI(QMainWindow):
 
         # Initiate logging to a file in the log file directory
         log.set_log_file(self.config_obj.path_log, 'TPC_')
+
+        self.update_branding()
 
         ##### serial port setup #####
         self.reader_obj = jts.SerialDataReader()
@@ -505,6 +507,17 @@ class CMJ_UI(QMainWindow):
         self.timer.timeout.connect(self.update_fields)
         self.timer.start()
 
+    # update branding
+    def update_branding(self):
+        brand = self.config_obj.get_config("branding")
+        if brand is not None:
+            new_title = f'{brand} - Powered by {self.application_name}'
+        else:
+            new_title = f'{self.application_name}'
+
+        self.setWindowTitle(new_title)
+        self.config_obj.app_name = new_title
+
     def check_serial_port(self):
 
         my_return = self.reader_obj.configure_serial_port(self.serial_port_name, self.baud_rate)
@@ -565,6 +578,8 @@ class CMJ_UI(QMainWindow):
         self.preferences_window = jtpref.JT_PreferencesWindow(self.config_obj, self.reader_obj)
         try:
             self.preferences_window.show()
+            self.update_branding()
+
         except Exception as e:
             log.error(f"self.preferences_window.show() an error occurred: {e}")
 

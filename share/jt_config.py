@@ -223,7 +223,7 @@ class JT_Config:
         return (path)
 
     #####################################
-    # get key value
+    # get key value - None is returned if not found/set
     #####################################
     def get_config(self, my_key):
         try:

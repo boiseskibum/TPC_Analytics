@@ -61,6 +61,8 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         # calls the setup method instead of the python class created from the UI
         self.setupUi(self)
 
+        self.setWindowTitle(self.config_obj.app_name)
+
         ##################################################
         ### browser tab 
         ##################################################

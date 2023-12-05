@@ -1,6 +1,6 @@
 import sys, time
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel
-from PyQt6.QtWidgets import    QPushButton, QComboBox, QTextEdit, QGroupBox, QSizePolicy
+from PyQt6.QtWidgets import QDialog, QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel
+from PyQt6.QtWidgets import QPushButton, QComboBox, QTextEdit, QGroupBox, QSizePolicy, QLineEdit
 from PyQt6.QtCore import Qt  # Import the Qt module
 
 try:
@@ -24,13 +24,14 @@ def convert_to_int(value):
         return integer_value
     except ValueError:
         return -1
-class JT_PreferencesWindow(QMainWindow):
+class JT_PreferencesWindow(QDialog):
     def __init__(self, jt_config_obj, jt_serial_reader):
         super().__init__()
 
-        central_widget = QWidget(self)
-        self.setCentralWidget(central_widget)
-        layout = QGridLayout(central_widget)
+#        central_widget = QWidget(self)
+#        layout_master = QVBoxLayout(self)
+
+        layout = QGridLayout(self)
 
         self.config_obj = jt_config_obj
         self.reader_obj = jt_serial_reader
@@ -136,11 +137,28 @@ class JT_PreferencesWindow(QMainWindow):
         else:
             self.video2.camera_offline()
 
-
-        ###### Ok ######
+        ##### Branding #####
         trow += 1
-        self.ok_button = QPushButton("  Ok  ", clicked=self.close)
-        layout.addWidget(self.ok_button, trow, 1)
+
+        self.brand_label = QLabel("Custom Branding")
+        self.brand_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.brand_label, trow, 0)
+
+        self.brand_text_input = QLineEdit()
+        self.brand_text_input.setMaxLength(20)
+        layout.addWidget(self.brand_text_input, trow, 1)
+        self.brand_text_input.editingFinished.connect(self.on_branding_edit_finished)
+
+        txt = self.config_obj.get_config("branding")
+        if txt is not None:
+            self.brand_text_input.setText(txt)
+
+        ###### Close  ######
+        trow += 1
+        close_button = QPushButton("Close", self)
+        close_button.clicked.connect(self.close)
+        layout.addWidget(close_button, trow, 1)
+
 
     def reload_serial_ports(self):
 
@@ -296,6 +314,11 @@ class JT_PreferencesWindow(QMainWindow):
 
         self.config_obj.set_config("camera1", cam1_index)
         self.config_obj.set_config("camera2", cam2_index)
+
+    def on_branding_edit_finished(self):
+        txt = self.brand_text_input.text()
+        log.info(f'new branding: {txt}')
+        self.config_obj.set_config("branding", txt)
 
     def resizeEvent(self, event):
         # Ignore resize event

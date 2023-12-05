@@ -125,7 +125,7 @@ class JT_Video(QThread):
                 self._video_widget.setPixmap(pixmap)
         else:
             pixmap = None
-            log.error(f'Could not find image_path for: {image_path}')
+            log.error(f'Could not find image_path for: {image_name}')
 
     # save video to file.  Filename must end in .mp4
     def save_video(self, filename):
