@@ -577,7 +577,7 @@ class CMJ_UI(QMainWindow):
     def preferences_screen(self):
         self.preferences_window = jtpref.JT_PreferencesWindow(self.config_obj, self.reader_obj)
         try:
-            self.preferences_window.show()
+            self.preferences_window.exec()
             self.update_branding()
 
         except Exception as e:

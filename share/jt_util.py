@@ -106,7 +106,7 @@ class jt_logging(object):
         # then eliminate the buffer and in the future srings will go directly there
         if self.temp_buffer is not None:
             buff = self.temp_buffer.get_all()
-            print(f'***** len buff: {len(buff)}')
+#            print(f'***** len buff: {len(buff)}')
             for str in buff:
                 self.print_to_file(str)
             self.temp_buffer = None
