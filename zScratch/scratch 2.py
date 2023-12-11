@@ -1,45 +1,42 @@
-from PyQt6.QtWidgets import QApplication, QDialog, QVBoxLayout, QTextEdit, QPushButton
+import sys
+from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton
+from PyQt6.QtCore import QTimer, QThread
 
-__copyright__ = """This software is designed to provide data from sensors (load cells), store the data,
-    and provide the data in a usable format for Strength and Conditioning analytics
-    Copyright (C) 2023  Jake Taylor and Steve Taylor
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    any later version.
+    def initUI(self):
+        self.button = QPushButton("Start Timer", self)
+        self.button.clicked.connect(self.startTimer)
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.checkTime)
+        self.startTime = 0
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-"""
+        # Set window geometry and show
+        self.setGeometry(300, 300, 300, 200)
+        self.show()
 
-class AboutDialog(QDialog):
-    def __init__(self, parent=None):
-        super(AboutDialog, self).__init__(parent)
+    def startTimer(self):
+        self.startTime = 0
+        self.timer.start(1000)  # Timer ticks every second
 
-        self.setWindowTitle("About")
+    def checkTime(self):
+        self.startTime += 1
+        if self.startTime in [3, 4]:
+            QApplication.beep()
+        elif self.startTime == 5:
+            self.playLongBeep()
+            self.timer.stop()  # Stop the timer after 5 seconds
 
-        self.layout = QVBoxLayout(self)
+    def playLongBeep(self):
+        for _ in range(3):  # Attempt to create a longer beep
+            QApplication.beep()
+            QThread.msleep(50)  # Short delay between beeps
 
-        # Add a text edit for the long text
-        self.textEdit = QTextEdit(self)
-        self.textEdit.setReadOnly(True)
-        self.textEdit.setText(__copyright__)
-        self.layout.addWidget(self.textEdit)
-
-        # Add a close button
-        self.closeButton = QPushButton("Close", self)
-        self.closeButton.clicked.connect(self.close)
-        self.layout.addWidget(self.closeButton)
-
-        self.resize(600, 400)  # You can adjust the size as needed
-
-app = QApplication([])
-
-dialog = AboutDialog()
-dialog.exec()
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    ex = MainWindow()
+    sys.exit(app.exec())

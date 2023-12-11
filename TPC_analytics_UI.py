@@ -226,8 +226,10 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         ##################################################
         self.canvas_list = []   # list of places on the screen that can show a specific plot
         self.plot_list = []     # ultimately will hold the list of plots to show on the screen that can be scrolled 
-        self.plot_current = 0   # this variable shows what the current plot being displayed is (ie, 1 to XX plots can 
+        self.plot_current = 0   # this variable shows what the current plot being displayed is (ie, 1 to XX plots can
                                 # be scrolled through
+        self.reports_protocol = None
+
         def canvas_define(canvas_list, label_plot ):
             figure_report = Figure()
             ax_reports = figure_report.add_subplot(111)
@@ -368,6 +370,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
                 trial.trial_name = item_text
 
                 self.set_trial(trial)
+                log.debug(f"Clicked: {item_text}, Parent Path: {parent_path}, original_filename: {original_filename}, filepath {trial.file_path}---")
             except:
                 msg = f'Error processing {item_text}, limited functionality '
                 jtd.JT_Dialog(parent=self, title="Exception",
@@ -376,7 +379,6 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
                 log.error(f'{msg}, {original_filename}')
 
 
-            log.debug(f"Clicked: {item_text}, Parent Path: {parent_path}, original_filename: {original_filename}, filepath {trial.file_path}---")
         else:
             log.debug(f'no item to selected, must be a folder.  item_text: {item.text(0)}')
             if item.isExpanded():
@@ -932,6 +934,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
             # get protocols that are valid for a given athlete
             protocols_for_athlete = list_of_combos[list_of_combos['athlete'] == athlete]['short_protocol'].unique().tolist()
+            protocols_for_athlete.sort()
 
             # for specific athlete, load protocols that they have done
             for protocol in protocols_for_athlete:
@@ -1038,7 +1041,12 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         output_file = 'testing/asf.pdf'
         protocol_obj = self.config_obj.protocol_obj
 
-        log.debug(f'reports_create_pdf:  self.reports_protocol: {self.reports_protocol} reports_protocol: {self.reports_protocol}')
+        if self.reports_protocol is None:
+            msg = 'Not to be a wise guy but you need to select a report first:-)'
+            jtd.JT_Dialog(parent=self, title='User error', msg=msg, type="ok")
+            return
+
+        log.debug(f'reports_create_pdf:  self.reports_protocol: {self.reports_protocol}')
 
         # the following is a total hack to deal with what happens with when the protocol is shortened to
         # eliminate L or R at the end.   Oh well, probably not the last HACK.   Something clearly needs
@@ -1049,7 +1057,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         output_file = self.config_obj.path_results + self.reports_athlete + '/' + pdf_filename
 
         #create the PDF file
-        pdf_obj = jtpdf2.JT_PDF_2_across(self.config_obj, self.reports_athlete, protocol_name, output_file)
+        pdf_obj = jtpdf2.JT_PDF_2_across(self.config_obj, self.reports_athlete, protocol_name, self.config_obj.app_name, output_file)
         pdf_filepath = pdf_obj.add_plots_and_create_pdf(self.plot_list, self)
 
         # have the OS display the pdf
@@ -1069,7 +1077,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     # configuration object for keys and values setup
-    config_obj = jtc.JT_Config('Taylor Performance Consulting Analytics', 'TPC', None)
+    config_obj = jtc.JT_Config('TPC Analytics', 'TPC', None)
 
     #validate
     if config_obj.validate_install() == False:

@@ -23,12 +23,14 @@ except:
 log = util.jt_logging()
 
 class JT_PDF_2_across:
-    def __init__(self, config_obj, athlete, protocol_title, output_file):
+    def __init__(self, config_obj, athlete, protocol_title, report_author, output_file):
 
         self.config_obj = config_obj
         self.athlete = athlete
         self.output_file = output_file
         self.title = protocol_title
+        self.report_author = report_author
+
     def add_plots_and_create_pdf(self, plots, my_pyqt_app = None):
         self.plots = plots
 
@@ -49,7 +51,13 @@ class JT_PDF_2_across:
 
         athlete_name = self.athlete
         title = self.title
+        report_author = self.report_author
+
         class PDF(FPDF):
+            def __init__(self):
+                super().__init__()
+                self.alias_nb_pages()  # Initialize the alias for total number of pages
+
             def header(self):
                 # Rendering logo:
                 if logo is not None:
@@ -63,17 +71,31 @@ class JT_PDF_2_across:
                 # Performing a line break:
 
             def footer(self):
+
                 # Position cursor at 1.5 cm from bottom:
                 self.set_y(-15)
                 # Setting font: helvetica italic 8
                 self.set_font("helvetica", "I", 8)
-                # Printing Date:
-                self.cell(0, 10, f"Date {today_date}", align="L")
-                # Printing page number:
-#                self.cell(0, 10, f"Page {self.page_no()}/{{nb}}", align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-                self.cell(0, 10, f"Page {self.page_no()}/{{nb}}", 0, 0, align="C")
-                # Printing name
-                self.cell(0, 0, f"Taylor Performance Consulting", align="L")
+
+                # Widths for the cells
+                page_width = 210  # or self.epw for the effective page width
+                page_width = 190
+                name_width = 60
+                date_width = 40
+                page_number_width = page_width - (name_width + date_width)
+
+                # Printing 'Taylor Performance Consulting' on the left
+                self.set_x(10)  # Adjust the X position as needed
+                self.cell(name_width, 10, report_author, 0, 0, "L")
+
+                # Printing page number in the center
+                self.set_x(10 + name_width)  # Position to the right of the name cell
+                self.cell(page_number_width, 10, f"Page {self.page_no()}/{{nb}}", 0, 0, "C")
+
+                # Printing date on the right
+                formatted_date = today_date.strftime("%m-%d-%Y")
+                self.set_x(10 + name_width + page_number_width)  # Position to the right of the page number cell
+                self.cell(date_width, 10, f"{formatted_date}", 0, 0, "R")
 
         plot_num = 1
         total_plots = len(plots)
@@ -156,6 +178,7 @@ if __name__ == "__main__":
     config_obj.validate_install()
 
     output_file = 'testing/jt_pdf_2_across.pdf'
-    plots = jtpl.test_plots(17)
-    pdf_obj = JT_PDF_2_across(config_obj, "Carl Lewis", "BIG TIME", output_file)
+#    plots = jtpl.test_plots(17)
+    plots = jtpl.test_plots(2)
+    pdf_obj = JT_PDF_2_across(config_obj, "Carl Lewis", "BIG TIME", "Luke, I am your father", output_file)
     pdf_obj.add_plots_and_create_pdf(plots)

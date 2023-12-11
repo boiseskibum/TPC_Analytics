@@ -62,7 +62,7 @@ class JT_Trial:
 
         if not os.path.exists(file_path):
             msg = f"parse_filename, file does not exist: {file_path}"
-            log.info(self.msg)
+            log.error(self.msg)
 
         self.short_filename = os.path.splitext(os.path.basename(file_path))[0]
         self.extension = os.path.splitext(os.path.basename(file_path))[1]

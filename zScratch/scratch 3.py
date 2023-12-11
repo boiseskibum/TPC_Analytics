@@ -1,26 +1,44 @@
-from PyQt6.QtWidgets import QApplication, QMessageBox
-__copyright__ = """This software is designed to provide data from sensors (load cells), store the data,
-    and provide the data in a usable format for Strength and Conditioning analytics
-    Copyright (C) 2023  Jake Taylor and Steve Taylor
+import sys
+from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton
+from PyQt6.QtCore import QTimer, QUrl
+from PyQt6.QtMultimedia import QSoundEffect
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    any later version.
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    def initUI(self):
+        self.button = QPushButton("Start Timer", self)
+        self.button.clicked.connect(self.startTimer)
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-"""
-app = QApplication([])
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.checkTime)
+        self.curTime = 0
+        self.beginTime = 1
 
-msgBox = QMessageBox()
-msgBox.setWindowTitle("About")
-msgBox.setText(__copyright__)  # Your long about text
-#msgBox.setStandardButtons(QMessageBox.Ok)
-msgBox.setStandardButtons(QMessageBox.StandardButton.Ok)
-msgBox.exec()
+        self.shortBeep = QSoundEffect()
+        self.shortBeep.setSource(QUrl.fromLocalFile("first1.wav"))
+        self.longBeep = QSoundEffect()
+        self.longBeep.setSource(QUrl.fromLocalFile("last.wav"))
+
+        # Set window geometry and show
+        self.setGeometry(300, 300, 300, 200)
+        self.show()
+
+    def startTimer(self):
+        self.curTime = 0
+        self.timer.start(1000)  # Timer ticks every second
+
+    def checkTime(self):
+        self.curTime += 1
+        if self.curTime == self.beginTime or self.curTime == self.beginTime+1:
+            self.shortBeep.play()
+        elif self.curTime == self.beginTime+2:
+            self.longBeep.play()
+            self.timer.stop()  # Stop the timer after 5 seconds
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    ex = MainWindow()
+    sys.exit(app.exec())

@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 __version__ = '2023-12-5.0'   #Format is date and build number from that day (hopefully the latter isn't used')
 __application_name__ = 'TPC Analytics'
 __about__ = f'{__application_name__}, Version: {__version__} \n\n{__copyright__}'
+__adduser__ = '-add user-'
 
 
 # debuggging and logging
@@ -37,10 +38,11 @@ log.msg(f'**** {__application_name__} ****\n  **** Version: {__version__}, Autho
 log.msg(f'Copyright Information:\n{__copyright__}\n')
 log.msg(f'INFO - Valid logging levels are: {util.logging_levels}')
 
-from PyQt6.QtCore import Qt, QTimer, QSize
+from PyQt6.QtCore import Qt, QTimer, QSize, QUrl
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QLabel, QCheckBox
 from PyQt6.QtWidgets import QPushButton, QComboBox, QRadioButton, QDialog, QFileDialog
 from PyQt6.QtGui import QPixmap, QIcon, QAction
+from PyQt6.QtMultimedia import QSoundEffect
 
 # Import necessary modules
 import os, platform, glob, sys, time, json
@@ -312,17 +314,12 @@ class CMJ_UI(QMainWindow):
         self.stop_button.setEnabled(False)
         self.grid_layout.addWidget(self.stop_button, trow, 1)
 
-        # Save Data button and dropdown menu for user
-        self.save_button = QPushButton("Save Trial", clicked=self.save_trial_to_csv)
-        self.save_button.setEnabled(False)
-        self.grid_layout.addWidget(self.save_button, trow, 2)
-
-        self.data_button = QPushButton("Analytics", clicked=self.jt_analytics)
-        self.data_button.setIcon(QIcon(self.config_obj.get_img_path() + "line-chart.png"))
+        self.analytics_button = QPushButton("Analytics", clicked=self.jt_analytics)
+        self.analytics_button.setIcon(QIcon(self.config_obj.get_img_path() + "line-chart.png"))
         size = 30
-        self.data_button.setIconSize(QSize(size, size))
-        self.data_button.setEnabled(True)
-        self.grid_layout.addWidget(self.data_button, trow, 3)
+        self.analytics_button.setIconSize(QSize(size, size))
+        self.analytics_button.setEnabled(True)
+        self.grid_layout.addWidget(self.analytics_button, trow, 3)
 
         #create area for graph
         trow += 1
@@ -393,6 +390,25 @@ class CMJ_UI(QMainWindow):
 
         self.serial_ports_list = self.reader_obj.get_available_ports()
 
+        # timer configuration when pressing start to notify athlete when to go
+        self.countdown = True
+        cd = self.config_obj.get_config("countdown")
+        if cd is False:
+            self.countdown = False
+
+        self.countdown_timer = QTimer(self)
+        self.countdown_timer.timeout.connect(self.countdown_checker)
+        self.countdown_curTime = 0
+        self.countdown_beginTime = 2
+
+        self.shortBeep = QSoundEffect()
+        self.shortBeep.setSource(QUrl.fromLocalFile("first1.wav"))
+        self.longBeep = QSoundEffect()
+        self.longBeep.setSource(QUrl.fromLocalFile("last.wav"))
+
+        # essentially these are red, yellow, green utilized in countdown timer
+        self.colors = ["#fc4747", "yellow", "#16e02b", ""]
+
         # if only one port available then attempt to connect to it
         if len(self.serial_ports_list) == 1:
             self.serial_port_name = self.serial_ports_list[0]
@@ -442,6 +458,7 @@ class CMJ_UI(QMainWindow):
         except:
             error = f'Could not find file: {self.config_obj.athletes_file_path}'
             value = jtd.JT_Dialog(parent=self, title="Athletes List Error", msg=error, type="ok")
+            log.error(error)
             self.athletes = []
 
         self.last_run_athlete = self.config_obj.get_config("last_athlete")
@@ -451,7 +468,10 @@ class CMJ_UI(QMainWindow):
 
         # add athletes to the list
         self.enable_config_save = False   #this is a hack just for startup mode so it doesn't save to the config file one time only
-        self.athlete_combobox.addItems(self.athletes)
+
+        athletes_copy = self.athletes.copy()  # this is done to add the item "add user" to the end of the list
+        athletes_copy.append(__adduser__)
+        self.athlete_combobox.addItems(athletes_copy)
         self.enable_config_save = True
 
         try:
@@ -506,10 +526,10 @@ class CMJ_UI(QMainWindow):
 
         #fire off timer that updates time as well as the weight fields
         time_interval = 500      # in milliseconds
-        self.timer = QTimer()
-        self.timer.setInterval(time_interval)  # Update every 0.5 seconds
-        self.timer.timeout.connect(self.update_fields)
-        self.timer.start()
+        self.weightUpdate_timer = QTimer()
+        self.weightUpdate_timer.setInterval(time_interval)  # Update every 0.5 seconds
+        self.weightUpdate_timer.timeout.connect(self.weight_fields_update)
+        self.weightUpdate_timer.start()
 
     ##############################
     #### INTERFACE Callbacks
@@ -554,16 +574,28 @@ class CMJ_UI(QMainWindow):
     def showUserAddDialog(self):
         dialog = jtaa.AddAthleteDialog()
 
+        # get index of current athlete
+        index = self.athletes.index(self.last_run_athlete)
+
         if dialog.exec() == QDialog.DialogCode.Accepted:
             athlete, injured, shank_length = dialog.get_values()
             log.info(f"Adding new athlete: {athlete}, injured: {injured}, shank_length: {shank_length}")
 
+            #add new athlete and then refresh our list
             self.config_obj.athletes_obj.add_athlete( athlete, injured, shank_length )
             self.athletes = self.athletes_obj.get_athletes()
 
-            # clear and re-add items to the combo box
+            # clear and re-add items to the combo box - plus add the "add user" item to the end
             self.athlete_combobox.clear()
-            self.athlete_combobox.addItems(self.athletes)
+            athletes_copy = self.athletes.copy()
+            athletes_copy.append(__adduser__)
+            self.athlete_combobox.addItems(athletes_copy)
+            # get index of newly added athlete
+            index = self.athletes.index(athlete)
+
+        #set user back to current athlete
+        self.athlete_combobox.setCurrentIndex(index)
+#        print(f'after add user trying to set user back to last athlete: {self.last_run_athlete}, index: {index}')
 
     def showAbout(self):
         bigB = jtd.JT_DialogLongText(self, title="About TPC", msg=__about__)
@@ -695,10 +727,18 @@ class CMJ_UI(QMainWindow):
 
     def athlete_combobox_change(self, value):
         if self.enable_config_save:
-            self.last_run_athlete = value
-            self.config_obj.set_config("last_athlete", self.last_run_athlete)
+            # check if the fake entry "add user" was selected and if so
+            if value == __adduser__:
+#                print(f'User BEFORE add dialog{self.last_run_athlete}')
+                self.showUserAddDialog()
+#               print(f'User AFTER add dialog{self.last_run_athlete}')
 
-        log.debug(f'athlete_combobox_change: {value}')
+            else:
+                self.last_run_athlete = value
+                self.config_obj.set_config("last_athlete", self.last_run_athlete)
+#                print(f'comboxbox changed and SAVED athlete: {self.last_run_athlete}')
+
+            log.info(f'athlete_combobox_change: {value}, self.last_run_athlete: {self.last_run_athlete}')
 
     def on_video_checkbox_checkbox_changed(self, value):
 
@@ -718,7 +758,15 @@ class CMJ_UI(QMainWindow):
             self.video_on = False
 
     def start_recording(self):
-        log.f()
+        log.msg("Starting a recording")
+
+        if self.check_serial_port() is not True:
+            msg = "Must connect/configure Serial Port"
+            self.message_line(msg)
+            log.info("Must connect/configure Serial Port")
+            return
+
+        log.msg("Starting a recording")
 
         #check if athlete selected
         if len(self.last_run_athlete) < 1:
@@ -726,31 +774,6 @@ class CMJ_UI(QMainWindow):
                                    msg="You Must specify an athlete",
                                    type="ok")
             return
-
-        #prior run saved?  if it has not been saved then request for them to save it
-        if self.saved == False:
-
-            value = jtd.JT_Dialog(parent=self, title="Save Last Trial", msg="Save last Trial? NO will lose data",
-                                       type="yesno")
-            # save the data if requested
-            if value == True:
-                self.save_trial_to_csv(True)
-            else:
-                pass
-
-            jtd.JT_Dialog(parent=self, title="Start Trial", msg="Press ok to start Trial", type="ok")
-
-        # # Calibration - check with user if they want to proceed without calibration?
-        # if self.protocol_type_selected == 'single' and self.l_calibration == False:
-        #     value = jtd.JT_Dialog(parent=self, title="Uncalibrated", msg="Continue uncalibrated?",
-        #                            type="yesno")  # this is custom dialog class created above
-        #     if value == False:
-        #         return
-        # elif self.protocol_type_selected == 'double' and (self.l_calibration == False or self.r_calibration == False):
-        #     value = jtd.JT_Dialog(parent=self, title="Uncalibrated", msg="Continue uncalibrated?",
-        #                            type="yesno")  # this is custom dialog class created above
-        #     if value == False:
-        #         return
 
         # remove the graph from the canvas
         if self.canvas:
@@ -782,11 +805,42 @@ class CMJ_UI(QMainWindow):
             recording_startup = end_recording_time - end_video_time
             log.info(f'Trial startup times >>> video_startup: {video_startup:.3f}, recording_startup: {recording_startup:.3f}')
 
+            if self.countdown is True:
+                #starts the countdown timer to play tones
+                self.countdown_curTime = 0
+                self.current_color_index = 0
+                self.countdown_timer.start(1000)  # Timer ticks every second
+
         # End the timer
 
 
         log.debug(f"Start recording, protocol: {self.protocol_name_selected}, athlete: {self.last_run_athlete}")
 
+    # function that executes a countdown timer with beeps and buttons changing color
+    def countdown_checker(self):
+        #mini function just to be used here in the changing of colors
+        def changeColor():
+            color = self.colors[self.current_color_index]
+            if color:
+                self.stop_button.setStyleSheet(f"background-color: {color};")
+            else:
+                self.stop_button.setStyleSheet("")
+            self.countdown_timer.stop()  # Stop the timer after 3rd beep
+
+            self.current_color_index = (self.current_color_index + 1) % len(self.colors)
+
+        self.countdown_curTime += 1
+        if self.countdown_curTime == self.countdown_beginTime or self.countdown_curTime == self.countdown_beginTime+1:
+            self.shortBeep.play()
+            changeColor()
+        elif self.countdown_curTime == self.countdown_beginTime+2:
+            self.longBeep.play()
+            changeColor()
+        elif self.countdown_curTime > self.countdown_beginTime + 2:
+            changeColor()
+
+
+            self.current_color_index = (self.current_color_index + 1) % len(self.colors)
     def stop_recording(self):
         log.f()
 
@@ -822,20 +876,6 @@ class CMJ_UI(QMainWindow):
         self.canvas.figure.clear()
         axes = self.canvas.figure.add_subplot(111)
 
-        # jt_color1 = colors_seismic[2]
-        # jt_color2 = colors_icefire[4]
-        #
-        # if self.protocol_type_selected == 'single':
-        #     axes.plot(self.results_df['force_N'], linewidth=1, color=jt_color1, label='Force')
-        # else:
-        #     axes.plot(self.results_df['l_force_N'], linewidth=1, color=jt_color1, label="Left")
-        #     axes.plot(self.results_df['r_force_N'], linewidth=1, color=jt_color2, label="Right")
-        #
-        # axes.legend()
-        # axes.set_title("Current trial", fontdict={'fontweight': 'bold', 'fontsize': 12})
-        # axes.set_ylabel("force (N)")
-        # axes.set_xlabel("measurement number")
-
         if self.protocol_type_selected == 'single':
             line_data = [
                 {'y': self.results_df['force_N'], 'label': 'Force (N)', 'color': 0}]
@@ -858,29 +898,36 @@ class CMJ_UI(QMainWindow):
 
         self.message_line(f"Elapsed Time: {elapsed_str}, recorded {len(self.results_df)}")
 
+        # See if they want to save the run or dump it.
+
+        value = jtd.JT_Dialog(parent=self, title="Save Last Trial", msg="Save last Trial? NO will lose data",
+                                   type="yesno")
+        # save the data if requested
+        if value == True:
+            self.save_trial_to_csv(True)
+        else:
+            # write to message line that data has not been saved
+            pass
+
     def buttons_running(self):
         #flip flop which buttons are enabled
         self.start_button.setEnabled(False)
         self.stop_button.setEnabled(True)
-#        self.data_button.setEnabled(False)
         self.l_calibrate_button.setEnabled(False)
         self.r_calibrate_button.setEnabled(False)
-        self.save_button.setEnabled(False)
 
     def buttons_stopped(self):
         #flip flop which buttons are enabled
         self.start_button.setEnabled(True)
         self.stop_button.setEnabled(False)
-#        self.data_button.setEnabled(True)
         self.l_calibrate_button.setEnabled(True)
         self.r_calibrate_button.setEnabled(True)
-        self.save_button.setEnabled(True)
 
     def message_line(self, msg):
         self.status_display.setText(msg)
 
     #### Clock updating
-    def update_fields(self):
+    def weight_fields_update(self):
 
         current_time = time.strftime('%H:%M:%S')
         #log.debug(f"update time: {current_time}")
@@ -925,14 +972,6 @@ class CMJ_UI(QMainWindow):
     ########  SAVE DATA ########
     def save_trial_to_csv(self, lose_last_run=False):
 
-        # lose_last_run would be True if being called where the user had tried to start a run without the last one being
-        # saved.   Otherwise it is false and we ask the user for sure if they want to save it.
-        # if lose_last_run == False:
-        #     value = jtd.JT_Dialog(parent=self, title="Save Last Trial", msg="Do you want to save the last Trial?", type="yesno")
-        #
-        #     if value == False:
-        #         return
-
         protocol_filename = self.protocol_obj.get_protocol_by_name(self.protocol_name_selected)
 
         # Create Trial which will allow dataframe and videos to be saved
@@ -968,9 +1007,9 @@ class CMJ_UI(QMainWindow):
         #save trial structural information to disk
         self.trial_mgr_obj.save_trial_indexing(trial_dict)
 
-        self.saved = True
-        self.save_button.setEnabled(False)
-        self.message_line(f"saved file: {self.last_original_filename}")
+        # self.saved = True
+        # self.save_button.setEnabled(False)
+        # self.message_line(f"saved file: {self.last_original_filename}")
 
 
     #get weight (lbs or kg) using zero, multiplier, and wether or not kb or lbs

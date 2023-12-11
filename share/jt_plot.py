@@ -1,5 +1,6 @@
 import random
 import sys
+
 from PyQt6.QtWidgets import QApplication, QWidget, QPushButton, QGridLayout
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.dates import DateFormatter
@@ -254,9 +255,13 @@ def test_plots(num_plots = 5):
 
     return (plots)
 
+###############################################################################################
+###############################################################################################
 if __name__ == "__main__":
     # set up colors to make easier
-
+    from PyQt6.QtCore import QTimer, QUrl
+    from PyQt6.QtMultimedia import QSoundEffect
+    from PyQt6.QtGui import QColor
 
     class Window(QWidget):
         def __init__(self):
@@ -309,6 +314,22 @@ if __name__ == "__main__":
 
             self.setLayout(layout)
 
+            # background color, sound, and timer code
+            self.timer = QTimer(self)
+            self.timer.timeout.connect(self.checkTime)
+            self.curTime = 0
+            self.beginTime = 2
+
+            self.shortBeep = QSoundEffect()
+            self.shortBeep.setSource(QUrl.fromLocalFile("testing/first1.wav"))
+            self.longBeep = QSoundEffect()
+            self.longBeep.setSource(QUrl.fromLocalFile("testing/last.wav"))
+
+            # essentially these are red, yellow, green
+            self.colors = ["#fc4747", "yellow", "#16e02b", ""]
+
+            self.current_color_index = 0
+
         def plot1(self):
 
             self.canvas.figure.clear()
@@ -316,6 +337,7 @@ if __name__ == "__main__":
             self.my_plot1.draw_on_pyqt(ax, self.canvas.figure)
 
             self.canvas.draw()
+            self.startTimer()
 
         def plot2(self):
             self.canvas.figure.clear()
@@ -335,6 +357,31 @@ if __name__ == "__main__":
             self.my_plot2.output_filepath = "testing/plot2_test.png"
             self.my_plot2.save_plot_to_file(True)   #shows the plot
             self.my_plot2.save_plot_to_file(False)    # saves plot to disk
+
+        def startTimer(self):
+            self.curTime = 0
+            self.timer.start(1000)  # Timer ticks every second
+
+        def checkTime(self):
+            self.curTime += 1
+            if self.curTime == self.beginTime or self.curTime == self.beginTime+1:
+                self.shortBeep.play()
+                self.changeColor()
+            elif self.curTime == self.beginTime+2:
+                self.longBeep.play()
+                self.changeColor()
+            elif self.curTime > self.beginTime + 2:
+                self.changeColor()
+                self.timer.stop()  # Stop the timer after 5 seconds
+
+        def changeColor(self):
+            color = self.colors[self.current_color_index]
+            if color:
+                self.button1.setStyleSheet(f"background-color: {color};")
+            else:
+                self.button1.setStyleSheet("")
+
+            self.current_color_index = (self.current_color_index + 1) % len(self.colors)
 
 
     app = QApplication(sys.argv)
