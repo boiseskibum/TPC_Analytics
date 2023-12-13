@@ -18,50 +18,47 @@ log = util.jt_logging()
 # of connected cameras.  I suspect this code is very finicky to changes to the OS so be fore warned.  The plan is to
 # see if there is 1 or more and default to recording if so.  It should be implemented to do no harm if it shows
 # a number less than this so program carefully on this!!!
+
+
 def external_camera_count():
-    # this function is hypersensitive to the output coming in and is for MacOS only
-    def count_model_id_without_facetime(strings):
-        count = 0
-        model_names = []
-        last_string = ''
-        for string in strings:
-            if "Model ID" in string and "FaceTime" not in string:
-                count += 1
-                model = f'{last_string.strip()} {string.strip()}'
-                model_names.append(model)
-            last_string = string
+    count = 0
+    models = []
+    if sys.platform == "win32":
+        # Windows-specific command (requires pywin32)
+        log.info(f'Code not implemented to determine win32 cameras: {sys.platform}')
 
-        return count, model_names
-    def list_cameras_stdout():
-        if sys.platform == "win32":
-            # Windows-specific command (requires pywin32)
-            pass
-        elif sys.platform == "darwin":
-            # macOS-specific command
-            result = subprocess.run(["system_profiler", "SPCameraDataType"], capture_output=True, text=True)
-            return result.stdout
-        elif sys.platform == "linux" or sys.platform == "linux2":
-            # Linux-specific command (requires v4l2-ctl)
-            result = subprocess.run(["v4l2-ctl", "--list-devices"], capture_output=True, text=True)
-            return result.stdout
-        else:
-            return "Unsupported OS"
+        pass
 
-    ## parse the stdout into list of strings with no blank lines
-    stdout = list_cameras_stdout()
-#    print(f' Stdout: {stdout}')
-    #break into list of strings
-    lines = stdout.splitlines()
-    # Using list comprehension to filter out empty or whitespace-only strings
-    lines = [line for line in lines if line.strip()]
-#    print(f'lines: {lines}')
+    elif sys.platform == "darwin":
+        # macOS-specific command
+        result = subprocess.run(["system_profiler", "SPCameraDataType"], capture_output=True, text=True)
+
+        if result.stdout is not None:
+#            print(f' Stdout: {result.stdout}')
+
+            # break into list of strings
+            lines = result.stdout.splitlines()
+            # Using list comprehension to filter out empty or whitespace-only strings
+            lines = [line for line in lines if line.strip()]
+#            print(f'lines: {lines}')
+
+            last_string = ''
+            #get count and model names
+            for string in lines:
+                if "Model ID" in string and "FaceTime" not in string:
+                    count += 1
+                    model = f'{last_string.strip()} {string.strip()}'
+                    models.append(model)
+                last_string = string
+
+            log.debug(f'External Camera count: {count}, Models: {models}')
 
 
-    #get count and model names
-    count, models = count_model_id_without_facetime(lines)
-    log.debug(f'External Camera count: {count}, Models: {models}')
+    else:
+        log.error(f'sys.platform does not return known platform: {sys.platform}')
 
     return count, models
+
 
 def resize_with_aspect_ratio(img, target_width):
     height, width = img.shape[:2]

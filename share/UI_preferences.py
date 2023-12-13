@@ -1,6 +1,6 @@
 import sys, time
 from PyQt6.QtWidgets import QDialog, QApplication, QMainWindow, QWidget, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel
-from PyQt6.QtWidgets import QPushButton, QComboBox, QTextEdit, QGroupBox, QSizePolicy, QLineEdit
+from PyQt6.QtWidgets import QPushButton, QComboBox, QTextEdit, QGroupBox, QSizePolicy, QLineEdit, QCheckBox
 from PyQt6.QtCore import Qt  # Import the Qt module
 
 try:
@@ -141,7 +141,7 @@ class JT_PreferencesWindow(QDialog):
         ##### Branding #####
         trow += 1
 
-        self.brand_label = QLabel("Custom Branding")
+        self.brand_label = QLabel("Custom Branding:")
         self.brand_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.brand_label, trow, 0)
 
@@ -153,6 +153,19 @@ class JT_PreferencesWindow(QDialog):
         txt = self.config_obj.get_config("branding")
         if txt is not None:
             self.brand_text_input.setText(txt)
+
+        ##### Countdown *****
+        trow += 1
+        #get current countdown timer.   The funky code sets the default to True if it has not been saved previously
+        self.countdown = True
+        cd = self.config_obj.get_config("countdown")
+        if cd is False:
+            self.countdown = False
+
+        self.countdown_checkbox = QCheckBox('Countdown timer on')
+        self.countdown_checkbox.setChecked(self.countdown)
+        self.countdown_checkbox.stateChanged.connect(self.on_countdown_checkbox_changed)
+        layout.addWidget(self.countdown_checkbox, trow, 1)
 
         ###### Close  ######
         trow += 1
@@ -320,6 +333,15 @@ class JT_PreferencesWindow(QDialog):
         txt = self.brand_text_input.text()
         log.info(f'new branding: {txt}')
         self.config_obj.set_config("branding", txt)
+
+    def on_countdown_checkbox_changed(self, value):
+#        print(f'###### countdown changed was called: {value}, before change countdown was: {self.countdown} ')
+        if value != 0:
+            self.countdown = True
+            self.config_obj.set_config('countdown', True)
+        else:
+            self.countdown = False
+            self.config_obj.set_config('countdown', False)
 
     def resizeEvent(self, event):
         # Ignore resize event

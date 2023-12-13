@@ -203,7 +203,7 @@ class CMJ_UI(QMainWindow):
         fileMenu.addAction(aboutAction)
 
         # Connect the actions to their respective functions
-        preferenceAction.triggered.connect(self.preferences_screen)
+        preferenceAction.triggered.connect(self.preference_screen)
         addAthleteAction.triggered.connect(self.showUserAddDialog)
         dirMaintAction.triggered.connect(self.showDirMaint)
         toggleDebugAction.triggered.connect(self.toggleDebugLog)
@@ -241,7 +241,7 @@ class CMJ_UI(QMainWindow):
         settings_icon = QIcon(settings_image)
 
         # Create the ico image button
-        self.gear_button = QPushButton(clicked=self.preferences_screen)
+        self.gear_button = QPushButton(clicked=self.preference_screen)
         self.gear_button.setIcon(settings_icon)
         self.gear_button.setIconSize(settings_image.size())
         self.gear_button.setStyleSheet("background-color: rgba(255, 255, 255, 0);")   #make background transparent
@@ -391,6 +391,7 @@ class CMJ_UI(QMainWindow):
         self.serial_ports_list = self.reader_obj.get_available_ports()
 
         # timer configuration when pressing start to notify athlete when to go
+        # The funky code sets the default to True if it has not been saved previously
         self.countdown = True
         cd = self.config_obj.get_config("countdown")
         if cd is False:
@@ -402,9 +403,9 @@ class CMJ_UI(QMainWindow):
         self.countdown_beginTime = 2
 
         self.shortBeep = QSoundEffect()
-        self.shortBeep.setSource(QUrl.fromLocalFile("first1.wav"))
+        self.shortBeep.setSource(QUrl.fromLocalFile("resources/sound/first1.wav"))
         self.longBeep = QSoundEffect()
-        self.longBeep.setSource(QUrl.fromLocalFile("last.wav"))
+        self.longBeep.setSource(QUrl.fromLocalFile("resources/sound/last.wav"))
 
         # essentially these are red, yellow, green utilized in countdown timer
         self.colors = ["#fc4747", "yellow", "#16e02b", ""]
@@ -613,11 +614,18 @@ class CMJ_UI(QMainWindow):
                 self.debug_mode = False
                 log.set_logging_level("INFO")
 
-    def preferences_screen(self):
+    def preference_screen(self):
         self.preferences_window = jtpref.JT_PreferencesWindow(self.config_obj, self.reader_obj)
         try:
             self.preferences_window.exec()
+
+            #update required values from preference screen
             self.update_branding()
+            self.countdown = self.preferences_window.countdown
+            print(f'preference_screen return: {self.countdown}')
+            self.serial_port_name = self.preferences_window.serial_port_name
+            self.check_serial_port()
+
 
         except Exception as e:
             log.error(f"self.preferences_window.show() an error occurred: {e}")
@@ -627,7 +635,7 @@ class CMJ_UI(QMainWindow):
         self.config_obj.set_config("protocol_type", self.protocol_type_selected)
 
         #change the button text on the left calibrate button and setup combo box
-        self.l_calibrate_button.setText( self.double_single_configuratrion_setup() )
+        self.l_calibrate_button.setText( self.double_single_configuration_setup() )
         log.debug(f"protocol type_selected: {self.protocol_type_selected}, name_selected: {self.protocol_name_selected} name_list: {self.protocol_name_list}")
 
         self.r_calibrate_button.setVisible(False)
@@ -638,14 +646,14 @@ class CMJ_UI(QMainWindow):
         self.config_obj.set_config("protocol_type", self.protocol_type_selected)
 
         #change the button text on the left calibrate button and setup combo box
-        self.l_calibrate_button.setText( self.double_single_configuratrion_setup() )
+        self.l_calibrate_button.setText( self.double_single_configuration_setup() )
         log.debug(f"protocol type_selected: {self.protocol_type_selected}, name_selected: {self.protocol_name_selected} name_list: {self.protocol_name_list}")
 
         self.r_calibrate_button.setVisible(True)
         self.r_calibration_display.setVisible(True)
 
     #set up button text for double and Single measurements
-    def double_single_configuratrion_setup(self):
+    def double_single_configuration_setup(self):
 
         #bonus finish out combo box
         self.protocol_name_list = self.protocol_obj.get_names_by_type(self.protocol_type_selected)
@@ -758,12 +766,11 @@ class CMJ_UI(QMainWindow):
             self.video_on = False
 
     def start_recording(self):
-        log.msg("Starting a recording")
 
         if self.check_serial_port() is not True:
             msg = "Must connect/configure Serial Port"
             self.message_line(msg)
-            log.info("Must connect/configure Serial Port")
+            log.info(msg)
             return
 
         log.msg("Starting a recording")
@@ -774,6 +781,8 @@ class CMJ_UI(QMainWindow):
                                    msg="You Must specify an athlete",
                                    type="ok")
             return
+
+        log.msg("Starting a recording session")
 
         # remove the graph from the canvas
         if self.canvas:
@@ -821,11 +830,11 @@ class CMJ_UI(QMainWindow):
         #mini function just to be used here in the changing of colors
         def changeColor():
             color = self.colors[self.current_color_index]
+#            print(f'countdown color: {color}, curTime: {self.countdown_curTime}')
             if color:
                 self.stop_button.setStyleSheet(f"background-color: {color};")
             else:
                 self.stop_button.setStyleSheet("")
-            self.countdown_timer.stop()  # Stop the timer after 3rd beep
 
             self.current_color_index = (self.current_color_index + 1) % len(self.colors)
 
@@ -834,10 +843,13 @@ class CMJ_UI(QMainWindow):
             self.shortBeep.play()
             changeColor()
         elif self.countdown_curTime == self.countdown_beginTime+2:
-            self.longBeep.play()
             changeColor()
+            self.longBeep.play()
+            time.sleep(.02)
+            self.longBeep.play()
         elif self.countdown_curTime > self.countdown_beginTime + 2:
             changeColor()
+            self.countdown_timer.stop()  # Stop the timer after 3rd beep
 
 
             self.current_color_index = (self.current_color_index + 1) % len(self.colors)
