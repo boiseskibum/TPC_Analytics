@@ -8,3 +8,32 @@
 /build/TPC Analytics/xref-TPC Analytics.html
 /build/TPC Analytics jt/xref-TPC Analytics jt.html
 /build/TPC_main/xref-TPC_main.html
+/build/tpc_main/Analysis-00.toc
+/.idea/.gitignore
+/build/test_install_main/Analysis-00.toc
+/build/test_install_main/base_library.zip
+/build/tpc_main/base_library.zip
+/share/config_testing.csv
+/build/test_install_main/EXE-00.toc
+/build/tpc_main/EXE-00.toc
+/.idea/JT_AFA.iml
+/.idea/misc.xml
+/.idea/modules.xml
+/build/test_install_main/PKG-00.toc
+/build/tpc_main/PKG-00.toc
+/.idea/inspectionProfiles/profiles_settings.xml
+/build/test_install_main/PYZ-00.pyz
+/build/tpc_main/PYZ-00.pyz
+/build/test_install_main/PYZ-00.toc
+/build/tpc_main/PYZ-00.toc
+/zScratch/test_csv_append
+/dist/test_install_main.exe
+/build/test_install_main/test_install_main.exe.manifest
+/build/test_install_main/test_install_main.pkg
+/dist/tpc_main.exe
+/build/tpc_main/tpc_main.exe.manifest
+/build/tpc_main/tpc_main.pkg
+/build/tpc_main/Tree-00.toc
+/build/tpc_main/Tree-01.toc
+/build/tpc_main/Tree-02.toc
+/.idea/vcs.xml
