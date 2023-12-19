@@ -191,6 +191,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.vertical_line = None
         self.debug_last_time = None
         self.debug_update_frame_count = 0
+        self.video_starting_point = None
 
         #if this is launched from parent window then grab its child mgr object
         if parent != None:
@@ -366,7 +367,6 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
                 trial.trial_name = item_text
 
-                self.set_trial(trial)
                 log.debug(f"Clicked: {item_text}, Parent Path: {parent_path}, original_filename: {original_filename}, filepath {trial.file_path}---")
             except:
                 msg = f'Error processing {item_text}, limited functionality '
@@ -375,6 +375,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
                                    type="ok")
                 log.error(f'{msg}, {original_filename}')
 
+            self.set_trial(trial)
 
         else:
             log.debug(f'no item to selected, must be a folder.  item_text: {item.text(0)}')
@@ -492,6 +493,21 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             if self.short_video == True and self.current_trial.short_end_index is not None:
                 self.max_data_point = self.current_trial.short_end_index    # change this in the future
 
+            # the following code changes the start point to align with the beginning of the video.  Testing found that
+            # generally the video was about .5 seconds to start up.  Therefore when there is video the first .5 seconds
+            # worth of data needs to be "trimmed".  The following code does that by setting self.min_data_point to the
+            # trimmed value
+            # NOTE: technically this only needs to be run once but I am a bit lazy on and let it happen for each line
+            if self.video1_cv2 is not None:
+                # calculate amount of time to be trimmed:   #frames * timer/frame = video length
+                trim_time = (self.total_frames * self.video_time_freq_full) - self.elapsed_time
+                self.video_starting_point = trim_time / self.elapsed_time / self.total_data_points
+                # check if video start is later than min_data_point and if so bump it out.  With 70hz this should
+                # typically be around 35
+
+                if self.video_starting_point > self.min_data_point:
+                    self.min_data_point = int(self.video_starting_point)
+
             tl = len(line)
             short_line = line[self.min_data_point:self.max_data_point]
             sl = len(short_line)
@@ -528,7 +544,8 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.canvas_browsing.draw()
 
         # finalize video setup
-        self.set_video1()
+        if self.video1_cv2 is not None:
+            self.set_video1()
 
         #adjust the slider for the number of datapoints
         self.videoSlider.setMinimum( self.min_data_point )
@@ -553,8 +570,8 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         # setup video frame reader and buffer
         self._setup_video_frame_reader()
 
-        # make adjustments if video is shortened
-        if self.min_data_point > 0:
+        # make adjustments if video is shortened  (self.video_starting_point is a replacement for 0)
+        if self.min_data_point > self.video_starting_point:
             self.min_frame = round(self.min_data_point/self.total_data_points * self.total_frames)
 
         if self.max_data_point != self.total_data_points:
