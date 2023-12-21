@@ -134,6 +134,10 @@ class JT_Config:
 
         self._set_paths()
 
+    # copy any demo files to there default directory if requested
+    def setup_demo_files(self):
+        pass
+
     def _set_paths(self):
 
         # setup path variables
