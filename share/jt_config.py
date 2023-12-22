@@ -1,17 +1,19 @@
 # jt_config.py
 # purpose: ability to store configuration data (keys and values) into a file
 
-import json, os, sys, platform
+import json, os, platform, shutil
 from PyQt6.QtGui import QImage, QPixmap
 
 try:
     from . import jt_util as util
     from . import jt_protocol as jtp
     from . import jt_athletes as jta
+    from . import jt_trial_manager as jttm
 except:
     import jt_util as util
     import jt_protocol as jtp
     import jt_athletes as jta
+    import jt_trial_manager as jttm
 
 # logging configuration - the default level if not set is DEBUG
 log = util.jt_logging()
@@ -136,6 +138,52 @@ class JT_Config:
 
     # copy any demo files to there default directory if requested
     def setup_demo_files(self):
+
+        #copy files from resources/demo to path_data/username
+        # 1) get list of demo files
+        # 2) iterate over them getting the 2nd token from each which is the username
+        # 3) create data directory with username if it doesn't exist
+        # 4) copy file to said directory
+
+        dp = self.get_demo_path()
+        files = os.listdir(dp)
+        athlete_list = []
+
+        for file in files:
+            athlete_full_path = os.path.join(dp, file)
+            # validate it's a file
+            athlete = ""
+            if os.path.isfile(athlete_full_path):
+                tokens = file.split('_')
+                try:
+                    athlete = tokens[1]
+                    ap = self.path_data + athlete + '/'
+                    if not os.path.isdir(ap):
+                        os.makedirs(ap, exist_ok=True)
+                        log.info(f"Creating athlete folder: {ap}.")
+                    try:
+                        shutil.copy(athlete_full_path, ap)
+                        log.info(f"demo athlete: copied {file} to folder:{ap}.")
+                    except IOError as e:
+                        print(f"Unable to copy file: {file} to folder: {ap}  Error: {e}")
+
+                except IndexError:
+                    log.msg(f"Could not tokenize name to copy demo file: {file}")
+
+                # check if user hasn't been added and if so add it.
+                if athlete not in athlete_list:
+                    # If not, add it to the list
+                    athlete_list.append(athlete)
+                    self.athletes_obj.add_athlete(athlete, 'right', .3)
+
+        # add the athletes into the athletes file
+
+
+        #create all_athletes.json file3 in side of path_db.  Technically, I am just running the
+        # trial_manager.reprocess_all_files() command
+        tm = jttm.JT_JsonTrialManager(self)
+        tm.reprocess_all_files()   # pyqt is not sent in so there will not be a status bar on the screen
+
         pass
 
     def _set_paths(self):

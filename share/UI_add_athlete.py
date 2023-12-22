@@ -44,7 +44,7 @@ class AddAthleteDialog(QDialog, aaUI.Ui_Dialog_add_user):
 
         def validate_name(s):
             # Regular expression pattern
-            pattern = r'^[a-zA-Z0-9 ~]+$'
+            pattern = r'^[a-zA-Z0-9 ]+$'
 
             # Using re.match to check if the entire string matches the pattern
             if re.match(pattern, s):

@@ -32,11 +32,13 @@ class JT_athletes:
             #create a small sample file if the athletes file doesn't exist
             # Column names
             columns = ["athletes_name", "injured", "shank_length"]
-            # Data in row format
-            data = [
-                ["-huey", "right", .25],
-                ["-dewey", "left", .3]
-            ]
+            data = []
+            # Data in row format - no longer utilized
+            # data = [
+            #     ["zHuey", "right", .25],
+            #     ["zDewey", "left", .3]
+            # ]
+
             self.df = pd.DataFrame(data, columns=columns)
 
             # Write the prototype DataFrame to a CSV file
@@ -82,7 +84,7 @@ class JT_athletes:
 
         # validate athlete doesn't already exist
         if athlete.lower() in self.df['athletes_name'].str.lower().values:
-            log.error(f'add_athlete failed to add user: |{athlete}| already exists')
+            log.info(f'add_athlete failed to add user: |{athlete}| already exists')
             return
 
         self.get_athletes()

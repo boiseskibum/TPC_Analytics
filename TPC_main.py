@@ -175,7 +175,8 @@ class CMJ_UI(QMainWindow):
         self.saved = True  #flag so that the user can be asked if they want to save the previous set of data before recording new data
 
         self.last_original_filename = ""
-
+        self.last_run_athlete = None
+        self.enable_config_save = False
 
 #######################################################################
 #### Main Screen ######################################################
@@ -375,6 +376,12 @@ class CMJ_UI(QMainWindow):
                 if value == None:
                     sys.exit()
 
+            # Lastly, ask if they want to install Demo files
+            value = jtd.JT_Dialog(parent=self, title="Demo Files Install", msg=f"Do you want to install Demo Files", type="yesno")
+            if value == True:
+                self.config_obj.setup_demo_files()
+
+
         # Initiate logging to a file in the log file directory
         log.set_log_file(self.config_obj.path_log, 'TPC_')
 
@@ -462,18 +469,27 @@ class CMJ_UI(QMainWindow):
             log.error(error)
             self.athletes = []
 
-        self.last_run_athlete = self.config_obj.get_config("last_athlete")
-        log.debug(f'last_athlete from config is {self.last_run_athlete}')
-        if self.last_run_athlete == None:
-            self.last_run_athlete = ""
+        # if no athletes exist prompt the user for an athlete before they get started until they add one
+        if len(self.athletes) < 1:
+            while len(self.athletes) < 1:
+                self.showUserAddDialog()
+            self.enable_config_save = True
+        # if there is 1 or more athletes get the lasat run and set up the combo list.
+        else:
+            # get last run athlete
+            self.last_run_athlete = self.config_obj.get_config("last_athlete")
+            log.debug(f'last_athlete from config is {self.last_run_athlete}')
+            if self.last_run_athlete == None:
+                self.last_run_athlete = ""
 
-        # add athletes to the list
-        self.enable_config_save = False   #this is a hack just for startup mode so it doesn't save to the config file one time only
+            # add athletes to the list
+            self.enable_config_save = False   #this is a hack just for startup mode so it doesn't save to the config file one time only
 
-        athletes_copy = self.athletes.copy()  # this is done to add the item "add user" to the end of the list
-        athletes_copy.append(__adduser__)
-        self.athlete_combobox.addItems(athletes_copy)
-        self.enable_config_save = True
+            athletes_copy = self.athletes.copy()  # this is done to add the item "add user" to the end of the list
+            athletes_copy.append(__adduser__)
+            self.athlete_combobox.addItems(athletes_copy)
+            self.enable_config_save = True
+
 
         try:
             index = self.athletes.index(self.last_run_athlete)
@@ -576,7 +592,13 @@ class CMJ_UI(QMainWindow):
         dialog = jtaa.AddAthleteDialog()
 
         # get index of current athlete
-        index = self.athletes.index(self.last_run_athlete)
+        index = 0
+        if self.last_run_athlete is not None:
+            try:
+                index = self.athletes.index(self.last_run_athlete)
+            except ValueError:
+                pass
+        new_user = False
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
             athlete, injured, shank_length = dialog.get_values()
@@ -590,13 +612,16 @@ class CMJ_UI(QMainWindow):
             self.athlete_combobox.clear()
             athletes_copy = self.athletes.copy()
             athletes_copy.append(__adduser__)
+            print(f'#### athletes_copy {athletes_copy}')
             self.athlete_combobox.addItems(athletes_copy)
             # get index of newly added athlete
             index = self.athletes.index(athlete)
-
+            new_user = True
         #set user back to current athlete
         self.athlete_combobox.setCurrentIndex(index)
 #        print(f'after add user trying to set user back to last athlete: {self.last_run_athlete}, index: {index}')
+
+        return new_user
 
     def showAbout(self):
         bigB = jtd.JT_DialogLongText(self, title="About TPC", msg=__about__)
