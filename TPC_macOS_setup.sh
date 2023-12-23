@@ -2,6 +2,11 @@
 # use following command to make this file executable:
 # Run chmod +x TPC_macos_setup.sh to make the script executable.
 
+## Set your repository details
+VERSION_TAG="Beta_Release_2023_12_23_0"    # Replace with the repository name
+OWNER="boiseskibum"  # Replace with the GitHub username or organization
+REPO="TPC_Analytics"    # Replace with the repository name
+
 # Check if Python is installed
 if ! command -v python3 &> /dev/null
 then
@@ -17,12 +22,6 @@ python3 -m venv ~/Documents/TPC/application/venv
 
 # Activate the virtual environment
 source ~/Documents/TPC/application/venv/bin/activate
-
-## Set your repository details
-OWNER="boiseskibum"  # Replace with the GitHub username or organization
-REPO="TPC_Analytics"    # Replace with the repository name
-VERSION_TAG="Beta_Release_2023_12_22_1"    # Replace with the repository name
-
 
 # Download the code from GitHub
 curl -L "https://github.com/$OWNER/$REPO/archive/refs/tags/$VERSION_TAG.zip" -o ~/Documents/TPC/application/code.zip
