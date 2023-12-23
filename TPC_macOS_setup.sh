@@ -3,7 +3,7 @@
 # Run chmod +x TPC_macos_setup.sh to make the script executable.
 
 ## Set your repository details
-VERSION_TAG="Beta_Release_2023_12_23_0"    # Replace with the repository name
+VERSION_TAG="Beta_Release_2023_12_23_1"    # Replace with the repository name
 OWNER="boiseskibum"  # Replace with the GitHub username or organization
 REPO="TPC_Analytics"    # Replace with the repository name
 
