@@ -63,10 +63,10 @@ echo "$Github Repository: REPO Version: $VERSION_TAG" > ~/Documents/TPC/TPC_vers
 # Install required modules
 pip install -r ~/Documents/TPC/application/code/requirements.txt
 
-# Create TPC_start command file
-echo "#!/bin/bash" > ~/TPC_start
-echo "source ~/Documents/TPC/application/venv/bin/activate" >> ~/TPC_start
-echo "python ~/Documents/TPC/application/code/TPC_main.py" >> ~/TPC_start
-chmod +x ~/TPC_start
-
-echo "Setup completed. Run your application with '~/TPC_start'"
+# Create TPC_run command file
+echo "#!/bin/bash" > ~/TPC_run
+echo "source ~/Documents/TPC/application/venv/bin/activate" >> ~/TPC_run
+echo "python ~/Documents/TPC/application/code/TPC_main.py" >> ~/TPC_run
+chmod +x ~/TPC_run
+echo " "
+echo "Setup completed. Run your application with '~/TPC_run'"
