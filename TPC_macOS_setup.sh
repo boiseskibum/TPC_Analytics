@@ -69,5 +69,5 @@ echo "source ~/Documents/TPC/application/venv/bin/activate" >> ~/TPC_run
 echo "python ~/Documents/TPC/application/code/TPC_main.py" >> ~/TPC_run
 chmod +x ~/TPC_run
 echo " "
-echo "Setup completed. Run your application with '~/TPC_run'"
+echo "Setup completed. Run your application with './TPC_run'"
 echo " "
