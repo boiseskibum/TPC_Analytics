@@ -1,6 +1,8 @@
 # TPC_Main program
 __copyright__ = """This software is designed to provide data from sensors (load cells), store the data,
-and provide the data in a usable format for Strength and Conditioning analytics
+and provide the data in a usable format for Strength and Conditioning analytics.  Essentially enabling a
+person to have a relatively simple ability to measure isometric and/or Counter Movement Jumps (CMJ).  This would
+be similar to what is commonly called "force plates" in the industry.
 Copyright (C) 2023, 2024  Jake Taylor and Steve Taylor
 
 This program is free software: you can redistribute it and/or modify
