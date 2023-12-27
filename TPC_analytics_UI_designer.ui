@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1561</width>
-    <height>978</height>
+    <width>1098</width>
+    <height>730</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -34,6 +34,12 @@
            <enum>Qt::Horizontal</enum>
           </property>
           <widget class="QSplitter" name="splitter_3">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
@@ -308,9 +314,15 @@
              <layout class="QVBoxLayout" name="verticalLayout_Lvideo">
               <item>
                <widget class="QLabel" name="label_video1">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="minimumSize">
                  <size>
-                  <width>350</width>
+                  <width>250</width>
                   <height>0</height>
                  </size>
                 </property>
@@ -331,43 +343,6 @@
               </item>
               <item>
                <widget class="QCheckBox" name="checkBox_video1_overlay">
-                <property name="text">
-                 <string>overlay</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <layout class="QVBoxLayout" name="verticalLayout_Rvideo">
-              <item>
-               <widget class="QLabel" name="label_video2">
-                <property name="minimumSize">
-                 <size>
-                  <width>350</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>video 2</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="checkBox_video2_enable">
-                <property name="text">
-                 <string>enable</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="checkBox_video2_overlay">
                 <property name="text">
                  <string>overlay</string>
                 </property>
@@ -571,7 +546,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1561</width>
+     <width>1098</width>
      <height>22</height>
     </rect>
    </property>

@@ -91,9 +91,9 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
         # state changes video buttons
         self.checkBox_video1_enable.stateChanged.connect(self.checkbox_video1_enable_changed)
-        self.checkBox_video2_enable.stateChanged.connect(self.checkbox_video2_enable_changed)
+#        self.checkBox_video2_enable.stateChanged.connect(self.checkbox_video2_enable_changed)
         self.checkBox_video1_overlay.stateChanged.connect(self.checkbox_video1_overlay_changed)
-        self.checkBox_video2_overlay.stateChanged.connect(self.checkbox_video2_overlay_changed)
+#        self.checkBox_video2_overlay.stateChanged.connect(self.checkbox_video2_overlay_changed)
         self.checkBox_short_video.stateChanged.connect(self.checkBox_short_video_changed)
         self.checkBox_freeze_y_axis.stateChanged.connect(self.checkBox_freeze_y_axis_changed)
 
@@ -116,9 +116,9 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.video_widgets.append(self.pushButton_rewind_to_start)
         self.video_widgets.append(self.videoSlider)
         self.video_widgets.append(self.checkBox_video1_enable)
-        self.video_widgets.append(self.checkBox_video2_enable)
+#        self.video_widgets.append(self.checkBox_video2_enable)
         self.video_widgets.append(self.checkBox_video1_overlay)
-        self.video_widgets.append(self.checkBox_video2_overlay)
+#        self.video_widgets.append(self.checkBox_video2_overlay)
         # commented out because might want to see jump only even if there isn't a video
 #        self.video_widgets.append(self.checkBox_short_video)
         self.video_widgets.append(self.radioButton_full)
@@ -128,7 +128,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.video_widgets.append(self.videoAlignmentSlider)
         self.video_widgets.append(self.label_align_video)
         self.video_widgets.append(self.label_video1)
-        self.video_widgets.append(self.label_video2)
+#        self.video_widgets.append(self.label_video2)
 
         self.videoAlignmentSlider.setMinimum(-30)
         self.videoAlignmentSlider.setMaximum( 30)
@@ -189,7 +189,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.browsing_yMax = None
 
         self.video1_cv2 = None
-        self.video2_capture = None
+#        self.video2_capture = None
         self.srt_label_graphic = None
         self.video_play_timer = None
         self.vertical_line = None
@@ -216,9 +216,9 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
         #video stuff
         self.video1_overlay = True
-        self.video2_overlay = True
+#        self.video2_overlay = True
         self.video1_enabled = True
-        self.video2_enabled = True
+#        self.video2_enabled = True
         self.short_video = False
 
         ##################################################
@@ -648,11 +648,11 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         else:
             self.video1_enabled = True
 
-    def checkbox_video2_enable_changed(self, checked):
-        if checked != 0:
-            self.video2_enabled = True
-        else:
-            self.video2_enabled = True
+    # def checkbox_video2_enable_changed(self, checked):
+    #     if checked != 0:
+    #         self.video2_enabled = True
+    #     else:
+    #         self.video2_enabled = True
 
     def checkbox_video1_overlay_changed(self, checked):
         if checked != 0:
@@ -661,12 +661,12 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             self.video1_overlay = False
         self.update_frame()
 
-    def checkbox_video2_overlay_changed(self, checked):
-        if checked != 0:
-            self.video2_overlay = True
-        else:
-            self.video2_overlay = False
-        self.update_frame()
+    # def checkbox_video2_overlay_changed(self, checked):
+    #     if checked != 0:
+    #         self.video2_overlay = True
+    #     else:
+    #         self.video2_overlay = False
+    #     self.update_frame()
 
     def radio_button_callback(self, sender ):
         sender = self.sender()  # Get the sender of the signal
