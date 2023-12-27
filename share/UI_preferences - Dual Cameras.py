@@ -28,6 +28,9 @@ class JT_PreferencesWindow(QDialog):
     def __init__(self, jt_config_obj, jt_serial_reader):
         super().__init__()
 
+#        central_widget = QWidget(self)
+#        layout_master = QVBoxLayout(self)
+
         layout = QGridLayout(self)
 
         self.config_obj = jt_config_obj
@@ -43,7 +46,9 @@ class JT_PreferencesWindow(QDialog):
 
         self.num_cameras = 1
         self.video1 = None
+        self.video2 = None
         self.camera1 = -1
+        self.camera2 = -1
         self.ignore_combox_change = False
 
         # Row 1: Refresh Serial Ports button and ComboBox to select the serial port
@@ -73,6 +78,10 @@ class JT_PreferencesWindow(QDialog):
         label1.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(label1, trow, 0)
 
+        label1 = QLabel("Side View Camera")
+        label1.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(label1, trow, 1)
+
         # Row 4: Refresh Camera List button and ComboBox to select the camera
         trow += 1
 
@@ -83,6 +92,12 @@ class JT_PreferencesWindow(QDialog):
         self.camera1_combobox.currentTextChanged.connect(self.camera1_combox_changed)
         self.camera1_combobox.addItems(list_of_cameras)
         layout.addWidget(self.camera1_combobox, trow, 0)
+
+        #Set up camera #2
+        self.camera2_combobox = QComboBox()
+        self.camera2_combobox.currentTextChanged.connect(self.camera2_combox_changed)
+        self.camera2_combobox.addItems(list_of_cameras)
+        layout.addWidget(self.camera2_combobox, trow, 1)
 
         ###### VIDEO ######
         # Row 5: Preview widget with video control (QGroupBox with QLabel)
@@ -97,20 +112,31 @@ class JT_PreferencesWindow(QDialog):
         video_label1.setAlignment(Qt.AlignmentFlag.AlignCenter)
         preview_layout.addWidget(video_label1)
 
+        video_label2 = QLabel("Preview Video 2")
+        video_label2.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        preview_layout.addWidget(video_label2)
+
         preview_group_box.setLayout(preview_layout)
         layout.addWidget(preview_group_box, trow, 0, 1, 2)
         # Set the vertical size policy of the preview_group_box to Expanding (it will expand vertically)
         preview_group_box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         self.video1 = jtv.JT_Video(self.config_obj, video_label1)
+        self.video2 = jtv.JT_Video(self.config_obj, video_label2)
 
         cam1_index = self.config_obj.get_config("camera1")
+        cam2_index = self.config_obj.get_config("camera2")
 
         if cam1_index is not None and cam1_index > -1:
             self.camera1_combobox.setCurrentIndex(cam1_index + 1)
 #            print(f'Setting combobox index to: {cam1_index+1}')
         else:
             self.video1.camera_offline()
+
+        if cam2_index is not None and cam2_index > -1:
+            self.camera2_combobox.setCurrentIndex(cam2_index + 1)
+        else:
+            self.video2.camera_offline()
 
         ##### Branding #####
         trow += 1
@@ -201,7 +227,6 @@ class JT_PreferencesWindow(QDialog):
 
         return result
 
-
     def camera1_combox_changed(self, value):
 
         if self.video1 == None or self.ignore_combox_change == True:
@@ -215,11 +240,60 @@ class JT_PreferencesWindow(QDialog):
 
             self.video1.camera_index = value
 
+            #self.camera1_combobox.setCurrentIndex(value+1)   should already be there?
+            #make sure "other cameara" is in use and if so flip its value
+            value = convert_to_int(self.camera2_combobox.currentText())
+            if value > -1 and self.video1.camera_index == self.video2.camera_index:
+                self.video2.stop()
+                time.sleep(camera_sleep_time)
+                if self.video2.camera_index == 0:   #flips the value
+                    self.video2.camera_index = 1
+                else:
+                    self.video2.camera_index = 0
+                self.ignore_combox_change = True
+                self.camera2_combobox.setCurrentIndex(self.video2.camera_index+1)
+                self.video2.start()
+                self.ignore_combox_change = False
+
             self.start_video1()
 
         else:   #handle case of not in use
             self.camera1_combobox.setCurrentIndex(0)
             self.video1.camera_offline()
+
+        self.save_video_config()
+
+    def camera2_combox_changed(self, value):
+        if self.video2 == None or self.ignore_combox_change == True:
+            return
+        self.video2.stop()
+        time.sleep(camera_sleep_time)
+
+        log.debug(f"combox_changed for video2 to: {value}")
+        value = convert_to_int(value)
+        if value > -1 :  # this skips of -1 coming back from convert_to_int
+            self.video2.camera_index = value
+            self.camera2_combobox.setCurrentIndex(value+1)
+
+            #make sure "other cameara" is in use and if so stop/flip/start
+            value = convert_to_int(self.camera1_combobox.currentText())
+            if value > -1 and self.video1.camera_index == self.video2.camera_index:
+                self.video1.stop()
+                time.sleep(camera_sleep_time)
+                if self.video1.camera_index == 0:  # flips the value
+                    self.video1.camera_index = 1
+                else:
+                    self.video1.camera_index = 0
+                self.ignore_combox_change = True
+                self.camera1_combobox.setCurrentIndex(self.video1.camera_index+1)
+                self.start_video1()
+                self.ignore_combox_change = False
+
+            self.start_video2()
+
+        else:  # handle case of not in use
+            self.camera2_combobox.setCurrentIndex(0)
+            self.video2.camera_offline()
 
         self.save_video_config()
 
@@ -237,11 +311,23 @@ class JT_PreferencesWindow(QDialog):
             delta_time = video_end_time - video_start_time
             log.debug(f'Time for camera to start up: {delta_time:.3f}')
 
+    def start_video2(self):
+        log.debug(
+            f"checking to start video2: {self.video2.camera_index}")
+
+        selected_item = self.camera2_combobox.currentText()
+        value = convert_to_int(selected_item)
+        if self.video2 and value > -1:
+            self.video2.start()
+            log.debug(f"starting video2.   value: {value}")
+
     def save_video_config(self):
 
         cam1_index = convert_to_int(self.camera1_combobox.currentText())
+        cam2_index = convert_to_int(self.camera2_combobox.currentText())
 
         self.config_obj.set_config("camera1", cam1_index)
+        self.config_obj.set_config("camera2", cam2_index)
 
     def on_branding_edit_finished(self):
         txt = self.brand_text_input.text()
@@ -262,6 +348,7 @@ class JT_PreferencesWindow(QDialog):
         pass
     def closeEvent(self, event):
         self.video1.stop()
+        self.video2.stop()
         time.sleep(camera_sleep_time)
 
 
