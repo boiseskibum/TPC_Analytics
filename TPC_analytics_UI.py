@@ -127,8 +127,8 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.video_widgets.append(self.label_align_video)
         self.video_widgets.append(self.label_video1)
 
-        self.videoAlignmentSlider.setMinimum(-30)
-        self.videoAlignmentSlider.setMaximum( 30)
+        self.videoAlignmentSlider.setMinimum(-15)
+        self.videoAlignmentSlider.setMaximum( 15)
 
 
         # reports tab
@@ -548,13 +548,12 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             self.set_video1()
 
         #adjust the slider for the number of datapoints
-        self.videoSlider.setMinimum( self.min_data_point )
-        self.videoSlider.setMaximum( self.max_data_point - 1)
-        log.debug(f'min_data_point: {self.min_data_point}, max_data_point = {self.max_data_point}')
+        self.videoSlider.setMinimum( self.min_frame )
+        self.videoSlider.setMaximum( self.max_frame - 1)
+#        log.debug(f'min_data_point: {self.min_data_point}, max_data_point = {self.max_data_point}')
 
 
     def set_video1(self):
-
 
         # setup timers for video playback at the correct speed
         self.video_play_timer = QTimer(self)
@@ -657,9 +656,9 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             return
 
         self._stop_video()
-        self.current_data_point -= 1
-        if self.current_data_point < self.min_data_point:
-            self.current_data_point = self.min_data_point     # this is to take into account that update frame will add one to it automatically
+        self.current_frame -= 1
+        if self.current_frame < self.min_frame:
+            self.current_frame = self.min_frame     # this is to take into account that update frame will add one to it automatically
         self.update_frame()
 
     def rewind_chunk(self):
@@ -668,9 +667,9 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             return
 
         self._stop_video()
-        self.current_data_point -= self.chunk
-        if self.current_data_point < self.min_data_point:
-            self.current_data_point = self.min_data_point     # this is to take into account that update frame will add one to it automatically
+        self.current_frame -= self.chunk
+        if self.current_frame < self.min_frame:
+            self.current_frame = self.min_frame     # this is to take into account that update frame will add one to it automatically
         self.update_frame()
 
     def rewind_to_start(self):
@@ -678,7 +677,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             return
 
         self._stop_video()
-        self.current_data_point = self.min_data_point     #update frame will move it to frame zero
+        self.current_frame = self.min_frame     #update frame will move it to frame zero
         self.update_frame()
 
     def forward(self):
@@ -686,7 +685,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         if self.video1_cv2 == None:
             return
 
-        self.current_data_point += 1
+        self.current_frame += 1
         self._stop_video()
         self.update_frame()   #this automatically moves one step forward
 
@@ -696,11 +695,9 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             return
 
         self._stop_video()
-        self.current_data_point += self.chunk
-        if self.current_data_point > self.max_data_point:
-            self.current_data_point = self.max_data_point
-        if self.current_data_point > self.max_data_point:
-            self.current_data_point = self.max_data_point
+        self.current_frame += self.chunk
+        if self.current_frame > self.max_frame:
+            self.current_frame = self.max_frame
         self.update_frame()   #this automatically moves one step forward
 
     def slider_value_changed(self, value):
@@ -709,7 +706,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             return
 
         self._stop_video()
-        self.current_data_point = value
+        self.current_frame = self._calc_frame_bounds(value)
         self.update_frame()
 
     # function to tweak the video left or right to align with the graph
@@ -833,6 +830,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.debug_last_time = current_time
 #        return
 
+        # No Video
         if self.video1_cv2 == None:
             image_path = self.config_obj.get_img_path() + 'camera_offline.png'
             image = QImage(image_path)
@@ -841,20 +839,10 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             self.label_video1.setPixmap(pixmap)
             return
 
-        # if timer is active calculate the current_data_point for the graph.  If inactive we calculate which
-        # frame to show
-        if self.video_play_timer.isActive():
-            self.current_data_point = round( (self.current_frame-self.video_tweak_x)/self.ratio )
-        else:
-            # calculate which frame should be shown.  This is basically the number of
-            # frames of video divided by the total points being graphed.
-            self.current_frame = round( (self.current_data_point - self.min_data_point) * self.ratio)
-            if self.current_frame + self.video_tweak_x < self.min_frame:
-                self.current_frame = self.min_frame
-            elif self.current_frame + self.video_tweak_x >= self.max_frame:
-                self.current_frame = self.max_frame - 1
+        # Calculate current_data_point
+        self.current_data_point = round( (self.current_frame - self.video_tweak_x) / self.ratio)
 
-        #last check to make sure datapoints are between correct ranges.
+        # check to make sure datapoints are between correct ranges.
         if self.current_data_point < self.min_data_point:
             self.current_data_point = self.min_data_point
         elif self.current_data_point >= self.max_data_point:
@@ -862,9 +850,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
 #        print(f"  data: {self.current_data_point}, frame: {self.current_frame} ")
 
-
         # Set the frame position to the desired frame number
-
         update_video = True  #this is used to turn off for debugging
         if(update_video):
 
@@ -881,6 +867,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
                 self._setup_video_frame_reader()
             m_time = time.time()
 
+            # read next video frame
             # Read specific video frame, now it will be getting it from the buffer
 #            ret, frame = self.video1_cv2.read()
             frame = None
@@ -896,7 +883,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
                 total_elapsed = f_time - s_time
 #                print(f'      cv2.set: {set_elapsed:.3f}, cv2.read {read_elapsed:.3f}, cv2-total {total_elapsed:.3f}')
 
-            #display the video frame
+            ### update display the video frame
 #            if ret:
             if frame is not None:
 
@@ -914,9 +901,10 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
                 self.label_video1.setPixmap(scaled_pixmap)
 
+        #### Update Misc screen elements
         # update when video play back is inactive or read the other two statements.  Goal is to skip some updates
         # when running at full speed
-        skip_count = 3
+        skip_count = 1
         if  (self.video_play_timer.isActive() is False) or \
             (self.video_play_timer.isActive() is True and self.speed_multiplier != 1) or \
             (self.speed_multiplier == 1 and self.current_frame % skip_count == 0):
@@ -924,11 +912,12 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             # # sets the vertical bar on the graph
             self.set_vertical_bar()
             #
-            #update the slider position
+            # update the slider position
             self.videoSlider.valueChanged.disconnect(self.slider_value_changed) # disconnect the signal
-            self.videoSlider.setValue(self.current_data_point)
+            self.videoSlider.setValue(self.current_frame)
             self.videoSlider.valueChanged.connect(self.slider_value_changed)  # Reconnect the signal
 
+            # update time for display on the screen
             # the following accounts for if we are showing a short video
             x_point = self.current_data_point - self.min_data_point
             graph_time = self.graph_x_seconds[x_point]
@@ -941,7 +930,6 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         # if in play mode then increment to the next frame for the next time around
         if self.video_play_timer.isActive():
             self.current_frame += 1
-
 
         # check if video is trying to play beyond max_frame, if so then stop it
         if self.current_frame >= self.max_frame:
@@ -1027,6 +1015,19 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
                 widget.show()
             else:
                 widget.hide()
+
+
+    # calcuates frame boundaries
+    # - make sure bigger than min and smaller than max
+    # - accounts for tweak
+    def _calc_frame_bounds(self, new_value):
+        tweaked_value = new_value - self.video_tweak_x
+        if new_value < self.min_frame:
+            tweaked_value = self.min_frame
+        if new_value >= self.max_frame:
+            tweaked_value = self.max_frame
+
+        return tweaked_value
 
     ###############################################################
     #### Tab Reports
