@@ -535,9 +535,10 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         # log.msg(f"     current_trial      short_line len: {sl} graphx len {lxsecs}")
         # log.msg(f'     current_trial      self.min_data_point {self.min_data_point}. max_data_point: {self.max_data_point}')
 
-        #The intent was to create a vertical line where the person jumped which is not really necessary so commented out
+        #set the verical line at the beginning
         self.current_data_point = self.min_data_point
         self.vertical_line = self.ax_browsing.axvline(x=(start_time), color='g', linestyle='--')
+
         self.ax_browsing.legend()
         # will set limits if they aren't equal to None
         self.ax_browsing.set_ylim(self.browsing_yMin, self.browsing_yMax)
@@ -549,7 +550,21 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
         #adjust the slider for the number of datapoints
         self.videoSlider.setMinimum( self.min_frame )
-        self.videoSlider.setMaximum( self.max_frame - 1)
+        self.videoSlider.setMaximum( self.max_frame)
+
+        #set slider to correct position
+#        self.videoSlider.valueChanged.disconnect(self.slider_value_changed)  # disconnect the signal
+        self.videoSlider.setValue(self.current_frame)
+
+        # what to do with tweaker?
+        # self.video_tweak_x = 0
+        # self.videoAlignmentSlider.setValue(self.video_tweak_x)
+
+#        self.videoSlider.valueChanged.connect(self.slider_value_changed)  # Reconnect the signal
+
+        # update what is on the screen
+        self.update_frame()
+
 #        log.debug(f'min_data_point: {self.min_data_point}, max_data_point = {self.max_data_point}')
 
 
@@ -576,6 +591,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         if self.max_data_point != self.total_data_points:
             self.max_frame = round(self.max_data_point/self.total_data_points * self.total_frames)
 
+        # set initial frame to zero
         self.current_frame = self.min_frame
 
         # calculate ratio
@@ -589,7 +605,6 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         short_frame_cnt = self.max_frame - self.min_frame
         short_data_cnt = self.max_data_point - self.min_data_point
         log.info(f'  short_frames_cnt {short_frame_cnt}, data_point_cnt {short_data_cnt}, ratio(frames/data_points) = {self.ratio:.2f}')
-        self.update_frame()
 
     # sets data for the next color and draws the graph
 
@@ -706,7 +721,19 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             return
 
         self._stop_video()
-        self.current_frame = self._calc_frame_bounds(value)
+
+        # calculate the current frame to be diplayed
+        tweaked_value = value - self.video_tweak_x
+
+        # validate bounds of current frame so it doesn't go over.
+        if value < 0:
+            tweaked_value = 0
+        if value > self.total_frames -1:
+            tweaked_value = self.total_frames -1
+
+        self.current_frame = tweaked_value
+        print(f'    slider: tweaked_x: {self.video_tweak_x} slider_val: {value}  new_tweaked_value: {tweaked_value}')
+
         self.update_frame()
 
     # function to tweak the video left or right to align with the graph
@@ -717,6 +744,9 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
         self._stop_video()
         self.video_tweak_x = value
+        #self.current_frame = self.current_frame + self.video_tweak_x
+
+        print(f'          AlignmentSlider: {value}, tweak_x: {self.video_tweak_x}, current_frame: {self.current_frame}')
         self.update_frame()
 
     def checkbox_video1_enable_changed(self, checked):
@@ -810,13 +840,17 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
             # the following accounts for if we are showing a short video
             x_point = self.current_data_point - self.min_data_point
+            if x_point >= len(self.graph_x_seconds):
+                x_point = len(self.graph_x_seconds) - 1
 
             line_pos = self.graph_x_seconds[x_point]
             self.vertical_line.set_xdata([line_pos])
             self.canvas_browsing.draw()
+            print(f'    --Vertical Bar || Data min/cur/max: {self.min_data_point}, {self.current_data_point}, {self.max_data_point}  x_point: {x_point} line_pos: {line_pos}')
 
     def update_frame(self):
 
+        print(f'update_frame: {self.current_frame}')
         # debugging stuff
         self.debug_update_frame_count += 1
         #debug timer to see how fast this function is being run
@@ -828,7 +862,6 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
                 print(f'  update_frame cnt: {self.debug_update_frame_count-1}, current_frame: {self.current_frame}, elapsed: {elapsed:.3f}')
 
         self.debug_last_time = current_time
-#        return
 
         # No Video
         if self.video1_cv2 == None:
@@ -840,75 +873,75 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             return
 
         # Calculate current_data_point
-        self.current_data_point = round( (self.current_frame - self.video_tweak_x) / self.ratio)
+        self.current_data_point = round( ((self.current_frame - self.min_frame) / self.ratio) + self.min_data_point )
+#        print (f'    ## data point: {self.current_data_point}: ratio: {self.ratio} current_frame: {self.current_frame} min_frame: {self.min_frame}')
 
         # check to make sure datapoints are between correct ranges.
         if self.current_data_point < self.min_data_point:
             self.current_data_point = self.min_data_point
-        elif self.current_data_point >= self.max_data_point:
+        elif self.current_data_point > self.max_data_point:
             self.current_data_point = self.max_data_point - 1
 
-#        print(f"  data: {self.current_data_point}, frame: {self.current_frame} ")
+        print(f"     ## Data min/cur/max: {self.min_data_point}, {self.current_data_point}, {self.max_data_point} || Frame min/cur/max: {self.min_frame}, {self.current_frame}, {self.max_frame} | tweak: {self.video_tweak_x}")
 
-        # Set the frame position to the desired frame number
-        update_video = True  #this is used to turn off for debugging
-        if(update_video):
+        # Set the video frame
+        # the cv2.set command is not needed if video is being played live as the cv2.read command automatically
+        # goes to the next frame.  If the video isn't being played then set the location to the current_frame
+        s_time = time.time() # debug timer
+        if self.video_play_timer.isActive() is False:
+            self.video1_cv2.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame + self.video_tweak_x)
+            print(f'    cv2.set  current_frame: {self.current_frame} tweak_x: {self.video_tweak_x}')
+            # reset the video frame reader
+            self._setup_video_frame_reader()
+        else:
+            self.current_frame += 1
 
-            #set the video frame
-            s_time = time.time()
-            # the cv2.set command is not needed if video is being played live as the cv2.read command automatically
-            # goes to the next frame.  If the video isn't being played then go ahead and set the location to the
-            # current_frame
-            if self.video_play_timer.isActive() is False:
+            # check if video is trying to play beyond max_frame, if so then stop it
+        if self.current_frame > self.max_frame:
+            self.current_frame = self.max_frame
+            self._stop_video()
 
-                self.video1_cv2.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame + self.video_tweak_x)
-                print(f'   cv2.set  current_frame: {self.current_frame} tweak_x: {self.video_tweak_x}')
-                # reset the video frame reader
-                self._setup_video_frame_reader()
-            m_time = time.time()
+        m_time = time.time() # debug timer
 
-            # read next video frame
-            # Read specific video frame, now it will be getting it from the buffer
-#            ret, frame = self.video1_cv2.read()
-            frame = None
-            if not self.video1_frame_buffer.empty():
-                frame = self.video1_frame_buffer.get()
+        # read video frame from buffer
+        frame = None
+        if not self.video1_frame_buffer.empty():
+            frame = self.video1_frame_buffer.get()
 
-            f_time = time.time()
+        f_time = time.time() # debug timer
 
-            #debug information
-            if self.current_frame % 10 == 0:
-                set_elapsed = m_time - s_time
-                read_elapsed = f_time - m_time
-                total_elapsed = f_time - s_time
+        #debug timing information
+        if self.current_frame % 10 == 0:
+            set_elapsed = m_time - s_time
+            read_elapsed = f_time - m_time
+            total_elapsed = f_time - s_time
 #                print(f'      cv2.set: {set_elapsed:.3f}, cv2.read {read_elapsed:.3f}, cv2-total {total_elapsed:.3f}')
 
-            ### update display the video frame
-#            if ret:
-            if frame is not None:
+        ### update display the video frame
+        if frame is not None:
 
-                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                h, w, ch = rgb_frame.shape
-                bytes_per_line = ch * w
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            h, w, ch = rgb_frame.shape
+            bytes_per_line = ch * w
 
-                q_image = QImage(rgb_frame.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
+            q_image = QImage(rgb_frame.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
 
-                scaled_pixmap = QPixmap.fromImage(q_image).scaled(self.label_video1.size(), Qt.AspectRatioMode.KeepAspectRatio)
+            scaled_pixmap = QPixmap.fromImage(q_image).scaled(self.label_video1.size(), Qt.AspectRatioMode.KeepAspectRatio)
 
-                #add in lines/graphics
-                if(self.video1_overlay == True):
-                    self.frame_add_lines(scaled_pixmap)
+            #add in lines/graphics
+            if(self.video1_overlay == True):
+                self.frame_add_lines(scaled_pixmap)
 
-                self.label_video1.setPixmap(scaled_pixmap)
+            self.label_video1.setPixmap(scaled_pixmap)
 
         #### Update Misc screen elements
         # update when video play back is inactive or read the other two statements.  Goal is to skip some updates
         # when running at full speed
         skip_count = 1
-        if  (self.video_play_timer.isActive() is False) or \
-            (self.video_play_timer.isActive() is True and self.speed_multiplier != 1) or \
-            (self.speed_multiplier == 1 and self.current_frame % skip_count == 0):
-
+        # if  (self.video_play_timer.isActive() is False) or \
+        #     (self.video_play_timer.isActive() is True and self.speed_multiplier != 1) or \
+        #     (self.speed_multiplier == 1 and self.current_frame % skip_count == 0):
+        if skip_count == 1:
             # # sets the vertical bar on the graph
             self.set_vertical_bar()
             #
@@ -919,7 +952,11 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
             # update time for display on the screen
             # the following accounts for if we are showing a short video
+            # make sure we don't go beyond end of time graph
             x_point = self.current_data_point - self.min_data_point
+            if x_point >= len(self.graph_x_seconds):
+                x_point = len(self.graph_x_seconds) - 1
+
             graph_time = self.graph_x_seconds[x_point]
             graph_time = f'Time: {graph_time:.2f}'
 
@@ -929,11 +966,8 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
         # if in play mode then increment to the next frame for the next time around
         if self.video_play_timer.isActive():
-            self.current_frame += 1
+            pass
 
-        # check if video is trying to play beyond max_frame, if so then stop it
-        if self.current_frame >= self.max_frame:
-            self._stop_video()
 
     def frame_add_lines(self, scaled_pixmap):
 
@@ -1016,18 +1050,6 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             else:
                 widget.hide()
 
-
-    # calcuates frame boundaries
-    # - make sure bigger than min and smaller than max
-    # - accounts for tweak
-    def _calc_frame_bounds(self, new_value):
-        tweaked_value = new_value - self.video_tweak_x
-        if new_value < self.min_frame:
-            tweaked_value = self.min_frame
-        if new_value >= self.max_frame:
-            tweaked_value = self.max_frame
-
-        return tweaked_value
 
     ###############################################################
     #### Tab Reports
