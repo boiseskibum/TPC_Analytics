@@ -51,6 +51,9 @@ class JT_Config:
         else:
             self.base_path = self.current_directory
 
+        # get operations system (Windows or Darwin
+        self.my_platform = platform.system()
+
     # this validates if the install has happened.  see descriptions above
     def validate_install(self):
         if ".csv" in self.debug_path:
@@ -236,14 +239,13 @@ class JT_Config:
 
     #get the location of the documents folder for the particular OS
     def _get_os_document_path(self):
-        my_platform = platform.system()
-        if my_platform == "Darwin":
+        if self.my_platform == "Darwin":
 
             # Get the path to the Documents folder on macOS
             self.documents_folder = os.path.expanduser("~/Documents") + '/'
 
         # Windows
-        elif my_platform == "Windows":
+        elif self.my_platform == "Windows":
             # Get the path to the Documents folder on macOS
             self.documents_folder = os.path.expanduser("~/Documents") + '/'
 
