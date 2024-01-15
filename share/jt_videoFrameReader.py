@@ -1,14 +1,14 @@
-import cv2
-from threading import Thread
+import cv2, threading
 import time
 
 # the purpose of this class is to create a video frame reader for cv2 where it reads into a buffer in a
 # separate thread so that the frames can be processed by the main application.  It is the applications
 # responsibility to manage the video_cv2 and buffer
-class jt_VideoFrameReader(Thread):
-    def __init__(self, video_cv2, buffer, fps):
+class jt_VideoFrameReader(threading.Thread):
+    def __init__(self, video_cv2, lock, buffer, fps):
         super().__init__()
         self.video_cv2 = video_cv2
+        self.video_lock = lock
         self.buffer = buffer
         self.running = True
         self.frame_interval = 1.0 / fps  # Calculate frame interval in seconds
@@ -19,12 +19,13 @@ class jt_VideoFrameReader(Thread):
                 # If the buffer is full, sleep for the frame interval
                 time.sleep(self.frame_interval)
             else:
-                ret, frame = self.video_cv2.read()
-                if ret:
-                    self.buffer.put(frame)
-                else:
-                    # this means the video has reached its end
-                    break
+                with self.video_lock:
+                    ret, frame = self.video_cv2.read()
+                    if ret:
+                        self.buffer.put(frame)
+                    else:
+                        # this means the video has reached its end
+                        break
 
     def stop(self):
         self.running = False
@@ -42,10 +43,12 @@ if __name__ == '__main__':
         def __init__(self, argv):
             super().__init__(argv)
 
+            self.video1_cv2_lock = threading.Lock()
+
             file_path = 'jt_video_test1.mp4'
             self.video_cv2 = cv2.VideoCapture(file_path)
             self.frame_buffer = Queue(maxsize=10)  # Adjust size as needed
-            self.frame_reader = jt_VideoFrameReader(self.video_cv2, self.frame_buffer, 30)
+            self.frame_reader = jt_VideoFrameReader(self.video_cv2, self.video1_cv2_lock, self.frame_buffer, 30)
             self.frame_reader.start()
 
             self.window = QLabel()

@@ -1,6 +1,6 @@
 # TPC_analytics_UI.py
 
-import os, sys, cv2, platform, time
+import os, sys, cv2, platform, time, threading
 import numpy as np
 from queue import Queue, Empty  # utilized for video frame reader
 
@@ -163,9 +163,10 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         add_pb_icon ( "next-button.png", self.pushButton_forward)
         add_pb_icon ( "next-button-ff.png", self.pushButton_forward_chunk)
 
-        self.chunk = 10
 
-        self.speed_multiplier = 1
+        ##########################
+        # video setup
+        ##########################
 
         # starting are always 0
         # min is where the video will start
@@ -195,6 +196,10 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.debug_last_time = None
         self.debug_update_frame_count = 0
         self.video_starting_point = None
+
+        self.video1_cv2_lock = threading.Lock()
+        self.chunk = 10
+        self.speed_multiplier = 1
 
         #if this is launched from parent window then grab its child mgr object
         if parent != None:
@@ -383,6 +388,8 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             # to remain the same if the user is toggling between short and full lenght video OR if the user is
             # freezing/unfreezing the axis
             self.video_tweak_x = 0
+            self.videoAlignmentSlider.setValue(self.video_tweak_x)
+
             self.set_trial(trial)
 
         else:
@@ -419,9 +426,10 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             self._stop_video()
 
         if self.video1_cv2:
-            self.video1_cv2.release()
-            self.video1_cv2 = None
-            time.sleep(.2)
+            with self.video1_cv2_lock:
+                self.video1_cv2.release()
+                self.video1_cv2 = None
+                time.sleep(0)
 
         # 2) get video file and do basic setup.  The remainder is doing in (set_video1)
         if len(trial.video_files) > 0:
@@ -438,16 +446,15 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
                 try:
                     if os.path.exists(self.video1_filepath):
-                        if(self.config_obj.my_platform == "Darwin"):
-                            self.video1_cv2 = cv2.VideoCapture(self.video1_filepath, cv2.CAP_AVFOUNDATION)
-                        else:
+                        with self.video1_cv2_lock:
                             self.video1_cv2 = cv2.VideoCapture(self.video1_filepath)
 
                     # validated if file was successfully opened
                     if not self.video1_cv2.isOpened():
                         log.error(f"Error: cv2.VideoCapture Error: Could not open video file {self.video1_filepath}")
-                        self.video1_cv2.release()
-                        self.video1_cv2 = None
+                        with self.video1_cv2_lock:
+                            self.video1_cv2.release()
+                            self.video1_cv2 = None
                         self.show_video_widgets(False)
                     else:
                         # get video data
@@ -456,7 +463,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
                         self.video1_fps = self.video1_cv2.get(cv2.CAP_PROP_FPS)
                         self.video_time_freq_full = round(1000 / self.video1_fps)  # calculates milliseconds/frame
 
-                        log.info(f'Opened video: {self.video1_filepath}, FPS: {self.video1_fps}')
+                        log.debug(f'Opened video: {self.video1_filepath}, FPS: {self.video1_fps}')
                 except:
                     log.error(f'Failed to open video file: {self.video1_filepath}')
                     self.show_video_widgets(False)
@@ -638,7 +645,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.update_frame()
 
     #used internally to stop both the video_play_timer (pyqt loop), the VideoFrameReader thread, and empty the buffer
-    def _stop_video(self, pause_time = .1):
+    def _stop_video(self, pause_time = .0):
 
         #stop the pyqt video from playing
         if self.video_play_timer is not None:
@@ -661,9 +668,9 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
     # the main loop displays them.
     def _setup_video_frame_reader(self):
         self.video1_frame_buffer = Queue(maxsize=5)     # Adjust size as needed
-        self.video1_frame_reader = jtvf.jt_VideoFrameReader(self.video1_cv2, self.video1_frame_buffer, self.video_time_freq)
+        self.video1_frame_reader = jtvf.jt_VideoFrameReader(self.video1_cv2, self.video1_cv2_lock, self.video1_frame_buffer, self.video_time_freq)
         self.video1_frame_reader.start()                # go ahead and get the frame buffer loaded
-        timer_wait = .01
+        timer_wait = .0
         time.sleep(timer_wait) #give the buffer a chance to start filling
 
         st = time.time()
@@ -779,6 +786,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             self.video1_overlay = False
         self.update_frame()
 
+    # Video Speed control (normal, slow, superslow
     def radio_button_callback(self, sender ):
         sender = self.sender()  # Get the sender of the signal
 
@@ -805,7 +813,8 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         # after changing speed stop the video if it is active and restart it.
         if self.video_play_timer.isActive():
             self._stop_video()
-            time.sleep(0.1)
+            time.sleep(0)
+            self.update_frame()
             self.video_play_timer.start(self.video_time_freq)  #FPS
 
     # def checkbox_short_video_changed(self, checked):
@@ -818,9 +827,6 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             return
 
         self._stop_video()
-
-        # hack to try and stop occassional  crashes.
-        time.sleep(.3)
 
         if (self.video_frame_retrieve_debug):
             print('##### made it here, checkbox for short video after video stopped')
@@ -922,7 +928,9 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
                 elif frame_num >= self.total_frames:
                     frame_num = self.total_frames -1
 
-                self.video1_cv2.set(cv2.CAP_PROP_POS_FRAMES,frame_num )
+                with self.video1_cv2_lock:
+                    self.video1_cv2.set(cv2.CAP_PROP_POS_FRAMES,frame_num )
+
             except:
                 print(f'    ############### failed to set position of frame')
 
