@@ -1,2 +1,2 @@
 # version.py
-__version__ = '2024-1-15.0'   #Format is date and build number from that day (hopefully the latter isn't used')
+__version__ = 'v1.0.0'   #Format is Major.minor.patch
