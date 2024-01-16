@@ -23,34 +23,37 @@ python3 -m venv ~/Documents/TPC/application/venv
 # Activate the virtual environment
 source ~/Documents/TPC/application/venv/bin/activate
 
+echo "TPC: downloading code from GitHub"
 # Download the code from GitHub
 curl -L "https://github.com/$OWNER/$REPO/archive/refs/tags/$VERSION_TAG.zip" -o ~/Documents/TPC/application/code.zip
 #curl -L https://github.com/boiseskibum/JT_Analytics_for_Athletes/archive/refs/tags/Beta_Release_2023_12_22_1.zip -o ~/Documents/TPC/application/code.zip
 
-##########################
-# to do the latest release run the following code, uncomment down below
-##########################
-# code to get the most current version of a file
+#  Commented out as this code doesn't work
+###########################
+## to do the latest release run the following code, uncomment down below
+###########################
+## code to get the most current version of a file
+#
+## Get the latest release data from GitHub API
+#LATEST_RELEASE=$(curl -s "https://api.github.com/repos/$OWNER/$REPO/releases/latest")
+#
+## Extract the URL of the first asset
+#ASSET_URL=$(echo $LATEST_RELEASE | jq -r '.assets[0].browser_download_url')
+#
+## Check if the URL is valid
+#if [ -z "$ASSET_URL" ] || [ "$ASSET_URL" == "null" ]; then
+#  echo "No assets found in the latest release."
+#  exit 1
+#fi
+#
+## Output the URL
+#echo "Latest Release URL: $ASSET_URL"
+#
+## Uncomment the following line to download the asset
+## curl -L -o filename.ext "$ASSET_URL"
+#######################
 
-# Get the latest release data from GitHub API
-LATEST_RELEASE=$(curl -s "https://api.github.com/repos/$OWNER/$REPO/releases/latest")
-
-# Extract the URL of the first asset
-ASSET_URL=$(echo $LATEST_RELEASE | jq -r '.assets[0].browser_download_url')
-
-# Check if the URL is valid
-if [ -z "$ASSET_URL" ] || [ "$ASSET_URL" == "null" ]; then
-  echo "No assets found in the latest release."
-  exit 1
-fi
-
-# Output the URL
-echo "Latest Release URL: $ASSET_URL"
-
-# Uncomment the following line to download the asset
-# curl -L -o filename.ext "$ASSET_URL"
-######################
-
+echo "TPC: unzip, and put code where it belongs"
 # unzip the file,
 unzip ~/Documents/TPC/application/code.zip -d ~/Documents/TPC/application/
 # rename directory with title and version to be "code"
@@ -60,8 +63,11 @@ rm ~/Documents/TPC/application/code.zip
 # create dummy file to contain the version information
 echo "$Github Repository: REPO Version: $VERSION_TAG" > ~/Documents/TPC/TPC_version_info
 
+echo "TPC: installing python code specified in requirements.txt"
 # Install required modules
 pip install -r ~/Documents/TPC/application/code/requirements.txt
+
+echo "TPC: creating TPC_run command file"
 
 # Create TPC_run command file
 echo "#!/bin/bash" > ~/TPC_run
