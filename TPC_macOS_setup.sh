@@ -6,6 +6,7 @@
 VERSION_TAG="v1.0.1"    # Replace with the repository name
 OWNER="boiseskibum"  # Replace with the GitHub username or organization
 REPO="TPC_Analytics"    # Replace with the repository name
+VERSION_TAG_NO_V=${VERSION_TAG:1}  # Remove the 'v' prefix from version tag
 
 # Check if Python is installed
 if ! command -v python3 &> /dev/null
@@ -31,7 +32,7 @@ echo "TPC: unzip, and put code where it belongs"
 # unzip the file,
 unzip ~/Documents/TPC/application/code.zip -d ~/Documents/TPC/application/
 # rename directory with title and version to be "code"
-mv ~/Documents/TPC/application/$REPO-$VERSION_TAG ~/Documents/TPC/application/code
+mv ~/Documents/TPC/application/$REPO-$VERSION_TAG_NO_V ~/Documents/TPC/application/code
 # delete the zip file
 rm ~/Documents/TPC/application/code.zip
 # create dummy file to contain the version information
