@@ -86,6 +86,6 @@ echo "$appleScriptCommand" | osacompile -o "$appPath"
 cp "$iconPath" "$appPath/Contents/Resources/applet.icns"
 
 echo "--------------------------------------------------------------------------------------"
-echo "--------  TPC:  Installed TPC Analytics.  Find it in Desktop or Documents/TCP/ -------"
+echo "--------  TPC:  Installed TPC Analytics.  Find it in Desktop or Documents/TCP/  ------"
 echo "--------------------------------------------------------------------------------------"
 
