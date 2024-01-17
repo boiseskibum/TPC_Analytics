@@ -375,7 +375,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
                 trial.trial_name = item_text
 
-                log.debug(f"Clicked: {item_text}, Parent Path: {parent_path}, original_filename: {original_filename}, filepath {trial.file_path}---")
+                log.info(f"Clicked: {item_text}, Parent Path: {parent_path}, original_filename: {original_filename}, filepath {trial.file_path}---")
             except:
                 msg = f'Error processing {item_text}, limited functionality '
                 jtd.JT_Dialog(parent=self, title="Exception",
@@ -391,6 +391,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             self.videoAlignmentSlider.setValue(self.video_tweak_x)
 
             self.set_trial(trial)
+            self.statusbar.showMessage(f"Original Filename: {original_filename}")
 
         else:
             log.debug(f'no item to selected, must be a folder.  item_text: {item.text(0)}')
