@@ -65,7 +65,7 @@ def rename_files(directory):
                     new_time_str = new_time_obj.strftime("%H-%M-%S")
 
                     # Construct the new filename
-                    new_filename = f"{protocol}_{new_first_name}_{date_str}-{new_time_str}{more_crap}{ext}"
+                    new_filename = f"{protocol}_{new_first_name}_{date_str}_{new_time_str}{more_crap}{ext}"
                     new_filepath = os.path.join(directory, new_filename)
                     print(f' old filename: {filename}    new filename: {new_filename}')
 
