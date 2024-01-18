@@ -11,7 +11,10 @@ VERSION_TAG_NO_V=${VERSION_TAG:1}  # Remove the 'v' prefix from version tag
 # Check if Python is installed
 if ! command -v python3 &> /dev/null
 then
-    echo "Python could not be found. Please install Python."
+    echo ""
+    echo "*****  Python could not be found. Please install Python and rerun this script *****"
+    echo "*****  go to https://www.python.org/downloads/macos/ and install version 3.11.x *****"
+    echo ""
     exit
 fi
 

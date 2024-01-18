@@ -562,6 +562,13 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         self.vertical_line = self.ax_browsing.axvline(x=(start_time), color='g', linestyle='--')
 
         self.ax_browsing.legend()
+
+        # special case, all non-cmj jumps start at zero.  Who knows if this changes in the future but for now...
+        if 'cmj' not in self.current_trial.protocol:
+            self.browsing_yMin = 0
+        else:
+            self.browsing_yMin = None
+
         # will set limits if they aren't equal to None
         self.ax_browsing.set_ylim(self.browsing_yMin, self.browsing_yMax)
         self.canvas_browsing.draw()
@@ -854,6 +861,8 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             self.freeze_y_axis = False
             self.browsing_yMin = None
             self.browsing_yMax = None
+            if 'cmj' not in self.current_trial.protocol:
+                self.browsing_yMin = 0
 
         # this should force a redraw of the graph
         if self.current_trial is not None:
