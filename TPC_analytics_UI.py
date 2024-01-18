@@ -842,7 +842,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
     # handles freezing the y-axis to better see difference between different jumps
     def checkBox_freeze_y_axis_changed(self, checked):
 
-        if self.video_play_timer.isActive():
+        if self.video_play_timer is not None and self.video_play_timer.isActive():
             self._stop_video()
 
         if checked != 0:
