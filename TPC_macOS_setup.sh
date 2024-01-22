@@ -61,7 +61,7 @@ echo ""
 # Create TPC_Analytics_run command file
 echo "#!/bin/bash" > ~/TPC_Analytics_run
 echo "source ~/Documents/\"$APP_NAME\"/application/venv/bin/activate" >> ~/TPC_Analytics_run
-echo "python ~/Documents/\"$APP_NAME\"/application/code/TPC_Analytics_main.py" >> ~/TPC_Analytics_run
+echo "python ~/Documents/\"$APP_NAME\"/application/code/TPC_main.py" >> ~/TPC_Analytics_run
 chmod +x ~/TPC_Analytics_run
 echo " "
 echo " From the command line and your root directory you can run your application with './TPC_Analytics_run'"
