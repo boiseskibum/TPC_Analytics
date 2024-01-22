@@ -27,33 +27,33 @@ fi
 
 echo "$APP_NAME - Create $APP_NAME directory in the Documents directory"
 echo ""
-mkdir -p ~/Documents/$APP_NAME/application
+mkdir -p ~/Documents/"$APP_NAME"/application
 
 # Create a virtual environment
-python3 -m venv ~/Documents/$APP_NAME/application/venv
+python3 -m venv ~/Documents/"$APP_NAME"/application/venv
 
 # Activate the virtual environment
-source ~/Documents/$APP_NAME/application/venv/bin/activate
+source ~/Documents/"$APP_NAME"/application/venv/bin/activate
 
 echo "$APP_NAME - downloading code from GitHub"
 # Download the code from GitHub
-curl -L "https://github.com/$OWNER/$REPO/archive/refs/tags/$VERSION_TAG.zip" -o ~/Documents/$APP_NAME/application/code.zip
+curl -L "https://github.com/$OWNER/$REPO/archive/refs/tags/$VERSION_TAG.zip" -o ~/Documents/"$APP_NAME"/application/code.zip
 
 echo "$APP_NAME - unzip, and put code where it belongs"
 # unzip the file,
-unzip ~/Documents/$APP_NAME/application/code.zip -d ~/Documents/$APP_NAME/application/
+unzip ~/Documents/"$APP_NAME"/application/code.zip -d ~/Documents/"$APP_NAME"/application/
 # rename directory with title and version to be "code"
-mv ~/Documents/$APP_NAME/application/$REPO-$VERSION_TAG_NO_V ~/Documents/$APP_NAME/application/code
+mv ~/Documents/"$APP_NAME"/application/$REPO-$VERSION_TAG_NO_V ~/Documents/"$APP_NAME"/application/code
 # delete the zip file
-rm ~/Documents/$APP_NAME/application/code.zip
+rm ~/Documents/"$APP_NAME"/application/code.zip
 # create dummy file to contain the version information
-echo "$Github Repository: REPO Version: $VERSION_TAG" > ~/Documents/$APP_NAME/TPC_Analytics_version_info
+echo "$Github Repository: REPO Version: $VERSION_TAG" > ~/Documents/"$APP_NAME"/TPC_Analytics_version_info
 echo ""
 
 echo "$APP_NAME - installing python code specified in requirements.txt"
 echo ""
 # Install required modules
-pip install -r ~/Documents/$APP_NAME/application/code/requirements.txt
+pip install -r ~/Documents/"$APP_NAME"/application/code/requirements.txt
 
 echo "$APP_NAME - creating TPC_Analytics_run command file"
 echo ""
