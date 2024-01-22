@@ -7,7 +7,7 @@ VERSION_TAG="v1.0.2"    # Replace with the repository name
 OWNER="boiseskibum"  # Replace with the GitHub username or organization
 REPO="TPC_Analytics"    # Replace with the repository name
 VERSION_TAG_NO_V=${VERSION_TAG:1}  # Remove the 'v' prefix from version tag
-APP_NAME = "TPC Analytics"
+APP_NAME="TPC Analytics"
 
 echo " "
 echo "************************************************************************************"
@@ -70,9 +70,9 @@ echo " "
 # Creates icon path
 
 # Define paths
-appPath = "$HOME/Desktop/$APP_NAME.app"
-iconPath = "$HOME/Documents/$APP_NAME/application/code/resources/img/jt.icns"
-scriptPath = "$HOME/TPC_Analytics_run"
+appPath="$HOME/Desktop/$APP_NAME.app"
+iconPath="$HOME/Documents/$APP_NAME/application/code/resources/img/jt.icns"
+scriptPath="$HOME/TPC_Analytics_run"
 
 rm -rf "$appPath"
 
@@ -89,7 +89,7 @@ cp "$iconPath" "$appPath/Contents/Resources/applet.icns"
 open "$HOME/Desktop"
 
 #####
-appPath = "$HOME/Documents/$APP_NAME/$APP_NAME.app"
+appPath="$HOME/Documents/$APP_NAME/$APP_NAME.app"
 
 # Create an AppleScript command to run your bash script
 appleScriptCommand="do shell script \"${scriptPath}\""
@@ -100,7 +100,7 @@ echo "$appleScriptCommand" | osacompile -o "$appPath"
 # Set the icon for the application
 cp "$iconPath" "$appPath/Contents/Resources/applet.icns"
 echo ""
-echo "--------------------------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------------------------"
 echo "--------  $APP_NAME:  Installed $APP_NAME.  Find it in Desktop or Documents/$APP_NAME/  ------"
-echo "--------------------------------------------------------------------------------------"
+echo "------------------------------------------------------------------------------------------------"
 
