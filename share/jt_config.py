@@ -19,30 +19,28 @@ except:
 log = util.jt_logging()
 
 ###########################
-# app_name - holds the long app name for usage elsewhere
-# short_app_name - utilized as part of the directory structure both for the config file in /documents as well as where
-#               data/results/temp is stored.   This is probably something short like TPC, ABC, etc
+# app_name - holds the app name which will be used in directories and other places
 # path_app - used only for debug if you want the config file to be in specific spot.
 #
 # Usage:
 #   1) my_config = JT_config initialize to get started from your main app
 #   2) my_config.validate directories to see if a directory structure has already been set up.  If no directory has been
-#       set up it creates the directory in ~/documents/short_app_name with a default to self.path_app to utilize that
+#       set up it creates the directory in ~/documents/app_name with a default to self.path_app to utilize that
 #       initial path, but will return False so that the application can then have the opportunity to set the path_app
 #       for data/db/results/log/etc.
 #   3) if .validate() returns False then call my_config.set_app_location(directory_path) to pass in the path where the
-#       app should be installed.   The default will be in ~/documents/short_app_name.   Ideally they install in some
+#       app should be installed.   The default will be in ~/documents/app_name.   Ideally they install in some
 #       directory that is backed up in the cloud
 #   4) my_config._set_paths()  this utilizes the directory set above and is already called with a successful call
 #       of my_config.validate() or inside of my_config.set_app_location
 #
 class JT_Config:
-    def __init__(self, app_name, short_app_name, base_path, debug_path="" ):
+    def __init__(self, app_name, base_path, debug_path="" ):
 
         self.error_msg = ""
         self.error = False
         self.app_name = app_name
-        self.short_app_name = short_app_name
+        self.app_name_no_blanks = app_name.replace(" ", "_")
         self.debug_path = debug_path
         self.current_directory = os.getcwd()
         log.msg(f"Current Working Directory: {self.current_directory}")
@@ -62,9 +60,9 @@ class JT_Config:
 
         self._get_os_document_path()
 
-        starting_path_app = self.documents_folder + self.short_app_name + '/'   # this will be overwritten later
+        starting_path_app = self.documents_folder + self.app_name + '/'   # this will be overwritten later
         path_app_config = starting_path_app + 'config/'
-        self.path_app_config_json = path_app_config + self.short_app_name + '_path_app_config.json' #this will not change
+        self.path_app_config_json = path_app_config + self.app_name_no_blanks + '_path_app_config.json' #this will not change
 
         # validate if config.json file exists and read json file to get path_app
         if os.path.exists(self.path_app_config_json):
@@ -115,7 +113,7 @@ class JT_Config:
 
     # see documentation above
     def setup_app_location(self, path_for_app_install):
-        self.path_app = path_for_app_install + '/' + self.short_app_name + '/'
+        self.path_app = path_for_app_install + '/' + self.app_name + '/'
 
         # Create AppDirectory if it doesn't exist
         os.makedirs(self.path_app, exist_ok=True)
@@ -200,7 +198,7 @@ class JT_Config:
 
         # default db/tables names - can be changed but probably shouldn't be
         # These will go into a real database someday
-        self.config_file_path = self.path_config + self.short_app_name + '_config.json'
+        self.config_file_path = self.path_config + self.app_name + '_config.json'
         self.athletes_file_path = self.path_config + "athletes.csv"
         self.trial_mgr_filename = self.path_db + 'all_athletes.json'
         self.protocol_obj = None
@@ -307,6 +305,7 @@ class JT_Config:
 
         return my_return
 
+    #this function is used to convert paths if going between macOS and Windows.  Shouldn't affect anything if on same OS
     def convert_file_path(self, file_path):
 
         #only convert if file path does NOT exist
@@ -314,7 +313,7 @@ class JT_Config:
             return file_path
 
         # Find the index where "/Force Plate Testing/" ends
-        app_dir = 'TPC/'
+        app_dir = self.app_name + '/'
         index = file_path.find(app_dir)
 
         if index != -1:

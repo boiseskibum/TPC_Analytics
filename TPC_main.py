@@ -226,7 +226,7 @@ class CMJ_UI(QMainWindow):
         log.info(f'Base_path: {base_path}')
 
         # get config data.  REquired to do the icon.
-        self.config_obj = jtc.JT_Config(self.application_name, 'TPC', base_path)
+        self.config_obj = jtc.JT_Config(self.application_name, base_path)
 
         image = self.config_obj.validate_path_and_return_QImage("jt.ico")
         image = self.config_obj.validate_path_and_return_QImage("jt_app_round.png")

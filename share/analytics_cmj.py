@@ -409,7 +409,7 @@ class JT_analytics_cmj:
 
 if __name__ == "__main__":
 
-    config_obj = jtc.JT_Config('taylor performance', 'TPC', None)
+    config_obj = jtc.JT_Config('taylor performance', None)
     val = config_obj.validate_install()
     print('convig_obj.validate return value: {val}')
 

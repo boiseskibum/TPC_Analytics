@@ -1199,7 +1199,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     # configuration object for keys and values setup
-    config_obj = jtc.JT_Config('TPC Analytics', 'TPC', None)
+    config_obj = jtc.JT_Config('TPC Analytics', None)
 
     #validate
     if config_obj.validate_install() == False:

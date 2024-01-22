@@ -272,7 +272,7 @@ if __name__ == '__main__':
             super().__init__()
 
             self.reader_obj = jts.SerialDataReader()
-            self.config_obj = jtc.JT_Config('taylor performance', 'TPC', None, "testing_config.json")
+            self.config_obj = jtc.JT_Config('taylor performance', None, "testing_config.json")
             val = self.config_obj.validate_install()
             print('convig_obj.validate return value: {val}')
 

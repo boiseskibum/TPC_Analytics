@@ -174,7 +174,7 @@ class JT_PDF_2_across:
 if __name__ == "__main__":
 
     # set base and application path
-    config_obj = jtc.JT_Config('taylor performance', 'TPC', None)
+    config_obj = jtc.JT_Config('taylor performance', None)
     config_obj.validate_install()
 
     output_file = 'testing/jt_pdf_2_across.pdf'

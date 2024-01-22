@@ -7,6 +7,7 @@ VERSION_TAG="v1.0.2"    # Replace with the repository name
 OWNER="boiseskibum"  # Replace with the GitHub username or organization
 REPO="TPC_Analytics"    # Replace with the repository name
 VERSION_TAG_NO_V=${VERSION_TAG:1}  # Remove the 'v' prefix from version tag
+APP_NAME
 
 # Check if Python is installed
 if ! command -v python3 &> /dev/null
@@ -18,50 +19,56 @@ then
     exit
 fi
 
-# Create TPC directory in the Documents directory
-mkdir -p ~/Documents/TPC/application
+#
+
+echo "$APP_NAME: Create $TPC_Analytics directory in the Documents directory"
+echo ""
+mkdir -p ~/Documents/$APP_NAME/application
 
 # Create a virtual environment
-python3 -m venv ~/Documents/TPC/application/venv
+python3 -m venv ~/Documents/$APP_NAME/application/venv
 
 # Activate the virtual environment
-source ~/Documents/TPC/application/venv/bin/activate
+source ~/Documents/$APP_NAME/application/venv/bin/activate
 
-echo "TPC: downloading code from GitHub"
+echo "$APP_NAME: downloading code from GitHub"
 # Download the code from GitHub
-curl -L "https://github.com/$OWNER/$REPO/archive/refs/tags/$VERSION_TAG.zip" -o ~/Documents/TPC/application/code.zip
+curl -L "https://github.com/$OWNER/$REPO/archive/refs/tags/$VERSION_TAG.zip" -o ~/Documents/$APP_NAME/application/code.zip
 
-echo "TPC: unzip, and put code where it belongs"
+echo "$APP_NAME: unzip, and put code where it belongs"
 # unzip the file,
-unzip ~/Documents/TPC/application/code.zip -d ~/Documents/TPC/application/
+unzip ~/Documents/$APP_NAME/application/code.zip -d ~/Documents/$APP_NAME/application/
 # rename directory with title and version to be "code"
-mv ~/Documents/TPC/application/$REPO-$VERSION_TAG_NO_V ~/Documents/TPC/application/code
+mv ~/Documents/$APP_NAME/application/$REPO-$VERSION_TAG_NO_V ~/Documents/$APP_NAME/application/code
 # delete the zip file
-rm ~/Documents/TPC/application/code.zip
+rm ~/Documents/$APP_NAME/application/code.zip
 # create dummy file to contain the version information
-echo "$Github Repository: REPO Version: $VERSION_TAG" > ~/Documents/TPC/TPC_version_info
+echo "$Github Repository: REPO Version: $VERSION_TAG" > ~/Documents/$APP_NAME/TPC_Analytics_version_info
+echo ""
 
-echo "TPC: installing python code specified in requirements.txt"
+echo "$APP_NAME: installing python code specified in requirements.txt"
+echo ""
 # Install required modules
-pip install -r ~/Documents/TPC/application/code/requirements.txt
+pip install -r ~/Documents/$APP_NAME/application/code/requirements.txt
 
-echo "TPC: creating TPC_run command file"
+echo "$APP_NAME: creating TPC_Analytics_run command file"
+echo ""
 
-# Create TPC_run command file
-echo "#!/bin/bash" > ~/TPC_run
-echo "source ~/Documents/TPC/application/venv/bin/activate" >> ~/TPC_run
-echo "python ~/Documents/TPC/application/code/TPC_main.py" >> ~/TPC_run
-chmod +x ~/TPC_run
+# Create TPC_Analytics_run command file
+echo "#!/bin/bash" > ~/TPC_Analytics_run
+echo "source ~/Documents/$APP_NAME/application/venv/bin/activate" >> ~/TPC_Analytics_run
+echo "python ~/Documents/$APP_NAME/application/code/TPC_Analytics_main.py" >> ~/TPC_Analytics_run
+chmod +x ~/TPC_Analytics_run
 echo " "
-echo " From the command line and your root directory you can run your application with './TPC_run'"
+echo " From the command line and your root directory you can run your application with './TPC_Analytics_run'"
 echo " "
 
 # Creates icon path
 
 # Define paths
-appPath="$HOME/Desktop/TPC Analytics.app"
-iconPath="$HOME/Documents/TPC/application/code/resources/img/jt.icns"
-scriptPath="$HOME/TPC_run"
+appPath="$HOME/Desktop/$APP_NAME.app"
+iconPath="$HOME/Documents/$APP_NAME/application/code/resources/img/jt.icns"
+scriptPath="$HOME/TPC_Analytics_run"
 
 rm -rf "$appPath"
 
@@ -78,7 +85,7 @@ cp "$iconPath" "$appPath/Contents/Resources/applet.icns"
 open "$HOME/Desktop"
 
 #####
-appPath="$HOME/Documents/TPC/TPC Analytics.app"
+appPath="$HOME/Documents/$APP_NAME/$APP_NAME.app"
 
 # Create an AppleScript command to run your bash script
 appleScriptCommand="do shell script \"${scriptPath}\""
@@ -88,8 +95,8 @@ echo "$appleScriptCommand" | osacompile -o "$appPath"
 
 # Set the icon for the application
 cp "$iconPath" "$appPath/Contents/Resources/applet.icns"
-
+echo ""
 echo "--------------------------------------------------------------------------------------"
-echo "--------  TPC:  Installed TPC Analytics.  Find it in Desktop or Documents/TCP/  ------"
+echo "--------  $APP_NAME:  Installed $APP_NAME.  Find it in Desktop or Documents/TCP/  ------"
 echo "--------------------------------------------------------------------------------------"
 

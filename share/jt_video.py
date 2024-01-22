@@ -281,7 +281,7 @@ if __name__ == "__main__":
                 self.video1.camera_index = 1
                 self.video2.camera_index = 0
 
-    config_obj = jtc.JT_Config('taylor performance', 'TPC', None)
+    config_obj = jtc.JT_Config('taylor performance', None)
     log.set_logging_level("DEBUG")
     external_camera_count()
     app = QApplication(sys.argv)

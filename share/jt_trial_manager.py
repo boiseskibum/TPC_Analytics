@@ -380,7 +380,7 @@ class FileProcessor(QWidget):
     def process_files(self):
 
         #WARNING THIS WILL REPROCESS ALL FILES
-        config_obj = jtc.JT_Config('taylor performance', 'TPC', None)
+        config_obj = jtc.JT_Config('taylor performance', None)
         config_obj.validate_install()
 
         trial_mgr_obj = JT_JsonTrialManager(config_obj)

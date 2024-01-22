@@ -423,7 +423,7 @@ class JT_Trial:
 if __name__ == "__main__":
 
     # set base and application path
-    config_obj = jtc.JT_Config('taylor performance', 'TPC', None)
+    config_obj = jtc.JT_Config('taylor performance', None)
     config_obj.validate_install()
 
     trial_mgr_obj = jttm.JT_JsonTrialManager(config_obj)
