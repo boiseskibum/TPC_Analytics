@@ -3,7 +3,7 @@
 # Run chmod +x TPC_macos_setup.sh to make the script executable.
 
 ## Set your repository details
-VERSION_TAG="v1.0.2"    # Replace with the repository name
+VERSION_TAG="v1.0.3"    # Replace with the repository name
 OWNER="boiseskibum"  # Replace with the GitHub username or organization
 REPO="TPC_Analytics"    # Replace with the repository name
 VERSION_TAG_NO_V=${VERSION_TAG:1}  # Remove the 'v' prefix from version tag
