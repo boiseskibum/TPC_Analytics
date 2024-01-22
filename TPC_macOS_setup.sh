@@ -25,7 +25,7 @@ then
     exit
 fi
 
-echo "$APP_NAME: Create $APP_NAME directory in the Documents directory"
+echo "$APP_NAME - Create $APP_NAME directory in the Documents directory"
 echo ""
 mkdir -p ~/Documents/$APP_NAME/application
 
@@ -35,11 +35,11 @@ python3 -m venv ~/Documents/$APP_NAME/application/venv
 # Activate the virtual environment
 source ~/Documents/$APP_NAME/application/venv/bin/activate
 
-echo "$APP_NAME: downloading code from GitHub"
+echo "$APP_NAME - downloading code from GitHub"
 # Download the code from GitHub
 curl -L "https://github.com/$OWNER/$REPO/archive/refs/tags/$VERSION_TAG.zip" -o ~/Documents/$APP_NAME/application/code.zip
 
-echo "$APP_NAME: unzip, and put code where it belongs"
+echo "$APP_NAME - unzip, and put code where it belongs"
 # unzip the file,
 unzip ~/Documents/$APP_NAME/application/code.zip -d ~/Documents/$APP_NAME/application/
 # rename directory with title and version to be "code"
@@ -50,12 +50,12 @@ rm ~/Documents/$APP_NAME/application/code.zip
 echo "$Github Repository: REPO Version: $VERSION_TAG" > ~/Documents/$APP_NAME/TPC_Analytics_version_info
 echo ""
 
-echo "$APP_NAME: installing python code specified in requirements.txt"
+echo "$APP_NAME - installing python code specified in requirements.txt"
 echo ""
 # Install required modules
 pip install -r ~/Documents/$APP_NAME/application/code/requirements.txt
 
-echo "$APP_NAME: creating TPC_Analytics_run command file"
+echo "$APP_NAME - creating TPC_Analytics_run command file"
 echo ""
 
 # Create TPC_Analytics_run command file
@@ -101,6 +101,6 @@ echo "$appleScriptCommand" | osacompile -o "$appPath"
 cp "$iconPath" "$appPath/Contents/Resources/applet.icns"
 echo ""
 echo "------------------------------------------------------------------------------------------------"
-echo "--------  $APP_NAME:  Installed $APP_NAME.  Find it in Desktop or Documents/$APP_NAME/  ------"
+echo "--------  $APP_NAME -  Installed $APP_NAME.  Find it in Desktop or Documents/$APP_NAME/  ------"
 echo "------------------------------------------------------------------------------------------------"
 
