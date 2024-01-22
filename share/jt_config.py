@@ -198,7 +198,7 @@ class JT_Config:
 
         # default db/tables names - can be changed but probably shouldn't be
         # These will go into a real database someday
-        self.config_file_path = self.path_config + self.app_name + '_config.json'
+        self.config_file_path = self.path_config + self.app_name_no_blanks + '_config.json'
         self.athletes_file_path = self.path_config + "athletes.csv"
         self.trial_mgr_filename = self.path_db + 'all_athletes.json'
         self.protocol_obj = None

@@ -44,7 +44,7 @@ log.msg(f'INFO - Valid logging levels are: {util.logging_levels}')
 
 from PyQt6.QtCore import Qt, QTimer, QSize, QUrl
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QLabel, QCheckBox
-from PyQt6.QtWidgets import QPushButton, QComboBox, QRadioButton, QDialog, QFileDialog
+from PyQt6.QtWidgets import QPushButton, QComboBox, QRadioButton, QDialog, QFileDialog, QButtonGroup
 from PyQt6.QtGui import QPixmap, QIcon, QAction
 from PyQt6.QtMultimedia import QSoundEffect
 
@@ -267,6 +267,11 @@ class CMJ_UI(QMainWindow):
         self.double_radiobutton.toggled.connect( self.protocol_type_double)
         self.grid_layout.addWidget(self.double_radiobutton, trow, 1)
 
+        # Create a button group and add the radio buttons to it
+        self.buttonGroup = QButtonGroup(self)
+        self.buttonGroup.addButton(self.single_radiobutton)
+        self.buttonGroup.addButton(self.double_radiobutton)
+
         # protocol_name selection - COMBO BOX
         trow += 2
         self.protocol_name_combobox = QComboBox()
@@ -456,10 +461,10 @@ class CMJ_UI(QMainWindow):
         log.debug(f"protocol type_selected: {self.protocol_type_selected}, name_selected: {self.protocol_name_selected} name_list: {self.protocol_name_list}")
 
         if self.protocol_type_selected == "single":
-            self.protocol_type_single()
+            self.protocol_type_single(True)
             self.single_radiobutton.setChecked(True)
         else:
-            self.protocol_type_double()
+            self.protocol_type_double(True)
             self.double_radiobutton.setChecked(True)
 
         ##### Athletes #####
@@ -659,7 +664,10 @@ class CMJ_UI(QMainWindow):
         except Exception as e:
             log.error(f"self.preferences_window.show() an error occurred: {e}")
 
-    def protocol_type_single(self):
+    #radio button callback
+    def protocol_type_single(self, checked):
+        if checked is False:
+            return
         self.protocol_type_selected = "single"
         self.config_obj.set_config("protocol_type", self.protocol_type_selected)
 
@@ -670,7 +678,10 @@ class CMJ_UI(QMainWindow):
         self.r_calibrate_button.setVisible(False)
         self.r_calibration_display.setVisible(False)
 
-    def protocol_type_double(self):
+    #radio button callback
+    def protocol_type_double(self, checked):
+        if checked is False:
+            return
         self.protocol_type_selected = "double"
         self.config_obj.set_config("protocol_type", self.protocol_type_selected)
 
@@ -685,10 +696,24 @@ class CMJ_UI(QMainWindow):
     def double_single_configuration_setup(self):
 
         #bonus finish out combo box
-        self.protocol_name_list = self.protocol_obj.get_names_by_type(self.protocol_type_selected)
-        self.protocol_name_selected = self.protocol_name_list[0]
-        self.protocol_name_combobox.clear()
-        self.protocol_name_combobox.addItems(self.protocol_name_list)
+        my_list = self.protocol_obj.get_names_by_type(self.protocol_type_selected)
+        self.protocol_name_list = list(my_list)
+        self.protocol_name_selected = my_list[0]
+#        log.f(f"protocol type_selected: {self.protocol_type_selected}, name_selected: {self.protocol_name_selected}, temp_name_list: {my_list}")
+
+        # THE FOLLOWING CODE SHOULD BE THIS.  HOWEVER DUE TO A BUG IN PYQT 6.6.1 the hack below is implemented.
+        # this removes all items from the list but 1.  replaces that one and then adds the rest of the items into the list
+        # self.protocol_name_combobox.clear()
+        # self.protocol_name_combobox.addItems(temp_list)
+
+        #START HACK
+        for i in range(self.protocol_name_combobox.count() - 1, 0, -1):
+            self.protocol_name_combobox.removeItem(i)
+        self.protocol_name_combobox.setItemText(0, my_list[0])
+        for i in range(1, len(my_list)):
+            print(f'   adding item {i}: {my_list[i]}')
+            self.protocol_name_combobox.addItem(my_list[i])
+        # END HACK
 
         if self.protocol_type_selected == 'single':
             return 'Calibrate'
@@ -696,6 +721,7 @@ class CMJ_UI(QMainWindow):
             return 'Calibrate Left'
 
     def protocol_name_combobox_changed(self, value):
+
         self.protocol_name_selected = value
         self.config_obj.set_config("protocol_name", self.protocol_name_selected )
         log.debug(f"protocol name: {self.protocol_type_selected}, name_selected: {self.protocol_name_selected}, name_list: {self.protocol_name_list}")

@@ -1,42 +1,75 @@
-import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton
-from PyQt6.QtCore import QTimer, QThread
+from PyQt6.QtWidgets import QMainWindow, QApplication, QComboBox, QVBoxLayout, QPushButton, QWidget
 
-class MainWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.initUI()
 
-    def initUI(self):
-        self.button = QPushButton("Start Timer", self)
-        self.button.clicked.connect(self.startTimer)
+class MainWindow(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.checkTime)
-        self.startTime = 0
+        self.setWindowTitle("Combo Box fix Example")
 
-        # Set window geometry and show
-        self.setGeometry(300, 300, 300, 200)
-        self.show()
+        layout = QVBoxLayout()
+        self.setLayout(layout)
 
-    def startTimer(self):
-        self.startTime = 0
-        self.timer.start(1000)  # Timer ticks every second
+        self.combo_box = QComboBox()
+        self.combo_box.currentTextChanged.connect(self.combo_box_changed)
+        layout.addWidget(self.combo_box)
 
-    def checkTime(self):
-        self.startTime += 1
-        if self.startTime in [3, 4]:
-            QApplication.beep()
-        elif self.startTime == 5:
-            self.playLongBeep()
-            self.timer.stop()  # Stop the timer after 5 seconds
+        self.button1 = QPushButton("Button1 - remove")
+        self.button1.clicked.connect(self.on_pushButton1_clicked)
+        layout.addWidget(self.button1)
 
-    def playLongBeep(self):
-        for _ in range(3):  # Attempt to create a longer beep
-            QApplication.beep()
-            QThread.msleep(50)  # Short delay between beeps
+        self.button2 = QPushButton("Button2 - add")
+        self.button2.clicked.connect(self.on_pushButton2_clicked)
+        layout.addWidget(self.button2)
 
-if __name__ == '__main__':
+        self.button3 = QPushButton("Button3 - do nothing")
+        self.button3.clicked.connect(self.on_pushButton3_clicked)
+        layout.addWidget(self.button3)
+
+        self.button4 = QPushButton("Button4 - fixit")
+        self.button4.clicked.connect(self.on_pushButton4_clicked)
+        layout.addWidget(self.button4)
+
+    def on_pushButton1_clicked(self):
+        try:
+            for i in range(self.combo_box.count() - 1, 0, -1):
+                self.combo_box.removeItem(i)
+                print(f'removed item i = {i}')
+            print("combo_box->count():", self.combo_box.count())
+        except Exception as e:
+            print("exception:", e)
+
+    def on_pushButton2_clicked(self):
+        try:
+            self.combo_box.addItem("some text " + str(self.combo_box.count()))
+            print("combo_box->count():", self.combo_box.count())
+        except Exception as e:
+            print("exception:", e)
+
+    def on_pushButton3_clicked(self):
+        print('clicked combo box 3')
+        self.combo_box.setCurrentText("")
+
+    def on_pushButton4_clicked(self):
+        print('clicked combo box 4')
+        self.combo_box.setCurrentText("")
+
+        my_list = "hi baby", "val 1", "val 2", "val 3", "val 4"
+        for i in range(self.combo_box.count() - 1, 0, -1):
+            self.combo_box.removeItem(i)
+        self.combo_box.setItemText(0, my_list[0])
+        for i in range(1, len(my_list)):
+            print(f'   adding item {i}: {my_list[i]}')
+            self.combo_box.addItem(my_list[i])
+
+    def combo_box_changed(self, value):
+        print(f"    combo_box_changed, Selected: {value}")
+
+
+
+if __name__ == "__main__":
+    import sys
     app = QApplication(sys.argv)
-    ex = MainWindow()
+    window = MainWindow()
+    window.show()
     sys.exit(app.exec())

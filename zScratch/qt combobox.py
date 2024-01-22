@@ -28,8 +28,21 @@ class MainWindow(QMainWindow):
         print(f"Selected: {value}")
 
     def set_combo_box_values(self, values):
-        self.combo_box.clear()
-        self.combo_box.addItems(values)
+        print(f'    new combo box values: {values}')
+
+        # NORMAL CODE TO DO THIS
+        # self.combo_box.clear()
+        # self.combo_box.addItems(values)
+
+        my_list = values
+        #START HACK
+        for i in range(self.combo_box.count() - 1, 0, -1):
+            self.combo_box.removeItem(i)
+        self.combo_box.setItemText(0, my_list[0])
+        for i in range(1, len(my_list)):
+            print(f'   adding item {i}: {my_list[i]}')
+            self.combo_box.addItem(my_list[i])
+        # END HACK
 
     def toggle_values(self):
         if self.combo_box.count() == 2:
