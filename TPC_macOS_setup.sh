@@ -11,7 +11,7 @@ APP_NAME="TPC Analytics"
 
 echo " "
 echo "************************************************************************************"
-echo "****************** $APP_NAME: Installing $APP_NAME $VERSION_TAG ********************"
+echo "****************** Installing $APP_NAME $VERSION_TAG ********************"
 echo "************************************************************************************"
 echo " "
 
@@ -100,7 +100,7 @@ echo "$appleScriptCommand" | osacompile -o "$appPath"
 # Set the icon for the application
 cp "$iconPath" "$appPath/Contents/Resources/applet.icns"
 echo ""
-echo "------------------------------------------------------------------------------------------------"
-echo "--------  $APP_NAME -  Installed $APP_NAME.  Find it in Desktop or Documents/$APP_NAME/  ------"
-echo "------------------------------------------------------------------------------------------------"
+echo "-------------------------------------------------------------------------------------------------------------------"
+echo "--------  Installed $APP_NAME  $VERSION_TAG.  Find it on your Desktop or /Documents/$APP_NAME/ folder -------"
+echo "-------------------------------------------------------------------------------------------------------------------"
 

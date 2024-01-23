@@ -423,7 +423,7 @@ class JT_Trial:
 if __name__ == "__main__":
 
     # set base and application path
-    config_obj = jtc.JT_Config('taylor performance', None)
+    config_obj = jtc.JT_Config('TPC Analytics', None)
     config_obj.validate_install()
 
     trial_mgr_obj = jttm.JT_JsonTrialManager(config_obj)
@@ -436,7 +436,6 @@ if __name__ == "__main__":
     print(f'Convert: {str} to: {trial.convert_timestamp_str(str)}')
     str = '2023-08-17 00:40:26'
     print(f'Convert: {str} to: {trial.convert_timestamp_str(str)}')
-    exit()
 
     file1 = 'JTDcmj_huey_2023-08-17_00-27-47.csv'   # file that fails
     file3 = 'JTDcmj_huey_2023-08-17_00-38-07.csv'
@@ -444,15 +443,30 @@ if __name__ == "__main__":
 
     # failing files
 #    file5 = 'JTDcmj_huey_2023-08-17_00-43-17.csv'
-    file5 = 'JTDcmj_huey_2023-08-17_00-27-47.csv'
+#    file5 = 'JTDcmj_huey_2023-08-17_00-27-47.csv'
 
-    fp = file5
-    trial = trial_mgr_obj.get_trial_file_path(fp, 'srt')
+#    my_fp = 'JTDcmj_Sophia Avalos_2023-12-08_09-26-04.csv'
+    my_fp = 'JTDcmj_Sophia Avalos_2023-12-08_09-27-37.csv'
+
+    # generate full file path to where the problem file is
+    tokens = my_fp.split('_')
+    athlete = tokens[1]
+    my_fp = config_obj.path_data + athlete + '/' + my_fp
+
+    print(f'my_fp: {my_fp}')
+#    trial = trial_mgr_obj.get_trial_file_path(my_fp)
+
+    # populate trial object
+    trial = JT_Trial(config_obj)
+    trial.validate_trial_path(my_fp)
+    print(f'fp = {trial.file_path}, original = {trial.original_filename}')
+
     if trial_mgr_obj.error:
         print(f'trial manager error: {trial_mgr_obj.error_msg}')
     else:
+        log.set_logging_level("DEBUG")
         trial.process_summary()
-        print(f'TESTING RESULTS:  Processed file {fp}')
+        print(f'TESTING RESULTS:  Processed file {my_fp}')
         print(f'processing status: {trial.error} (false is error)  Error_msg:{trial.error_msg}')
         print(f'Summary dict:\n{trial.summary_results_dict}')
 

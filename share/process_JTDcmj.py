@@ -35,7 +35,17 @@ def asym_index(i_r, i_l, injured, col_name):
 
     total_impulse = i_r + i_l
 
-    asymmetry_index = ((non_injured_leg - injured_leg) / total_impulse) * 100
+    try:
+        if total_impulse != 0:
+            asymmetry_index = ((non_injured_leg - injured_leg) / total_impulse) * 100
+        else:
+            asymmetry_index = 0
+
+#        log.info(f'     ****** : injured_leg: {injured_leg}, non_injured_leg: {non_injured_leg}, total_impulse {total_impulse},   asymmetry_index: {asymmetry_index}')
+
+    except:
+        log.info(f'UGLY ERROR: injured_leg: {injured_leg}, non_injured_leg: {non_injured_leg}, total_impulse {total_impulse}')
+
 #    log.debug(f"{col_name}: {asymmetry_index}")
 
     results_dict = {}
@@ -471,7 +481,10 @@ class JTDcmj:
         # Braking Phase
 
         velocity_zero_index = np.where(delta_velocity[velocity_min_index:] > 0)
-        velocity_zero_index = velocity_zero_index[0][0]
+        if velocity_zero_index[0].size > 0:
+            velocity_zero_index = velocity_zero_index[0][0]
+        else:
+            velocity_zero_index = len(delta_velocity)
         log.debug(f"INDEX velocity_zero_index: {velocity_zero_index}")
 
         braking_end_index = (jump_onset_moment_index + velocity_min_index + velocity_zero_index)
@@ -510,6 +523,14 @@ class JTDcmj:
         #                                12944                  1640
         concentric_end_index = (jump_onset_moment_index + velocity_max_index)
         log.debug(f"INDEX concentric_end_index: {concentric_end_index}")
+        #SRT - maybe a hack but the bottom line is the braking_end_index must be less and the concentric_end_index
+        # this doesn't happen that often but occassionally it does.  Sooo, if it does modify concentric end to be 2 more
+        # than the braking end_index.  I have no idea how bad this corrupts things so smarter people will have to decide
+        # otherwise the code will continue to fail
+        if braking_end_index >= concentric_end_index:
+            log.info(f"for both legs had to tweak concentric_end_index to be one more than braking end_index:  {self.trial.original_filename}")
+            concentric_end_index = braking_end_index + 1
+
         concentric_force_arr = force[braking_end_index:concentric_end_index]
         # log.debug(f"concentric_force_arr: {concentric_force_arr}")
         concentric_time_arr = time[braking_end_index:concentric_end_index]
@@ -637,7 +658,7 @@ class JTDcmj:
             (force_leg[0:] > 20) | (force_leg[0:] < -20))  # if want to use one function, need to perform mass / 2
         jump_onset_moment_index = start_jump[0][0]  # time stamps jump moment
         # log.debug(f"start_jump: {len(start_jump)} {start_jump}")
-        # log.debug(f"jump_onset_moment_index: {jump_onset_moment_index}")
+        log.debug(f"jump_onset_moment_index: {jump_onset_moment_index}")
 
         # Start of the flight phase
         start_flight = np.where(force_leg[0:] < (
@@ -722,8 +743,12 @@ class JTDcmj:
         # Braking Phase
 
         velocity_zero_index = np.where(delta_velocity[velocity_min_index:] > 0)
-        velocity_zero_index = velocity_zero_index[0][0]
-        # print(f"velocity_zero_index: {velocity_zero_index}")
+        # Check if any index was found   SRT Modified if it can't find any sets it to zero
+        if velocity_zero_index[0].size > 0:
+            velocity_zero_index = velocity_zero_index[0][0]
+        else:
+            velocity_zero_index = len(delta_velocity)
+        log.debug(f"INDEX velocity_zero_index: {velocity_zero_index}")
 
         ### modified this to add all three together
         braking_end_index = (jump_onset_moment_index + velocity_min_index + velocity_zero_index)
@@ -749,10 +774,18 @@ class JTDcmj:
 
         velocity_max_index = np.where(delta_velocity == np.amax(delta_velocity))
         velocity_max_index = velocity_max_index[0][0]
-        # print(f"INDEX velocity_max_index: {velocity_max_index}")
+        log.debug(f"INDEX velocity_max_index: {velocity_max_index}")
 
         concentric_end_index = (jump_onset_moment_index + velocity_max_index)
-        # print(f"INDEX concentric_end_index: {concentric_end_index}")
+        log.debug(f"INDEX concentric_end_index: {concentric_end_index}")
+        #SRT - maybe a hack but the bottom line is the braking_end_index must be less and the concentric_end_index
+        # this doesn't happen that often but occassionally it does.  Sooo, if it does modify concentric end to be 2 more
+        # than the braking end_index.  I have no idea how bad this corrupts things so smarter people will have to decide
+        # otherwise the code will continue to fail
+        if braking_end_index >= concentric_end_index:
+            log.info(f"for single leg had to tweak concentric_end_index to be one more than braking end_index: {self.trial.original_filename}")
+            concentric_end_index = braking_end_index + 1
+
         concentric_force_arr = force_leg[braking_end_index:concentric_end_index]
         # print(f"concentric_force_arr: {concentric_force_arr}")
         concentric_time_arr = time[braking_end_index:concentric_end_index]

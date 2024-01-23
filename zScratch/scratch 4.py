@@ -1,21 +1,13 @@
-import subprocess
-import sys
+import numpy as np
 
-def list_cameras():
-    if sys.platform == "win32":
-        # Windows-specific command (requires pywin32)
-        pass
-    elif sys.platform == "darwin":
-        # macOS-specific command
-        result = subprocess.run(["system_profiler", "SPCameraDataType"], capture_output=True, text=True)
-        return result.stdout
-    elif sys.platform == "linux" or sys.platform == "linux2":
-        # Linux-specific command (requires v4l2-ctl)
-        result = subprocess.run(["v4l2-ctl", "--list-devices"], capture_output=True, text=True)
-        return result.stdout
-    else:
-        return "Unsupported OS"
 
-camera_info = list_cameras()
+my_array = [0.0, -1.0, -1.5, -2.0, -3.0, -4.0]
+np_array = np.array(my_array)
 
-print(camera_info)
+velocity_min_index = 5
+
+velocity_zero_index = np.where(np_array[velocity_min_index:] > 0)
+print(f'velocity_zero_index {velocity_zero_index}, len of tuple: {len(velocity_zero_index)}')
+
+velocity_zero_index = velocity_zero_index[0][0]
+print(velocity_zero_index)

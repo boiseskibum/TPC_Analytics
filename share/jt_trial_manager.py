@@ -86,7 +86,7 @@ class JT_JsonTrialManager:
     ###############################################
     # given just a filename it finds the full file_path which is needed.
     # returns a JT_Trial object containing the full path
-    def get_trial_file_path(self, original_filename, trial_text=""):
+    def get_trial_file_path(self, original_filename):
         if self.df is None:
             self.load_all_trials()
 
