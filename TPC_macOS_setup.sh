@@ -3,7 +3,7 @@
 # Run chmod +x TPC_macos_setup.sh to make the script executable.
 
 ## Set your repository details
-VERSION_TAG="v1.0.4"    # Replace with the repository name
+VERSION_TAG="v1.0.5"    # Replace with the repository name
 OWNER="boiseskibum"  # Replace with the GitHub username or organization
 REPO="TPC_Analytics"    # Replace with the repository name
 VERSION_TAG_NO_V=${VERSION_TAG:1}  # Remove the 'v' prefix from version tag
@@ -25,8 +25,10 @@ then
     exit
 fi
 
-echo "$APP_NAME - Create $APP_NAME directory in the Documents directory"
+echo "$APP_NAME - Create $APP_NAME directory in the Documents directory (Remove the directory if it previously existed"
 echo ""
+
+rm -rf ~/Documents/"$APP_NAME"/application
 mkdir -p ~/Documents/"$APP_NAME"/application
 
 # Create a virtual environment
@@ -35,8 +37,8 @@ python3 -m venv ~/Documents/"$APP_NAME"/application/venv
 # Activate the virtual environment
 source ~/Documents/"$APP_NAME"/application/venv/bin/activate
 
-echo "$APP_NAME - downloading code from GitHub"
 # Download the code from GitHub
+echo "$APP_NAME - downloading code from GitHub"
 curl -L "https://github.com/$OWNER/$REPO/archive/refs/tags/$VERSION_TAG.zip" -o ~/Documents/"$APP_NAME"/application/code.zip
 
 echo "$APP_NAME - unzip, and put code where it belongs"

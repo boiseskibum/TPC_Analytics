@@ -368,7 +368,7 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
             original_filename = item.data(0, Qt.ItemDataRole.UserRole)
 
             try:
-                log.info(f'Trial Browser item clicked: {original_filename} item_text: {item_text}')
+                log.debug(f'Trial Browser item clicked: {original_filename} item_text: {item_text}')
                 trial = self.trial_mgr_obj.get_trial_file_path(original_filename)
 
                 trial.process_summary()

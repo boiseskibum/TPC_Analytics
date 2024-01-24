@@ -96,7 +96,7 @@ class SerialDataReader(threading.Thread):
 
                     try:
                         # Try a simple operation, like reading a byte
-                        self.serial_port.read(1)
+                        line = self.serial_port.readline().decode('utf-8').strip()
                         # If no exception, the port is considered open
                         my_return = True
                         port_is_open = True
@@ -146,10 +146,11 @@ class SerialDataReader(threading.Thread):
         if self.serial_port is None:
             return False, "Serial Port NOT configured"
 
-        # validate the serial port is connected at this instant
+        # Attempt to do a throw away read to see if the port is working
         try:
             # Try a simple operation, like reading a byte
-            self.serial_port.read(1)
+            line = self.serial_port.readline().decode('utf-8').strip()
+
         except serial.SerialException:
             # Handle the exception (the port might be disconnected)
             self.serial_port = None

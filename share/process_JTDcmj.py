@@ -528,7 +528,7 @@ class JTDcmj:
         # than the braking end_index.  I have no idea how bad this corrupts things so smarter people will have to decide
         # otherwise the code will continue to fail
         if braking_end_index >= concentric_end_index:
-            log.info(f"for both legs had to tweak concentric_end_index to be one more than braking end_index:  {self.trial.original_filename}")
+            log.debug(f"for both legs had to tweak concentric_end_index to be one more than braking end_index:  {self.trial.original_filename}")
             concentric_end_index = braking_end_index + 1
 
         concentric_force_arr = force[braking_end_index:concentric_end_index]
@@ -783,7 +783,7 @@ class JTDcmj:
         # than the braking end_index.  I have no idea how bad this corrupts things so smarter people will have to decide
         # otherwise the code will continue to fail
         if braking_end_index >= concentric_end_index:
-            log.info(f"for single leg had to tweak concentric_end_index to be one more than braking end_index: {self.trial.original_filename}")
+            log.debug(f"for single leg had to tweak concentric_end_index to be one more than braking end_index: {self.trial.original_filename}")
             concentric_end_index = braking_end_index + 1
 
         concentric_force_arr = force_leg[braking_end_index:concentric_end_index]

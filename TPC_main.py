@@ -404,6 +404,8 @@ class CMJ_UI(QMainWindow):
         self.updated_weight_count = 5      # for updating the weight on the screen
         self.serial_port = None
 
+        serial_ports_list = self.reader_obj.get_available_ports()
+
         # timer configuration when pressing start to notify athlete when to go
         # The funky code sets the default to True if it has not been saved previously
         self.countdown = True
@@ -417,14 +419,12 @@ class CMJ_UI(QMainWindow):
         self.countdown_beginTime = 2
 
         self.shortBeep = QSoundEffect()
-        self.shortBeep.setSource(QUrl.fromLocalFile("resources/sound/first1.wav"))
+        self.shortBeep.setSource(QUrl.fromLocalFile(self.config_obj.get_sound_path() + "first1.wav"))
         self.longBeep = QSoundEffect()
-        self.longBeep.setSource(QUrl.fromLocalFile("resources/sound/last.wav"))
+        self.longBeep.setSource(QUrl.fromLocalFile(self.config_obj.get_sound_path() + "last.wav"))
 
         # essentially these are red, yellow, green utilized in countdown timer
         self.colors = ["#fc4747", "yellow", "#16e02b", ""]
-
-        serial_ports_list = self.reader_obj.get_available_ports()
 
         # if only one port available then attempt to connect to it
         if len(serial_ports_list) == 1:
@@ -521,21 +521,7 @@ class CMJ_UI(QMainWindow):
             temp_serial_port_name = self.serial_port_name
 
         # Calibration - attempt to read prior calibration information
-        self.l_zero = self.config_obj.get_config("l_zero__" + temp_serial_port_name)
-        if self.l_zero == None:
-            self.l_zero = -1
-
-        self.r_zero = self.config_obj.get_config("r_zero__" + temp_serial_port_name)
-        if self.r_zero == None:
-            self.r_zero = -1
-
-        self.l_mult = self.config_obj.get_config("l_mult__" + temp_serial_port_name)
-        if self.l_mult == None:
-            self.l_mult = -1
-
-        self.r_mult = self.config_obj.get_config("r_mult__" + temp_serial_port_name)
-        if self.r_mult == None:
-            self.r_mult = -1
+        self.get_calibration_data(temp_serial_port_name)
 
         # regardless if prior calibration info found mark them as not calibrated so that dialog box pops up
         self.l_calibration = False
@@ -557,6 +543,24 @@ class CMJ_UI(QMainWindow):
         self.weightUpdate_timer.timeout.connect(self.weight_fields_update)
         self.weightUpdate_timer.start()
 
+    def get_calibration_data(self, serial_port_name):
+        self.l_zero = self.config_obj.get_config("l_zero__" + serial_port_name)
+        if self.l_zero == None:
+            self.l_zero = -1
+
+        self.r_zero = self.config_obj.get_config("r_zero__" + serial_port_name)
+        if self.r_zero == None:
+            self.r_zero = -1
+
+        self.l_mult = self.config_obj.get_config("l_mult__" + serial_port_name)
+        if self.l_mult == None:
+            self.l_mult = -1
+
+        self.r_mult = self.config_obj.get_config("r_mult__" + serial_port_name)
+        if self.r_mult == None:
+            self.r_mult = -1
+
+
     ##############################
     #### INTERFACE Callbacks
     ##############################
@@ -571,7 +575,7 @@ class CMJ_UI(QMainWindow):
         self.setWindowTitle(new_title)
         self.config_obj.app_name = new_title
 
-    def check_serial_port(self, dialog = True):
+    def check_serial_port(self):
 
         my_return = self.reader_obj.configure_serial_port(self.serial_port_name, self.baud_rate)
         if my_return:
@@ -582,14 +586,12 @@ class CMJ_UI(QMainWindow):
                 self.config_obj.set_config("last_port", self.serial_port_name)
                 return True
             else:
-                if dialog is True:
-                    value = jtd.JT_Dialog(parent=self, title="Serial Port Error",
-                                       msg="Go to Settings and set the serial port, data doesn't look right",
+                value = jtd.JT_Dialog(parent=self, title="Serial Port Error",
+                                       msg="Go to Settings tab and set the serial port, data doesn't look right",
                                        type="ok")  # this is custom dialog class created above
                 return False
         else:
-            if dialog is True:
-                value = jtd.JT_Dialog(parent=None, title="Serial Port Error",
+            value = jtd.JT_Dialog(parent=None, title="Serial Port Error",
                                   msg="Go to Settings and set the serial port",
                                   type="ok") # this is custom dialog class created above
             return False
@@ -659,9 +661,12 @@ class CMJ_UI(QMainWindow):
             self.update_branding()
             self.countdown = self.preferences_window.countdown
             print(f'preference_screen return: {self.countdown}')
-            self.serial_port_name = self.preferences_window.serial_port_name
-            self.check_serial_port()
 
+            #serial port data, including the last calibration data
+            self.serial_port_name = self.preferences_window.serial_port_name
+            value = self.check_serial_port()
+            if value == True:
+                self.get_calibration_data(self.serial_port_name)
 
         except Exception as e:
             log.error(f"self.preferences_window.show() an error occurred: {e}")

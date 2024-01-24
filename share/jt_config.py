@@ -366,6 +366,10 @@ class JT_Config:
         path = os.path.join(self.base_path, 'resources/demo/')
         return path
 
+    def get_sound_path(self):
+        path = os.path.join(self.base_path, 'resources/sound/')
+        return path
+
 ########################################################
 
 if __name__ == "__main__":
