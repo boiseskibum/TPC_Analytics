@@ -89,9 +89,21 @@ class SerialDataReader(threading.Thread):
                 else:
                     log.error(f"Failed to connected to port |{self.port_name}|, OID: = {self.serial_port}")
             else:  #
+                my_return = False
                 if self.serial_port.isOpen():
                     log.debug(f"Serial Port: {self.port_name} is already open")
                     my_return = True
+
+                    try:
+                        # Try a simple operation, like reading a byte
+                        self.serial_port.read(1)
+                        # If no exception, the port is considered open
+                        my_return = True
+                        port_is_open = True
+                    except serial.SerialException:
+                        # Handle the exception (the port might be disconnected)
+                        port_is_open = False
+                        my_return = False
 
         except:
             log.error(f"Could not connect to port: |{self.port_name}| Baud: {self.baud_rate}, OID: = {self.serial_port}")
@@ -131,11 +143,17 @@ class SerialDataReader(threading.Thread):
 
         line = ""
 
-        if self.serial_port == None:
-            return False, line
-
-        if self.serial_port == None:
+        if self.serial_port is None:
             return False, "Serial Port NOT configured"
+
+        # validate the serial port is connected at this instant
+        try:
+            # Try a simple operation, like reading a byte
+            self.serial_port.read(1)
+        except serial.SerialException:
+            # Handle the exception (the port might be disconnected)
+            self.serial_port = None
+            return False, "Serial Port NOT connected any longer"
 
         line = "n/a"
         log.f(f"Validate data from port: {self.port_name}")
@@ -322,7 +340,7 @@ class SerialDataReader(threading.Thread):
         df = pd.DataFrame()
         #make sure there is some recorded data
         if self.recorded_data == None or len(self.recorded_data) < 1:
-            log.f("No Recorded Data")
+            log.debug("No Recorded Data")
             return(df)
 
         my_data = self._process_and_smooth_data(l_zero, l_mult, r_zero, r_mult, athlete, protocol_name, protocol_type, leg)

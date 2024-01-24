@@ -404,8 +404,6 @@ class CMJ_UI(QMainWindow):
         self.updated_weight_count = 5      # for updating the weight on the screen
         self.serial_port = None
 
-        self.serial_ports_list = self.reader_obj.get_available_ports()
-
         # timer configuration when pressing start to notify athlete when to go
         # The funky code sets the default to True if it has not been saved previously
         self.countdown = True
@@ -426,9 +424,11 @@ class CMJ_UI(QMainWindow):
         # essentially these are red, yellow, green utilized in countdown timer
         self.colors = ["#fc4747", "yellow", "#16e02b", ""]
 
+        serial_ports_list = self.reader_obj.get_available_ports()
+
         # if only one port available then attempt to connect to it
-        if len(self.serial_ports_list) == 1:
-            self.serial_port_name = self.serial_ports_list[0]
+        if len(serial_ports_list) == 1:
+            self.serial_port_name = serial_ports_list[0]
             log.debug(f"Only one port available, setting port to: {self.serial_port_name}, baud {self.baud_rate}")
 
             # attempt to connect to port
@@ -571,7 +571,7 @@ class CMJ_UI(QMainWindow):
         self.setWindowTitle(new_title)
         self.config_obj.app_name = new_title
 
-    def check_serial_port(self):
+    def check_serial_port(self, dialog = True):
 
         my_return = self.reader_obj.configure_serial_port(self.serial_port_name, self.baud_rate)
         if my_return:
@@ -582,13 +582,15 @@ class CMJ_UI(QMainWindow):
                 self.config_obj.set_config("last_port", self.serial_port_name)
                 return True
             else:
-                value = jtd.JT_Dialog(parent=self, title="Serial Port Error",
-                                       msg="Go to Settings tab and set the serial port, data doesn't look right",
+                if dialog is True:
+                    value = jtd.JT_Dialog(parent=self, title="Serial Port Error",
+                                       msg="Go to Settings and set the serial port, data doesn't look right",
                                        type="ok")  # this is custom dialog class created above
                 return False
         else:
-            value = jtd.JT_Dialog(parent=None, title="Serial Port Error",
-                                  msg="Go to Settings tab and set the serial port",
+            if dialog is True:
+                value = jtd.JT_Dialog(parent=None, title="Serial Port Error",
+                                  msg="Go to Settings and set the serial port",
                                   type="ok") # this is custom dialog class created above
             return False
 

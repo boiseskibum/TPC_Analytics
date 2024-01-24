@@ -2,12 +2,12 @@
 # Purpose: to provide non-blocking dialogs to the application so that threads can continue to run on the side and
 # the main screen can be updated
 
-import sys
+import sys, os
 from PyQt6.QtWidgets import (QApplication, QWidget, QPushButton, QMessageBox,
                              QVBoxLayout,  QInputDialog, QDialog, QTextEdit)
+from PyQt6.QtGui import QIcon, QPixmap
 
 #used just for the testing routine at the bottom of file
-import tkinter as tk
 
 def JT_Dialog(parent, title="Default Title", msg="Default message", type="okcancel"):
 
@@ -21,12 +21,16 @@ def JT_Dialog(parent, title="Default Title", msg="Default message", type="okcanc
 
     if type == "yesno":
         dialog.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        dialog.setIcon(QMessageBox.Icon.Question)
     elif type == "yesnocancel":
         dialog.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel)
+        dialog.setIcon(QMessageBox.Icon.Question)
     elif type == "retrycancel":
         dialog.setStandardButtons(QMessageBox.StandardButton.Retry | QMessageBox.StandardButton.Cancel)
+        dialog.setIcon(QMessageBox.Icon.Question)
     elif type == "okcancel":
         dialog.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
+        dialog.setIcon(QMessageBox.Icon.Question)
     else:
         dialog.setStandardButtons(QMessageBox.StandardButton.Ok)
 

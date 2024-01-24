@@ -985,8 +985,8 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
 
             scaled_pixmap = QPixmap.fromImage(q_image).scaled(self.label_video1.size(), Qt.AspectRatioMode.KeepAspectRatio)
 
-            #add in lines/graphics
-            if(self.video1_overlay == True):
+            #add in lines/graphics if it is a CMJ protocol
+            if(self.video1_overlay == True and self.current_trial.protocol == "JTDcmj"):
                 self.frame_add_lines(scaled_pixmap)
 
             self.label_video1.setPixmap(scaled_pixmap)

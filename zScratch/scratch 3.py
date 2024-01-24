@@ -1,44 +1,68 @@
-import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton
-from PyQt6.QtCore import QTimer, QUrl
-from PyQt6.QtMultimedia import QSoundEffect
+import sys, os
+from PyQt6.QtWidgets import QDialog, QMessageBox, QPushButton, QApplication, QWidget, QVBoxLayout
+from PyQt6.QtGui import QIcon
 
-class MainWindow(QMainWindow):
-    def __init__(self):
+class MainWindow(QWidget):
+    def __init__(self, parent=None):
         super().__init__()
-        self.initUI()
+        self.parent = parent
+        layout = QVBoxLayout()
 
-    def initUI(self):
-        self.button = QPushButton("Start Timer", self)
-        self.button.clicked.connect(self.startTimer)
+        button = QPushButton("dialog box", self)
+        button.clicked.connect(self.showDialog)
+        layout.addWidget(button)
 
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.checkTime)
-        self.curTime = 0
-        self.beginTime = 1
+        button1 = QPushButton("dialog1 box", self)
+        button1.clicked.connect(self.showDialog1)
+        layout.addWidget(button1)
 
-        self.shortBeep = QSoundEffect()
-        self.shortBeep.setSource(QUrl.fromLocalFile("first1.wav"))
-        self.longBeep = QSoundEffect()
-        self.longBeep.setSource(QUrl.fromLocalFile("last.wav"))
+        self.setLayout(layout)
+    def showDialog(self):
+        print('dialog clicked')
+        dialog = QMessageBox(self)
+        dialog.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        dialog.setIcon(QMessageBox.Icon.Question)
+        dialog.setIcon(QMessageBox.Icon.Warning)
+        dialog.setText("srt dialog that has crappy icoon")
+        dialog.exec()
 
-        # Set window geometry and show
-        self.setGeometry(300, 300, 300, 200)
-        self.show()
+    def showDialog1(self):
+        print('dialog clicked')
+        dialog = QDialog()
+#        dialog.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+#        dialog.setIcon(QMessageBox.Icon.Question)
+        dialog.exec()
 
-    def startTimer(self):
-        self.curTime = 0
-        self.timer.start(1000)  # Timer ticks every second
-
-    def checkTime(self):
-        self.curTime += 1
-        if self.curTime == self.beginTime or self.curTime == self.beginTime+1:
-            self.shortBeep.play()
-        elif self.curTime == self.beginTime+2:
-            self.longBeep.play()
-            self.timer.stop()  # Stop the timer after 5 seconds
-
+##########################################
 if __name__ == '__main__':
+
+    #Set a custom icon.   From the main program it will fall into the first example.
+    fp = 'resources/img/jt.ico'
+    icon = None
+    if os.path.exists(fp):
+        icon = QIcon(fp)  # Replace with your icon file path
+    else:
+        # Get the current working directory
+        current_path = os.getcwd()
+
+        # Go back one directory
+        parent_path = os.path.dirname(current_path)
+
+        # Construct the new path
+        new_path = os.path.join(parent_path, fp)
+        print(f'new_path:  {new_path}')
+
+        # Check if the file exists
+        if os.path.exists(new_path):
+            icon = QIcon(fp)  # Replace with your icon file path
+            print ('found icon path!')
+
     app = QApplication(sys.argv)
-    ex = MainWindow()
-    sys.exit(app.exec())
+
+    app.setWindowIcon(icon)  # Replace with the path to your icon
+
+    window = MainWindow(app)
+    window.show()
+
+    my_ret = app.exec()
+    sys.exit(my_ret)
