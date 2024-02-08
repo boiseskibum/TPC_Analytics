@@ -69,6 +69,8 @@ class JTDcmj:
         self.gravity = 9.81
         self.error = False
         self.error_msg = ""
+        self.force_range = 20   # this is starting point and is roughly 10% of the body weight of a small female.  It will
+        # get replaced by 10% of of the force generated later on
 
     def process(self):
         # read in the data
@@ -83,7 +85,7 @@ class JTDcmj:
         overall_time = self.elapsed_time[-1]
         num_values = len(self.elapsed_time)
         self.freq = num_values/overall_time   # calculate the frequency
-#        log.debug(f"JTDcmj - data point freq: {self.freq}, overall time: {overall_time}, num_value: {num_values}")
+        log.debug(f"JTDcmj - data point freq: {self.freq}, overall time: {overall_time}, num_value: {num_values}")
 
         # rename columns so they are easier to deal with AND does absolute value columns
         try:
@@ -102,6 +104,8 @@ class JTDcmj:
         self.mass = abs(float(self.mass_r)) + abs(float(self.mass_l))  # calculation of bodyweight total
         ('Subject mass  {:.3f} kg'.format(self.mass))
         # log.debug(f"mass: {self.mass}")
+        self.force_range = self.mass/2 * self.gravity * .08   # Use 8% of the force from one leg as the range
+        log.debug(f"mass: {self.mass}, force_range: {self.force_range}")
 
         # normalizing for bodyweight - R
         self.force_total = [sum(i) for i in zip(list_right, list_left)]  # sums the 2 lists so that total force can be calculated
@@ -135,7 +139,6 @@ class JTDcmj:
             plt.show()
 
         # store the lines away for later use in the Trial Object
-
         line_data = [
             {'y': self.force_norm_l, 'label': 'Left', 'color': 0},
             {'y': self.force_norm_r, 'label': 'Right', 'color': 1}]
@@ -188,6 +191,7 @@ class JTDcmj:
             log.error(self.error_msg)
             return
 
+        #Left Leg calcs
         try:
             results_dict_l = self.cmj_sl_calc(self.force_norm_l, "left", self.mass_l)
             cmj_arr_l = results_dict_l.get('cmj_arr')
@@ -198,6 +202,7 @@ class JTDcmj:
             log.error(self.error_msg)
             return
 
+        #Right Leg calcs
         try:
             results_dict_r = self.cmj_sl_calc(self.force_norm_r, "right", self.mass_r)
             cmj_arr_r = results_dict_r.get('cmj_arr')
@@ -277,18 +282,28 @@ class JTDcmj:
 
         # ******************************* Indexing Key Points in the Jump******************************
         # Onset of Jump
-        start_jump = np.where((force[0:] > 20) | (force[0:] < -20))  # if want to use one function, need to perform mass / 2
+        start_jump = np.where((force[0:] > self.force_range) | (force[0:] < -self.force_range))  # if want to use one function, need to perform mass / 2
         #log.debug(f'start_jump: {start_jump}')
 
         jump_onset_moment_index = start_jump[0][0]  # time stamps jump moment
         log.debug(f"INDEX jump_onset_moment_index: {jump_onset_moment_index}")
 
+        # NEW CODE
         # Start of the flight phase
+        # to do this we know it is after the onset moment.  By studying data we know that crouching and jumping is
+        # around .6 to .8 seconds.   Therefore I picked .3 seconds to delay looking for the minimum point.  This was
+        # done to deal with the fact if they crouch quick enough they essentially have zero weight on their feet
+        # which was triggering the start of flight at that point rather than after they actually jumped.
+        fudge_factor = int(.3 * self.freq)   #seconds * FPS (or measurements per second)
+        starting_pt_index = jump_onset_moment_index + fudge_factor
+#        print(f'--jump_onset_moment_index {jump_onset_moment_index} starting_pt_index: {starting_pt_index}')
+
         start_flight = np.where(
-            force[0:] < (np.amin(force) + 10))  # need to create if statement so that left and right can be calculated
+            force[starting_pt_index:] < (np.amin(force[starting_pt_index:]) + 10))  # need to create if statement so that left and right can be calculated
+#        print( start_flight)
         # log.debug(f"min: {np.amin(force)}")
         # log.debug(f"start_flight: {start_flight}")
-        takeoff_moment_index = start_flight[0][0]  # time stamps takeoff moment
+        takeoff_moment_index = starting_pt_index + start_flight[0][0]  # time stamps takeoff moment
         log.debug(f"INDEX takeoff_moment_index: {takeoff_moment_index}")
 
         # jump time (from start of jump until in the air)
@@ -653,28 +668,30 @@ class JTDcmj:
         time = np.arange(0, len(force_leg) / self.freq, 1 / self.freq)
         # log.debug(f"time: {time}")
 
-        # Onset of Jump
+        # Onset of Jump - need to divide teh force_range by 2 because it is just one leg and not both
         start_jump = np.where(
-            (force_leg[0:] > 20) | (force_leg[0:] < -20))  # if want to use one function, need to perform mass / 2
+            (force_leg[0:] > self.force_range) | (force_leg[0:] < -self.force_range))  # if want to use one function, need to perform mass / 2
         jump_onset_moment_index = start_jump[0][0]  # time stamps jump moment
         # log.debug(f"start_jump: {len(start_jump)} {start_jump}")
         log.debug(f"jump_onset_moment_index: {jump_onset_moment_index}")
 
+        # NEW CODE
         # Start of the flight phase
-        start_flight = np.where(force_leg[0:] < (
-                    np.amin(force_leg) + 10))  # need to create if statement so that left and right can be calculated
-        # amin_list = np.where(force_leg[0:] == (np.amin(force_leg)))
-        # amin_list_index = amin_list[0][0]
-        # true_min_list = force_leg[16581:16681]
-        # log.debug(f"true_min_list: {true_min_list}")
-        # log.debug(f"true_min: {np.amin(true_min_list)}")
-        # log.debug(f"amin: {np.amin(force_leg)}")
-        # log.debug(f"amin_list_index: {amin_list_index}")
-        log.debug(f"start_flight: {start_flight}")
-        takeoff_moment_index = start_flight[0][0]  # time stamps takeoff moment
-        # log.debug(f"takeoff_moment_index_force_{leg}: {force_leg[takeoff_moment_index]}")
-        log.debug(f"INDEX takeoff_moment_index_{leg}: {takeoff_moment_index}")
-        # log.debug(f"difference_in_index_{leg}: {takeoff_moment_index - jump_onset_moment_index}")
+        # to do this we know it is after the onset moment.  By studying data we know that crouching and jumping is
+        # around .6 to .8 seconds.   Therefore I picked .3 seconds to delay looking for the minimum point.  This was
+        # done to deal with the fact if they crouch quick enough they essentially have zero weight on their feet
+        # which was triggering the start of flight at that point rather than after they actually jumped.
+        fudge_factor = int(.3 * self.freq)  # seconds * FPS (or measurements per second)
+        starting_pt_index = jump_onset_moment_index + fudge_factor
+        #        print(f'--jump_onset_moment_index {jump_onset_moment_index} starting_pt_index: {starting_pt_index}')
+
+        start_flight = np.where(
+            force_leg[starting_pt_index:] < (np.amin(force_leg[starting_pt_index:]) + 10))  # need to create if statement so that left and right can be calculated
+        #        print( start_flight)
+        # log.debug(f"min: {np.amin(force)}")
+        # log.debug(f"start_flight: {start_flight}")
+        takeoff_moment_index = starting_pt_index + start_flight[0][0]  # time stamps takeoff moment
+        log.debug(f"INDEX takeoff_moment_index: {takeoff_moment_index}")
 
         # indexing values between jump_onset_moment_index and takoff_moment
         cmj_arr = force_leg[

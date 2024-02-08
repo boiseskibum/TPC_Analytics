@@ -831,10 +831,8 @@ class TPC_Analytics_UI(QMainWindow, Ui_MainAnalyticsWindow):
         if (self.video_frame_retrieve_debug):
             print('##### beggining of short video stopped')
 
-        if self.video1_cv2 == None:
-            return
-
-        self._stop_video()
+        if self.video1_cv2 is not None:
+            self._stop_video()
 
         if (self.video_frame_retrieve_debug):
             print('##### made it here, checkbox for short video after video stopped')

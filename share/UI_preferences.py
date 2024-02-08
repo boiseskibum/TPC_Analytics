@@ -69,14 +69,20 @@ class JT_PreferencesWindow(QDialog):
         layout.addWidget(self.text_widget, trow, 0, 2, 2)
 
         trow += 2
-        label1 = QLabel("Front View Camera")
+        label1 = QLabel("Camera Configuration")
         label1.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(label1, trow, 0)
 
         # Row 4: Refresh Camera List button and ComboBox to select the camera
         trow += 1
 
-        list_of_cameras = ["not in use", "0", "1"]
+        camera_count, cameras = jtv.external_camera_count()
+        camera_index = self.config_obj.get_config('camera1')
+        log.info(f'External Camera count: {camera_count}, Models: {cameras}, Camera_index = {camera_index}')
+
+        list_of_cameras = ["not in use"]
+        if camera_count > 0:
+            list_of_cameras.append('0')
 
         #Set up camera #1
         self.camera1_combobox = QComboBox()
@@ -211,7 +217,8 @@ class JT_PreferencesWindow(QDialog):
 
         log.debug(f"combox_changed for video1 to: {value}")
         value = convert_to_int(value)
-        if value > -1:      #this skips of -1 coming back from convert_to_int
+        if value > -1:      #this skips if -1 coming back from convert_to_int.   IE if the user selects
+                # 'not in use' it won't convert and will come back as a -1
 
             self.video1.camera_index = value
 

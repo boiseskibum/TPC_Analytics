@@ -530,7 +530,9 @@ class CMJ_UI(QMainWindow):
         # Camera and video setup
         camera_count, cameras = jtv.external_camera_count()
         log.info(f'External Camera count: {camera_count}, Models: {cameras}')
-        if(camera_count > 0):
+        camera_index = self.config_obj.get_config('camera1')
+
+        if(camera_count > 0 and camera_index > -1):
             self.video_checkbox.setChecked(True)
 
         #variables for utilizing test data
@@ -538,10 +540,10 @@ class CMJ_UI(QMainWindow):
 
         #fire off timer that updates time as well as the weight fields
         time_interval = 500      # in milliseconds
-        self.weightUpdate_timer = QTimer()
-        self.weightUpdate_timer.setInterval(time_interval)  # Update every 0.5 seconds
-        self.weightUpdate_timer.timeout.connect(self.weight_fields_update)
-        self.weightUpdate_timer.start()
+        self.screenUpdate_timer = QTimer()
+        self.screenUpdate_timer.setInterval(time_interval)  # Update every 0.5 seconds
+        self.screenUpdate_timer.timeout.connect(self.screen_fields_update)
+        self.screenUpdate_timer.start()
 
     def get_calibration_data(self, serial_port_name):
         self.l_zero = self.config_obj.get_config("l_zero__" + serial_port_name)
@@ -667,6 +669,17 @@ class CMJ_UI(QMainWindow):
             value = self.check_serial_port()
             if value == True:
                 self.get_calibration_data(self.serial_port_name)
+
+            #camera configuration
+            camera_count, cameras = jtv.external_camera_count()
+            camera_index = self.config_obj.get_config('camera1')
+            log.info(f'External Camera count: {camera_count}, Models: {cameras}, Camera_index = {camera_index}')
+
+            if (camera_count > 0 and camera_index > -1):
+                self.video_checkbox.setChecked(True)
+            else:
+                self.video_checkbox.setChecked(False)
+
 
         except Exception as e:
             log.error(f"self.preferences_window.show() an error occurred: {e}")
@@ -815,17 +828,30 @@ class CMJ_UI(QMainWindow):
 #        print(f'######video changed was called: {value} ')
         if value != 0:
             self.video_on = True
+            camera_count, cameras = jtv.external_camera_count()
             camera_index = self.config_obj.get_config('camera1')
-            if camera_index != None and camera_index > -1:
+#            print(f'External Camera count: {camera_count}, Models: {cameras}, Camera_index = {camera_index}')
+
+            if camera_count > 0 and camera_index != None and camera_index > -1:
                 self.video1 = jtv.JT_Video(self.config_obj)
                 self.video1.display_video = False       # turns off writing the video to the screen
                 self.video1.save_frames = True          # turns on recording of a video
                 self.video1.camera_index = camera_index
-                log.debug(f"video1 configured for index: {camera_index}")
+                log.info(f"video1 configured for index: {camera_index}")
+            else:
+                # undo the fact that it was checked.
+                self.video_checkbox.blockSignals(True)
+                self.video_checkbox.setChecked(False)
+                self.video_checkbox.blockSignals(False)
+#                print(f"Error condition met so can't turn on camera index: {camera_index}")
 
         else:
-            self.video1.quit()
+            if self.video1 is not None:
+                self.video1.quit()
+                self.video1 = None
+
             self.video_on = False
+
 
     def start_recording(self):
 
@@ -864,7 +890,7 @@ class CMJ_UI(QMainWindow):
 
             #start video
             start_time = time.perf_counter()
-            if self.video_on == True:
+            if self.video1 is not None and self.video_on == True:
                 self.video1.start()
             end_video_time = time.perf_counter()
 
@@ -919,7 +945,7 @@ class CMJ_UI(QMainWindow):
         log.f()
 
         self.is_recording = False
-        if self.video_on == True:
+        if self.video1 is not None and self.video_on == True:
             self.video1.stop()
 
         #button enabled/disabled
@@ -1000,9 +1026,10 @@ class CMJ_UI(QMainWindow):
     def message_line(self, msg):
         self.status_display.setText(msg)
 
-    #### Clock updating
-    def weight_fields_update(self):
+    #### Clock and Weight Field updates 
+    def screen_fields_update(self):
 
+        # Update clock
         current_time = time.strftime('%H:%M:%S')
         #log.debug(f"update time: {current_time}")
         self.clock_label.setText(current_time)
@@ -1022,6 +1049,12 @@ class CMJ_UI(QMainWindow):
                     right_weight = self.get_average_reading('s2_clean', 0, self.updated_weight_count)
                     r_force = self.get_force_lbs(right_weight, self.r_zero, self.r_mult)
                     self.r_calibration_display.setText("{:.0f}".format(r_force))
+
+        # update if camera is plugged in or not.  If not disable the field after unchecking.
+        # The idea was to have the camera auto enable if plugged in.  But what if it is for ISO jump where
+        # user doesn't want to record.   More thought needed so ignore for now...
+        if self.is_recording == False:
+            pass
 
     def jt_analytics(self):
 
